@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "371326537675",
+    "firebase_url": "https://battlefield-of-the-stars-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "battlefield-of-the-stars",
+    "storage_bucket": "battlefield-of-the-stars.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:371326537675:android:06e8779c215c6abd60304e",
+        "android_client_info": {
+          "package_name": "com.Battlefield.Game"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "371326537675-e1kev9fitqvsqomdlhdbgp07kd300nbk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYXHGHfLkeUKQgywWgzxq4X9-5PBWa9sk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "371326537675-e1kev9fitqvsqomdlhdbgp07kd300nbk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

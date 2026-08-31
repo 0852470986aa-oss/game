@@ -1,0 +1,1 @@
+C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project\Library\Bee\Android\Prj\IL2CPP\Gradle\unityLibrary\build\intermediates\cxx\Debug\6j70u1n3\obj\arm64-v8a
