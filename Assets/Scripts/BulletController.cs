@@ -33,7 +33,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         // ให้ทุกเครื่องกำหนดความเร็วเท่ากันเพื่อให้ภาพกระสุนไม่ค้างเฉพาะฝั่งที่ไม่ได้ยิง
         if (GetComponent<Rigidbody2D>() != null)
         {
-            GetComponent<Rigidbody2D>().velocity = transform.up * speed;
+            GetComponent<Rigidbody2D>().linearVelocity = transform.up * speed;
         }
 
         // ลบตัวเองถ้าอยู่นานเกินไป (เพื่อไม่ให้กินสเปคเครื่อง)
