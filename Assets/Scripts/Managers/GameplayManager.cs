@@ -6,6 +6,36 @@ using UnityEngine.UI;
 
 public class GameplayManager : MonoBehaviourPunCallbacks
 {
+    public const float ArenaHalfHeight = 36.5f;
+    private static readonly float[] ArenaHalfWidths = { 36.3f, 64f, 39f };
+
+    public static int GetCurrentMapIndex()
+    {
+        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object value))
+            return Mathf.Clamp((int)value, 0, ArenaHalfWidths.Length - 1);
+        return 2;
+    }
+
+    public static Vector2 GetArenaMin(int mapIndex)
+    {
+        mapIndex = Mathf.Clamp(mapIndex, 0, ArenaHalfWidths.Length - 1);
+        return new Vector2(-ArenaHalfWidths[mapIndex], -ArenaHalfHeight);
+    }
+
+    public static Vector2 GetArenaMax(int mapIndex)
+    {
+        mapIndex = Mathf.Clamp(mapIndex, 0, ArenaHalfWidths.Length - 1);
+        return new Vector2(ArenaHalfWidths[mapIndex], ArenaHalfHeight);
+    }
+
+    private static void FitBackgroundToArena(SpriteRenderer renderer)
+    {
+        if (renderer == null || renderer.sprite == null) return;
+        const float targetWorldHeight = 75f;
+        float scale = targetWorldHeight / Mathf.Max(renderer.sprite.bounds.size.y, 0.01f);
+        renderer.transform.localScale = new Vector3(scale, scale, 1f);
+    }
+
     public static GameplayManager Instance;
 
     [Header("UI Controls")]
@@ -148,18 +178,26 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                         if (bg != null) backgroundSprite.sprite = bg;
                     }
 
-                    // --- ระบบเปิด/ปิด โฟลเดอร์ของประดับฉากตามด่าน ---
+                    // --- Toggle map layouts (supports inactive GameObjects) ---
+                    GameObject[] rootObjs = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
                     for (int i = 0; i <= 2; i++)
                     {
-                        GameObject mapLayout = GameObject.Find("Map" + i + "_Layout");
-                        if (mapLayout != null)
+                        string targetName = "Map" + i + "_Layout";
+                        foreach (GameObject rootObj in rootObjs)
                         {
-                            mapLayout.SetActive(i == mapIdx); // เปิดเฉพาะด่านที่เลือก นอกนั้นปิด
+                            if (rootObj.name != targetName) continue;
+
+                            Transform layoutBackground = rootObj.transform.Find("Background");
+                            if (layoutBackground != null)
+                                FitBackgroundToArena(layoutBackground.GetComponent<SpriteRenderer>());
+
+                            rootObj.SetActive(i == mapIdx);
+                            break;
                         }
                     }
                 }
                 // Scale Background ให้ใหญ่พอครอบคลุมแม็พ แต่ไม่ใหญ่เกินจนกิน GPU มือถือ
-                backgroundSprite.transform.localScale = new Vector3(15f, 15f, 1f);
+                FitBackgroundToArena(backgroundSprite);
             }
 
             // Initialize Kills
@@ -176,7 +214,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             }
 
             // Spawn Player (Vertical Layout - ห่างกันมากขึ้นเพื่อไม่ให้โดนยิงทันที)
-            Vector3 spawnPos = PhotonNetwork.IsMasterClient ? new Vector3(0f, -6f, 0f) : new Vector3(0f, 6f, 0f);
+            Vector3 spawnPos = PhotonNetwork.IsMasterClient ? new Vector3(0f, -16f, 0f) : new Vector3(0f, 16f, 0f);
             Quaternion spawnRot = PhotonNetwork.IsMasterClient ? Quaternion.identity : Quaternion.Euler(0f, 0f, 180f);
             PhotonNetwork.Instantiate(prefabName, spawnPos, spawnRot);
 
@@ -265,10 +303,12 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         var obstacles = new System.Collections.Generic.List<(Vector2 pos, Vector2 scale, string type)>();
 
         // === กำแพงขอบแม็พ 4 ด้าน (ทุกแม็พใช้ร่วมกัน) ===
-        obstacles.Add((new Vector2(0, 26), new Vector2(54, 2), "wall"));
-        obstacles.Add((new Vector2(0, -26), new Vector2(54, 2), "wall"));
-        obstacles.Add((new Vector2(-26, 0), new Vector2(2, 54), "wall"));
-        obstacles.Add((new Vector2(26, 0), new Vector2(2, 54), "wall"));
+        float wallHalfWidth = ArenaHalfWidths[Mathf.Clamp(mapIndex, 0, ArenaHalfWidths.Length - 1)] + 1f;
+        float wallHalfHeight = ArenaHalfHeight + 1f;
+        obstacles.Add((new Vector2(0, wallHalfHeight), new Vector2(wallHalfWidth * 2f, 2), "wall"));
+        obstacles.Add((new Vector2(0, -wallHalfHeight), new Vector2(wallHalfWidth * 2f, 2), "wall"));
+        obstacles.Add((new Vector2(-wallHalfWidth, 0), new Vector2(2, wallHalfHeight * 2f), "wall"));
+        obstacles.Add((new Vector2(wallHalfWidth, 0), new Vector2(2, wallHalfHeight * 2f), "wall"));
 
         if (mapIndex == 0)
         {
@@ -277,23 +317,23 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             // แนวคิด: ป่าหลบซ่อน มี Cover 4 จุดรอบกลาง + ทางอ้อมซ้าย/ขวา
             // ==========================================
             // COVER รอบ Open Combat (4 จุดรอบตรงกลาง — หลบ Missile/Block Line of Sight)
-            obstacles.Add((new Vector2(-5, 5), new Vector2(3, 3), "large"));
-            obstacles.Add((new Vector2(5, 5), new Vector2(3, 3), "large"));
-            obstacles.Add((new Vector2(-5, -5), new Vector2(3, 3), "large"));
-            obstacles.Add((new Vector2(5, -5), new Vector2(3, 3), "large"));
+            obstacles.Add((new Vector2(-11, 9), new Vector2(5, 5), "large"));
+            obstacles.Add((new Vector2(11, 9), new Vector2(5, 5), "large"));
+            obstacles.Add((new Vector2(-11, -9), new Vector2(5, 5), "large"));
+            obstacles.Add((new Vector2(11, -9), new Vector2(5, 5), "large"));
             // SIDE ROUTE กำแพงยาวซ้าย/ขวา (บังคับให้อ้อม ไม่ให้ยิงตรงข้ามแม็พ)
-            obstacles.Add((new Vector2(-14, 0), new Vector2(3, 8), "large"));
-            obstacles.Add((new Vector2(14, 0), new Vector2(3, 8), "large"));
+            obstacles.Add((new Vector2(-25, 0), new Vector2(5, 14), "large"));
+            obstacles.Add((new Vector2(25, 0), new Vector2(5, 14), "large"));
             // มุมขอบ (ตกแต่ง + กั้นไม่ให้แคมป์มุม)
-            obstacles.Add((new Vector2(-20, 18), new Vector2(5, 3), "medium"));
-            obstacles.Add((new Vector2(20, 18), new Vector2(5, 3), "medium"));
-            obstacles.Add((new Vector2(-20, -18), new Vector2(5, 3), "medium"));
-            obstacles.Add((new Vector2(20, -18), new Vector2(5, 3), "medium"));
+            obstacles.Add((new Vector2(-32, 27), new Vector2(8, 5), "medium"));
+            obstacles.Add((new Vector2(32, 27), new Vector2(8, 5), "medium"));
+            obstacles.Add((new Vector2(-32, -27), new Vector2(8, 5), "medium"));
+            obstacles.Add((new Vector2(32, -27), new Vector2(8, 5), "medium"));
             // เสาเล็ก Transition Zone (เปลี่ยนจังหวะ)
-            obstacles.Add((new Vector2(-10, 12), new Vector2(2, 2), "small"));
-            obstacles.Add((new Vector2(10, -12), new Vector2(2, 2), "small"));
-            obstacles.Add((new Vector2(0, 15), new Vector2(2, 2), "small"));
-            obstacles.Add((new Vector2(0, -15), new Vector2(2, 2), "small"));
+            obstacles.Add((new Vector2(-19, 20), new Vector2(3, 3), "small"));
+            obstacles.Add((new Vector2(19, -20), new Vector2(3, 3), "small"));
+            obstacles.Add((new Vector2(8, 27), new Vector2(3, 3), "small"));
+            obstacles.Add((new Vector2(-8, -27), new Vector2(3, 3), "small"));
         }
         else if (mapIndex == 1)
         {
@@ -302,19 +342,26 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             // แนวคิด: กำแพงแนวนอนกลางแม็พแบ่ง 2 ฝั่ง มีช่องตรงกลางให้ลอดผ่าน (Chokepoint)
             // ==========================================
             // กำแพงแนวนอนซ้าย/ขวา (แบ่งแม็พ ช่องว่างตรงกลาง 6 units ให้ทุกยานลอดได้)
-            obstacles.Add((new Vector2(-12, 0), new Vector2(10, 2.5f), "large"));
-            obstacles.Add((new Vector2(12, 0), new Vector2(10, 2.5f), "large"));
+            obstacles.Add((new Vector2(-20, 0), new Vector2(16, 3.5f), "large"));
+            obstacles.Add((new Vector2(20, 0), new Vector2(16, 3.5f), "large"));
             // เสาฝั่งบน/ล่าง (Flank Route)
-            obstacles.Add((new Vector2(-8, 10), new Vector2(3, 6), "large"));
-            obstacles.Add((new Vector2(8, -10), new Vector2(3, 6), "large"));
+            obstacles.Add((new Vector2(-13, 16), new Vector2(5, 10), "large"));
+            obstacles.Add((new Vector2(13, -16), new Vector2(5, 10), "large"));
             // Cover ใกล้ Spawn (ที่หลบหลัง Respawn)
-            obstacles.Add((new Vector2(0, 16), new Vector2(4, 2.5f), "medium"));
-            obstacles.Add((new Vector2(0, -16), new Vector2(4, 2.5f), "medium"));
+            obstacles.Add((new Vector2(0, 28), new Vector2(7, 4), "medium"));
+            obstacles.Add((new Vector2(0, -28), new Vector2(7, 4), "medium"));
             // เสาเล็กกระจาย (เปลี่ยนทิศทาง)
-            obstacles.Add((new Vector2(-18, 10), new Vector2(2.5f, 2.5f), "small"));
-            obstacles.Add((new Vector2(18, -10), new Vector2(2.5f, 2.5f), "small"));
-            obstacles.Add((new Vector2(8, 10), new Vector2(2.5f, 2.5f), "small"));
-            obstacles.Add((new Vector2(-8, -10), new Vector2(2.5f, 2.5f), "small"));
+            obstacles.Add((new Vector2(-30, 17), new Vector2(4, 4), "small"));
+            obstacles.Add((new Vector2(30, -17), new Vector2(4, 4), "small"));
+            obstacles.Add((new Vector2(14, 19), new Vector2(4, 4), "small"));
+            obstacles.Add((new Vector2(-14, -19), new Vector2(4, 4), "small"));
+            // Wide outer wings unique to the panoramic Map 1 background.
+            obstacles.Add((new Vector2(-49, 12), new Vector2(9, 5), "medium"));
+            obstacles.Add((new Vector2(49, -12), new Vector2(9, 5), "medium"));
+            obstacles.Add((new Vector2(-52, -22), new Vector2(6, 8), "large"));
+            obstacles.Add((new Vector2(52, 22), new Vector2(6, 8), "large"));
+            obstacles.Add((new Vector2(-43, 28), new Vector2(5, 4), "small"));
+            obstacles.Add((new Vector2(43, -28), new Vector2(5, 4), "small"));
         }
         else if (mapIndex == 2)
         {
@@ -323,19 +370,34 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             // ซากหุ่นยักษ์อยู่กลางสนาม, อุกกาบาตลาวาเป็น cover และป้อมพัง
             // วางแบบตายตัวเพื่อให้ตำแหน่งชนตรงกันทุกเครื่องใน multiplayer
             // ==========================================
+            // Central wreck with four open flank routes around it.
             obstacles.Add((new Vector2(0, 0), new Vector2(6.5f, 3.5f), "mech"));
-            obstacles.Add((new Vector2(-10, 5), new Vector2(4.5f, 3.5f), "asteroid"));
-            obstacles.Add((new Vector2(10, -5), new Vector2(4.5f, 3.5f), "asteroid"));
-            obstacles.Add((new Vector2(-15, -7), new Vector2(3.5f, 3f), "asteroid"));
-            obstacles.Add((new Vector2(15, 7), new Vector2(3.5f, 3f), "asteroid"));
-            obstacles.Add((new Vector2(-17, 14), new Vector2(3f, 2.5f), "turret"));
-            obstacles.Add((new Vector2(17, -14), new Vector2(3f, 2.5f), "turret"));
-            obstacles.Add((new Vector2(-5, 14), new Vector2(3.5f, 2.5f), "asteroid"));
-            obstacles.Add((new Vector2(5, -14), new Vector2(3.5f, 2.5f), "asteroid"));
+
+            // Inner asteroid ring. Opposite pairs keep both spawn sides fair.
+            obstacles.Add((new Vector2(-14f, 10f), new Vector2(7.5f, 5.8f), "asteroid"));
+            obstacles.Add((new Vector2(14f, -10f), new Vector2(7.5f, 5.8f), "asteroid"));
+            obstacles.Add((new Vector2(15f, 11f), new Vector2(6.5f, 5f), "asteroid"));
+            obstacles.Add((new Vector2(-15f, -11f), new Vector2(6.5f, 5f), "asteroid"));
+
+            // Outer ring provides cover without sealing the map edges.
+            obstacles.Add((new Vector2(-34f, 30f), new Vector2(13f, 9f), "asteroid"));
+            obstacles.Add((new Vector2(34f, 30f), new Vector2(13f, 9f), "asteroid"));
+            obstacles.Add((new Vector2(-34f, -30f), new Vector2(13f, 9f), "asteroid"));
+            obstacles.Add((new Vector2(34f, -30f), new Vector2(13f, 9f), "asteroid"));
+            obstacles.Add((new Vector2(-11f, 32f), new Vector2(9f, 6f), "asteroid"));
+            obstacles.Add((new Vector2(11f, -32f), new Vector2(9f, 6f), "asteroid"));
+            obstacles.Add((new Vector2(-36f, 6f), new Vector2(8f, 6f), "asteroid"));
+            obstacles.Add((new Vector2(36f, -6f), new Vector2(8f, 6f), "asteroid"));
+
+            obstacles.Add((new Vector2(-31f, 29f), new Vector2(6f, 4.8f), "turret"));
+            obstacles.Add((new Vector2(31f, 29f), new Vector2(6f, 4.8f), "turret"));
             // Energy cores เป็น cover ขนาดเล็กสำหรับหยุดจังหวะยิง ไม่ใช่จุดเกิดของผู้เล่น
-            obstacles.Add((new Vector2(-6, -1), new Vector2(2.2f, 2.2f), "core"));
-            obstacles.Add((new Vector2(6, 1), new Vector2(2.2f, 2.2f), "core"));
-            obstacles.Add((new Vector2(0, 10), new Vector2(2f, 2f), "core"));
+            obstacles.Add((new Vector2(-9f, -3f), new Vector2(3.8f, 3.8f), "core"));
+            obstacles.Add((new Vector2(9f, 3f), new Vector2(3.8f, 3.8f), "core"));
+            obstacles.Add((new Vector2(0, 20f), new Vector2(3.5f, 3.5f), "core"));
+            obstacles.Add((new Vector2(0, -20f), new Vector2(3.5f, 3.5f), "core"));
+            obstacles.Add((new Vector2(-24f, 0f), new Vector2(3.2f, 3.2f), "core"));
+            obstacles.Add((new Vector2(24f, 0f), new Vector2(3.2f, 3.2f), "core"));
         }
         else
         {
@@ -381,6 +443,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             if (validAsteroids.Count == 0) validAsteroids.AddRange(asteroidSprites);
         }
 
+        GameObject map2Layout = GameObject.Find("Map2_Layout");
+        bool hasAuthoredMap2Rocks = map2Layout != null && map2Layout.transform.Find("RockObstacles") != null;
+        bool hasAuthoredMap2Turrets = map2Layout != null && map2Layout.transform.Find("TurretObstacles") != null;
+        bool hasAuthoredMap2RedCores = map2Layout != null && map2Layout.transform.Find("RedCoreObstacles") != null;
+
         foreach (var obs in obstacles)
         {
             // สร้าง Core (ตัวกำแพงหลัก)
@@ -397,7 +464,13 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             {
                 // พื้นหลังมีหุ่นยักษ์เป็นฉากฐาน ส่วนอุกกาบาต/ป้อม/แกนพลังงานคือชั้นเกมเพลย์
                 // ที่วางทับขึ้นมาและชนได้เหมือน cover ใน Mini Militia
-                if (obs.type != "wall" && obs.type != "mech")
+                // Asteroid art is authored under Map2_Layout so it is visible while editing.
+                // Runtime objects still provide the authoritative colliders for multiplayer.
+                bool usesAuthoredVisual =
+                    (obs.type == "asteroid" && hasAuthoredMap2Rocks) ||
+                    (obs.type == "turret" && hasAuthoredMap2Turrets) ||
+                    (obs.type == "core" && hasAuthoredMap2RedCores);
+                if (obs.type != "wall" && obs.type != "mech" && !usesAuthoredVisual)
                     CreateMechWarzoneLayerVisual(box.transform, obs.type, obs.scale, id, asteroidSprites, turretSprites, coreSprites);
             }
             else if (mapIndex == 1 && obs.type != "wall" && crystalSprites != null && crystalSprites.Length > 0)
@@ -489,7 +562,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             {
                 GameObject crystal = new GameObject("Crystal_BG");
                 crystal.transform.SetParent(bgDeco.transform);
-                crystal.transform.position = new Vector3(Random.Range(-20f, 20f), Random.Range(-11f, 11f), 0);
+                crystal.transform.position = new Vector3(Random.Range(-36f, 36f), Random.Range(-33f, 33f), 0);
                 
                 SpriteRenderer sr = crystal.AddComponent<SpriteRenderer>();
                 sr.sprite = crystalSprites[Random.Range(0, crystalSprites.Length)];
@@ -508,7 +581,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                 {
                     GameObject pillar = new GameObject("Pillar_BG");
                     pillar.transform.SetParent(bgDeco.transform);
-                    pillar.transform.position = new Vector3(Random.Range(-18f, 18f), Random.Range(-9f, 9f), 0);
+                    pillar.transform.position = new Vector3(Random.Range(-34f, 34f), Random.Range(-31f, 31f), 0);
                     
                     SpriteRenderer sr = pillar.AddComponent<SpriteRenderer>();
                     sr.sprite = pillarSprites[Random.Range(0, pillarSprites.Length)];
@@ -914,3 +987,4 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         targetTransform.localScale = endScale;
     }
 }
+

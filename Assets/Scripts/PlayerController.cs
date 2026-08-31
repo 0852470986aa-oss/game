@@ -32,8 +32,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private float nextFireTime = 0f;
 
     [Header("Arena Bounds")]
-    public Vector2 arenaMin = new Vector2(-25f, -25f);
-    public Vector2 arenaMax = new Vector2(25f, 25f);
+    public Vector2 arenaMin = new Vector2(-38f, -35.5f);
+    public Vector2 arenaMax = new Vector2(38f, 35.5f);
 
     [Header("Skill Mechanics")]
     public int skillType = 0; // 0=STUN, 1=SHIELD, 2=NOVA, 3=SEEKER
@@ -55,8 +55,9 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     void Start()
     {
         // บังคับขอบเขตแผนที่ให้เป็นค่าใหม่เสมอ (กันการโดนทับด้วยค่าเก่าใน Prefab)
-        arenaMin = new Vector2(-25f, -25f);
-        arenaMax = new Vector2(25f, 25f);
+        int mapIndex = GameplayManager.GetCurrentMapIndex();
+        arenaMin = GameplayManager.GetArenaMin(mapIndex);
+        arenaMax = GameplayManager.GetArenaMax(mapIndex);
 
         playerRigidbody = GetComponent<Rigidbody2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();

@@ -8,11 +8,14 @@ public class CameraFollow : MonoBehaviour
     public Camera cam;
 
     // Camera Bounds — กล้องจะไม่หลุดออกนอกขอบแม็พ
-    public Vector2 arenaMin = new Vector2(-25f, -25f);
-    public Vector2 arenaMax = new Vector2(25f, 25f);
+    public Vector2 arenaMin = new Vector2(-38f, -35.5f);
+    public Vector2 arenaMax = new Vector2(38f, 35.5f);
 
     void Start()
     {
+        int mapIndex = GameplayManager.GetCurrentMapIndex();
+        arenaMin = GameplayManager.GetArenaMin(mapIndex);
+        arenaMax = GameplayManager.GetArenaMax(mapIndex);
         cam = GetComponent<Camera>();
         if (cam != null)
         {

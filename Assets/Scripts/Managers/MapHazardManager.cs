@@ -40,7 +40,8 @@ public class MapHazardManager : MonoBehaviour
         {
             float waitTime = 10f;
             string hazardPrefabName = "";
-            Vector3 spawnPos = new Vector3(Random.Range(-5f, 5f), Random.Range(-10f, 10f), 0);
+            float hazardHalfWidth = mapIndex == 1 ? 56f : 30f;
+            Vector3 spawnPos = new Vector3(Random.Range(-hazardHalfWidth, hazardHalfWidth), Random.Range(-28f, 28f), 0);
 
             if (mapIndex == 0) // Electric Jellyfish Core
             {
@@ -55,7 +56,7 @@ public class MapHazardManager : MonoBehaviour
             else if (mapIndex == 2) // Abandoned Mech Warzone
             {
                 hazardPrefabName = "Hazard_MoltenAsteroid";
-                spawnPos = new Vector3(Random.Range(-8f, 8f), 12f, 0); // โผล่จากด้านบนสุด
+                spawnPos = new Vector3(Random.Range(-28f, 28f), 30f, 0); // โผล่จากด้านบนของพื้นที่เล่น
                 waitTime = Random.Range(3f, 6f); // เกิดถี่หน่อย
             }
 
