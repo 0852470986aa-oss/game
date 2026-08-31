@@ -12,7 +12,9 @@ FirebaseAuth iOS and Android Dependencies.
     </iosPod>
   </iosPods>
   <androidPackages>
-    <androidPackage spec="com.google.firebase:firebase-auth:24.2.0">
+    <!-- Firebase Auth 24.2.0 fails during Unity 6.3 Android packaging.
+         Keep 24.1.0 until the Unity Android toolchain is compatible. -->
+    <androidPackage spec="com.google.firebase:firebase-auth:24.1.0">
     </androidPackage>
     <androidPackage spec="com.google.firebase:firebase-analytics:23.2.0">
     </androidPackage>

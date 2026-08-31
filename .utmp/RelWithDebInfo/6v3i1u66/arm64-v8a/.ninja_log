@@ -1,12 +1,23 @@
 # ninja log v5
+45	7420	8090515385611196	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	19fabc8c535a9e61
 164	2560	8090515336645201	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	edd072800104fdd5
 2566	4194	8090515348191223	C:/Users/08524/Documents/BattlefieldOfTheStarsprojactGame/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6v3i1u66/obj/arm64-v8a/libswappywrapper.so	1a75e6d9fbaacf6d
 88	6122	8090515372606647	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	71d25c1199013718
 104	6149	8090515372653960	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4bd11fc9676451e7
-1	6222	8090515373277436	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e7b69f2bf7704b75
-120	6244	8090515373781430	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	77168357ea1c8476
-26	6508	8090515376573553	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	14037f78761db66d
-139	7110	8090515382561753	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	8c90fbd0b78ea89d
-64	7175	8090515383216443	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	d1bcac8934f8281e
-45	7420	8090515385611196	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	19fabc8c535a9e61
 7420	7677	8090515388275456	C:/Users/08524/Documents/BattlefieldOfTheStarsprojactGame/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6v3i1u66/obj/arm64-v8a/libgame.so	667a8cb73c159383
+139	7110	8090515382561753	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	8c90fbd0b78ea89d
+1	6222	8090515373277436	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e7b69f2bf7704b75
+26	6508	8090515376573553	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	14037f78761db66d
+120	6244	8090515373781430	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	77168357ea1c8476
+64	7175	8090515383216443	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	d1bcac8934f8281e
+167	1141	8098975788998127	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	edd072800104fdd5
+1142	1864	8098975795813023	C:/Users/08524/Documents/BattlefieldOfTheStarsprojactGame/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6v3i1u66/obj/arm64-v8a/libswappywrapper.so	1a75e6d9fbaacf6d
+122	4554	8098975822887167	GameActivity/CMakeFiles/game.dir/UGAInputKeyEvent.cpp.o	71d25c1199013718
+38	4635	8098975823132637	GameActivity/CMakeFiles/game.dir/UGAConfiguration.cpp.o	e7b69f2bf7704b75
+137	4641	8098975822902424	GameActivity/CMakeFiles/game.dir/UGAEntry.cpp.o	4bd11fc9676451e7
+93	4666	8098975823808342	GameActivity/CMakeFiles/game.dir/UGAInputMotionEvent.cpp.o	77168357ea1c8476
+76	4751	8098975824972745	GameActivity/CMakeFiles/game.dir/UGADebug.cpp.o	14037f78761db66d
+107	5076	8098975828265008	GameActivity/CMakeFiles/game.dir/UGAInput.cpp.o	d1bcac8934f8281e
+64	5236	8098975829824304	GameActivity/CMakeFiles/game.dir/UGAApplication.cpp.o	19fabc8c535a9e61
+151	5250	8098975829906760	GameActivity/CMakeFiles/game.dir/UGASoftKeyboard.cpp.o	8c90fbd0b78ea89d
+5250	5479	8098975832384720	C:/Users/08524/Documents/BattlefieldOfTheStarsprojactGame/My project/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/6v3i1u66/obj/arm64-v8a/libgame.so	667a8cb73c159383
