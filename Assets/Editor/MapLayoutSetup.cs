@@ -30,6 +30,15 @@ public class MapLayoutSetup : EditorWindow
         return underscore >= 0 && int.TryParse(sprite.name.Substring(underscore + 1), out int value) ? value : 0;
     }
 
+    private static GameObject FindSceneRoot(string objectName)
+    {
+        foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
+        {
+            if (root.name == objectName) return root;
+        }
+        return null;
+    }
+
     [MenuItem("Battlefield/Setup Map Layouts")]
     public static void SetupMaps()
     {
@@ -47,7 +56,7 @@ public class MapLayoutSetup : EditorWindow
         for (int i = 0; i < 3; i++)
         {
             // ??????????????????????????????? ????????????????????
-            GameObject mapLayout = GameObject.Find(mapNames[i]);
+            GameObject mapLayout = FindSceneRoot(mapNames[i]);
             if (mapLayout == null)
             {
                 mapLayout = new GameObject(mapNames[i]);
@@ -111,7 +120,7 @@ public class MapLayoutSetup : EditorWindow
             scene = EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Single);
         }
 
-        GameObject mapLayout = GameObject.Find("Map2_Layout");
+        GameObject mapLayout = FindSceneRoot("Map2_Layout");
         if (mapLayout == null)
         {
             Debug.LogError("Map2_Layout was not found in " + GameplayScenePath);

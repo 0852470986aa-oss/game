@@ -36,6 +36,28 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         renderer.transform.localScale = new Vector3(scale, scale, 1f);
     }
 
+    private void ApplySelectedMapLayout(int selectedMapIndex)
+    {
+        GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
+        for (int i = 0; i < 3; i++)
+        {
+            string layoutName = "Map" + i + "_Layout";
+            foreach (GameObject root in roots)
+            {
+                if (root.name != layoutName) continue;
+
+                Transform background = root.transform.Find("Background");
+                SpriteRenderer renderer = background != null ? background.GetComponent<SpriteRenderer>() : null;
+                FitBackgroundToArena(renderer);
+                root.SetActive(i == selectedMapIndex);
+
+                if (i == selectedMapIndex && renderer != null)
+                    backgroundSprite = renderer;
+                break;
+            }
+        }
+    }
+
     public static GameplayManager Instance;
 
     [Header("UI Controls")]
@@ -145,6 +167,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
         if (PhotonNetwork.IsConnected && PhotonNetwork.LocalPlayer != null)
         {
+            int selectedMapIndex = GetCurrentMapIndex();
+            ApplySelectedMapLayout(selectedMapIndex);
             // สร้างสิ่งกีดขวาง (ทำแค่ครั้งเดียวตอนเริ่มเกม)
             if (autoGenerateMap)
             {
