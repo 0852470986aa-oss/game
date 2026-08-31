@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -142,10 +142,10 @@ TextureImporter:
       name: Obs_Pillars_0
       rect:
         serializedVersion: 2
-        x: 14
-        y: 9
-        width: 835
-        height: 378
+        x: 9
+        y: 232
+        width: 231
+        height: 155
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -156,6 +156,314 @@ TextureImporter:
       bones: []
       spriteID: 38d073304dcf28890800000000000000
       internalID: -7457120045454914173
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_1
+      rect:
+        serializedVersion: 2
+        x: 262
+        y: 219
+        width: 61
+        height: 166
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b7cb4b2ae49ce864abd31087544ff71b
+      internalID: 1726432158
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_2
+      rect:
+        serializedVersion: 2
+        x: 335
+        y: 224
+        width: 200
+        height: 160
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 992ddf4f69ee0e84fbe8c756bce7bc3a
+      internalID: 218411555
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_3
+      rect:
+        serializedVersion: 2
+        x: 555
+        y: 225
+        width: 60
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc8fa4f182f88ad4285542eb83afd3cc
+      internalID: 1513331421
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_4
+      rect:
+        serializedVersion: 2
+        x: 626
+        y: 234
+        width: 162
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d5f260dcdf05e7340b337d09511b2f5c
+      internalID: 1316543329
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_5
+      rect:
+        serializedVersion: 2
+        x: 799
+        y: 234
+        width: 47
+        height: 120
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30dd5519575ceee489d85a06155e42de
+      internalID: -1565050661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_6
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 73
+        width: 57
+        height: 145
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1a5fdad3755b1f74fa165b70f47f3d75
+      internalID: 387383478
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_7
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 11
+        width: 59
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b30618566681d084688961cf442274cd
+      internalID: 1131969187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_8
+      rect:
+        serializedVersion: 2
+        x: 77
+        y: 11
+        width: 45
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 888b2fe4f1b1c204688f799547625402
+      internalID: 342796509
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_9
+      rect:
+        serializedVersion: 2
+        x: 79
+        y: 153
+        width: 41
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a3f8cf1f25f32644096a48c1e31bf406
+      internalID: 381871310
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_10
+      rect:
+        serializedVersion: 2
+        x: 80
+        y: 116
+        width: 41
+        height: 35
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fbb60573bf20521439f65a6b50357eaa
+      internalID: 1019017978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_11
+      rect:
+        serializedVersion: 2
+        x: 77
+        y: 75
+        width: 44
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ca6cdf11804a5d043a7a523d3b41c7e1
+      internalID: -326102552
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_12
+      rect:
+        serializedVersion: 2
+        x: 142
+        y: 13
+        width: 257
+        height: 199
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9631a0ec54fef0b4bbd7888344e859af
+      internalID: -1281523157
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_13
+      rect:
+        serializedVersion: 2
+        x: 416
+        y: 10
+        width: 257
+        height: 202
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: effb1aabc1ba1784e97af53b36c13e94
+      internalID: -1876646561
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_Pillars_14
+      rect:
+        serializedVersion: 2
+        x: 680
+        y: 7
+        width: 160
+        height: 224
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 63d11804ea3edbd499e4bb2524549c58
+      internalID: -727259273
       vertices: []
       indices: 
       edges: []
@@ -175,6 +483,20 @@ TextureImporter:
       entries: []
     nameFileIdTable:
       Obs_Pillars_0: -7457120045454914173
+      Obs_Pillars_1: 1726432158
+      Obs_Pillars_10: 1019017978
+      Obs_Pillars_11: -326102552
+      Obs_Pillars_12: -1281523157
+      Obs_Pillars_13: -1876646561
+      Obs_Pillars_14: -727259273
+      Obs_Pillars_2: 218411555
+      Obs_Pillars_3: 1513331421
+      Obs_Pillars_4: 1316543329
+      Obs_Pillars_5: -1565050661
+      Obs_Pillars_6: 387383478
+      Obs_Pillars_7: 1131969187
+      Obs_Pillars_8: 342796509
+      Obs_Pillars_9: 381871310
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
