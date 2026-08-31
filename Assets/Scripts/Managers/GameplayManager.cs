@@ -374,20 +374,20 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             obstacles.Add((new Vector2(0, 0), new Vector2(6.5f, 3.5f), "mech"));
 
             // Inner asteroid ring. Opposite pairs keep both spawn sides fair.
-            obstacles.Add((new Vector2(-14f, 10f), new Vector2(7.5f, 5.8f), "asteroid"));
-            obstacles.Add((new Vector2(14f, -10f), new Vector2(7.5f, 5.8f), "asteroid"));
-            obstacles.Add((new Vector2(15f, 11f), new Vector2(6.5f, 5f), "asteroid"));
-            obstacles.Add((new Vector2(-15f, -11f), new Vector2(6.5f, 5f), "asteroid"));
+            obstacles.Add((new Vector2(-14f, 10f), new Vector2(9f, 7f), "asteroid"));
+            obstacles.Add((new Vector2(14f, -10f), new Vector2(9f, 7f), "asteroid"));
+            obstacles.Add((new Vector2(15f, 11f), new Vector2(8f, 6f), "asteroid"));
+            obstacles.Add((new Vector2(-15f, -11f), new Vector2(8f, 6f), "asteroid"));
 
             // Outer ring provides cover without sealing the map edges.
-            obstacles.Add((new Vector2(-34f, 30f), new Vector2(13f, 9f), "asteroid"));
-            obstacles.Add((new Vector2(34f, 30f), new Vector2(13f, 9f), "asteroid"));
-            obstacles.Add((new Vector2(-34f, -30f), new Vector2(13f, 9f), "asteroid"));
-            obstacles.Add((new Vector2(34f, -30f), new Vector2(13f, 9f), "asteroid"));
-            obstacles.Add((new Vector2(-11f, 32f), new Vector2(9f, 6f), "asteroid"));
-            obstacles.Add((new Vector2(11f, -32f), new Vector2(9f, 6f), "asteroid"));
-            obstacles.Add((new Vector2(-36f, 6f), new Vector2(8f, 6f), "asteroid"));
-            obstacles.Add((new Vector2(36f, -6f), new Vector2(8f, 6f), "asteroid"));
+            obstacles.Add((new Vector2(-34f, 30f), new Vector2(16f, 12f), "asteroid"));
+            obstacles.Add((new Vector2(34f, 30f), new Vector2(16f, 12f), "asteroid"));
+            obstacles.Add((new Vector2(-34f, -30f), new Vector2(16f, 12f), "asteroid"));
+            obstacles.Add((new Vector2(34f, -30f), new Vector2(16f, 12f), "asteroid"));
+            obstacles.Add((new Vector2(-11f, 32f), new Vector2(11f, 8f), "asteroid"));
+            obstacles.Add((new Vector2(11f, -32f), new Vector2(11f, 8f), "asteroid"));
+            obstacles.Add((new Vector2(-36f, 6f), new Vector2(10f, 8f), "asteroid"));
+            obstacles.Add((new Vector2(36f, -6f), new Vector2(10f, 8f), "asteroid"));
 
             obstacles.Add((new Vector2(-31f, 29f), new Vector2(6f, 4.8f), "turret"));
             obstacles.Add((new Vector2(31f, 29f), new Vector2(6f, 4.8f), "turret"));

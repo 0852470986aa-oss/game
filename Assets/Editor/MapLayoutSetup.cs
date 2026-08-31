@@ -23,6 +23,13 @@ public class MapLayoutSetup : EditorWindow
         }
     }
 
+    private static int SpriteNumber(Sprite sprite)
+    {
+        if (sprite == null) return 0;
+        int underscore = sprite.name.LastIndexOf('_');
+        return underscore >= 0 && int.TryParse(sprite.name.Substring(underscore + 1), out int value) ? value : 0;
+    }
+
     [MenuItem("Battlefield/Setup Map Layouts")]
     public static void SetupMaps()
     {
@@ -132,6 +139,12 @@ public class MapLayoutSetup : EditorWindow
             DestroyImmediate(oldRedCoreContainer.gameObject);
         }
 
+        Transform oldDecorationContainer = mapLayout.transform.Find("RockDecorations");
+        if (oldDecorationContainer != null)
+        {
+            DestroyImmediate(oldDecorationContainer.gameObject);
+        }
+
         Object[] loadedAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Resources/Images/Obs_Asteroids.png");
         List<Sprite> sprites = new List<Sprite>();
         foreach (Object asset in loadedAssets)
@@ -149,27 +162,29 @@ public class MapLayoutSetup : EditorWindow
             DestroyImmediate(container);
             return;
         }
+        sprites.Sort((left, right) => SpriteNumber(left).CompareTo(SpriteNumber(right)));
 
         RockPlacement[] rocks =
         {
-            new RockPlacement(-14f, 10f, 7.5f, 5.8f, -18f),
-            new RockPlacement(14f, -10f, 7.5f, 5.8f, 162f),
-            new RockPlacement(15f, 11f, 6.5f, 5f, 28f),
-            new RockPlacement(-15f, -11f, 6.5f, 5f, 208f),
-            new RockPlacement(-34f, 30f, 13f, 9f, 14f),
-            new RockPlacement(34f, 30f, 13f, 9f, -14f),
-            new RockPlacement(-34f, -30f, 13f, 9f, 24f),
-            new RockPlacement(34f, -30f, 13f, 9f, -24f),
-            new RockPlacement(-11f, 32f, 9f, 6f, 35f),
-            new RockPlacement(11f, -32f, 9f, 6f, 215f),
-            new RockPlacement(-36f, 6f, 8f, 6f, -12f),
-            new RockPlacement(36f, -6f, 8f, 6f, 168f)
+            new RockPlacement(-14f, 10f, 9f, 7f, -18f),
+            new RockPlacement(14f, -10f, 9f, 7f, 162f),
+            new RockPlacement(15f, 11f, 8f, 6f, 28f),
+            new RockPlacement(-15f, -11f, 8f, 6f, 208f),
+            new RockPlacement(-34f, 30f, 16f, 12f, 14f),
+            new RockPlacement(34f, 30f, 16f, 12f, -14f),
+            new RockPlacement(-34f, -30f, 16f, 12f, 24f),
+            new RockPlacement(34f, -30f, 16f, 12f, -24f),
+            new RockPlacement(-11f, 32f, 11f, 8f, 35f),
+            new RockPlacement(11f, -32f, 11f, 8f, 215f),
+            new RockPlacement(-36f, 6f, 10f, 8f, -12f),
+            new RockPlacement(36f, -6f, 10f, 8f, 168f)
         };
 
         for (int i = 0; i < rocks.Length; i++)
         {
             RockPlacement placement = rocks[i];
-            Sprite sprite = sprites[i % sprites.Count];
+            // Prefer the cracked/lava asteroid cuts so Map 2 matches the orange mech background.
+            Sprite sprite = sprites[(i + 6) % sprites.Count];
             GameObject rock = new GameObject(string.Format("RockObstacle_{0:00}", i + 1));
             rock.transform.SetParent(container.transform, false);
             rock.transform.localPosition = new Vector3(placement.position.x, placement.position.y, 0f);
@@ -184,6 +199,66 @@ public class MapLayoutSetup : EditorWindow
             SpriteRenderer renderer = rock.AddComponent<SpriteRenderer>();
             renderer.sprite = sprite;
             renderer.sortingOrder = -1;
+
+            GameObject rim = new GameObject("LavaRim");
+            rim.transform.SetParent(rock.transform, false);
+            rim.transform.localScale = new Vector3(1.1f, 1.1f, 1f);
+            SpriteRenderer rimRenderer = rim.AddComponent<SpriteRenderer>();
+            rimRenderer.sprite = sprite;
+            rimRenderer.color = new Color(1f, 0.25f, 0.04f, 0.22f);
+            rimRenderer.sortingOrder = -2;
+        }
+
+        // Small visual-only debris fills the full composition without making flight frustrating.
+        GameObject decorationContainer = new GameObject("RockDecorations");
+        decorationContainer.transform.SetParent(mapLayout.transform, false);
+        RockPlacement[] decorations =
+        {
+            new RockPlacement(-27f, 23f, 3.8f, 3f, 18f),
+            new RockPlacement(-18f, 27f, 2.4f, 2f, -24f),
+            new RockPlacement(4f, 29f, 2.2f, 1.8f, 12f),
+            new RockPlacement(18f, 25f, 3.5f, 2.8f, -32f),
+            new RockPlacement(28f, 20f, 2.4f, 2f, 35f),
+            new RockPlacement(-31f, 15f, 2.2f, 1.8f, -18f),
+            new RockPlacement(-21f, 15f, 3.2f, 2.6f, 42f),
+            new RockPlacement(-5f, 17f, 2f, 1.7f, -12f),
+            new RockPlacement(8f, 18f, 2.5f, 2f, 28f),
+            new RockPlacement(25f, 13f, 3.2f, 2.5f, -16f),
+            new RockPlacement(-29f, 5f, 2.2f, 1.8f, 24f),
+            new RockPlacement(-19f, 3f, 1.8f, 1.5f, -30f),
+            new RockPlacement(-4f, 7f, 1.7f, 1.4f, 15f),
+            new RockPlacement(18f, 5f, 2.2f, 1.8f, 38f),
+            new RockPlacement(30f, 3f, 2.7f, 2.1f, -20f),
+            new RockPlacement(-30f, -7f, 3f, 2.4f, -36f),
+            new RockPlacement(-19f, -18f, 2.5f, 2f, 22f),
+            new RockPlacement(-5f, -17f, 2f, 1.7f, -18f),
+            new RockPlacement(19f, -17f, 3.2f, 2.5f, 32f),
+            new RockPlacement(29f, -14f, 2.2f, 1.8f, -25f),
+            new RockPlacement(-26f, -25f, 2.6f, 2.1f, 18f),
+            new RockPlacement(-15f, -28f, 3.5f, 2.8f, -28f),
+            new RockPlacement(1f, -28f, 2.2f, 1.8f, 12f),
+            new RockPlacement(25f, -26f, 3.5f, 2.8f, 28f)
+        };
+
+        for (int i = 0; i < decorations.Length; i++)
+        {
+            RockPlacement placement = decorations[i];
+            Sprite sprite = sprites[(i * 3 + 2) % sprites.Count];
+            GameObject rock = new GameObject(string.Format("RockDecoration_{0:00}", i + 1));
+            rock.transform.SetParent(decorationContainer.transform, false);
+            rock.transform.localPosition = new Vector3(placement.position.x, placement.position.y, 0f);
+            rock.transform.localRotation = Quaternion.Euler(0f, 0f, placement.rotation);
+            Vector2 spriteSize = sprite.bounds.size;
+            float scale = Mathf.Min(
+                placement.collisionSize.x / Mathf.Max(spriteSize.x, 0.01f),
+                placement.collisionSize.y / Mathf.Max(spriteSize.y, 0.01f));
+            scale *= 1.45f;
+            rock.transform.localScale = new Vector3(scale, scale, 1f);
+            SpriteRenderer renderer = rock.AddComponent<SpriteRenderer>();
+            renderer.sprite = sprite;
+            renderer.sortingOrder = -3;
+            float depthAlpha = i % 3 == 0 ? 0.68f : 0.86f;
+            renderer.color = new Color(0.72f, 0.78f, 0.9f, depthAlpha);
         }
 
         Object[] loadedTurretAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Resources/Images/Obs_Turrets.png");
@@ -223,6 +298,14 @@ public class MapLayoutSetup : EditorWindow
                 SpriteRenderer renderer = turret.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
                 renderer.sortingOrder = 0;
+
+                GameObject warningGlow = new GameObject("WarningGlow");
+                warningGlow.transform.SetParent(turret.transform, false);
+                warningGlow.transform.localScale = new Vector3(1.12f, 1.12f, 1f);
+                SpriteRenderer glowRenderer = warningGlow.AddComponent<SpriteRenderer>();
+                glowRenderer.sprite = sprite;
+                glowRenderer.color = new Color(1f, 0.08f, 0.02f, 0.24f);
+                glowRenderer.sortingOrder = -1;
             }
         }
         else
@@ -272,12 +355,20 @@ public class MapLayoutSetup : EditorWindow
                 SpriteRenderer renderer = core.AddComponent<SpriteRenderer>();
                 renderer.sprite = sprite;
                 renderer.sortingOrder = 1;
+
+                GameObject halo = new GameObject("CoreHalo");
+                halo.transform.SetParent(core.transform, false);
+                halo.transform.localScale = new Vector3(1.55f, 1.55f, 1f);
+                SpriteRenderer haloRenderer = halo.AddComponent<SpriteRenderer>();
+                haloRenderer.sprite = sprite;
+                haloRenderer.color = new Color(1f, 0.04f, 0.02f, 0.2f);
+                haloRenderer.sortingOrder = 0;
             }
         }
 
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
-        Debug.Log("Map2 obstacle layout created: " + rocks.Length + " rocks, 2 turrets and 6 red cores.");
+        Debug.Log("Map2 full composition created: " + rocks.Length + " obstacle rocks, " + decorations.Length + " debris rocks, 2 turrets and 6 red cores.");
     }
 }
 
