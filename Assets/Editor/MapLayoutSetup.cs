@@ -39,6 +39,58 @@ public class MapLayoutSetup : EditorWindow
         return null;
     }
 
+    private static Dictionary<int, Sprite> LoadNumberedSprites(string assetPath)
+    {
+        Dictionary<int, Sprite> sprites = new Dictionary<int, Sprite>();
+        foreach (Object asset in AssetDatabase.LoadAllAssetsAtPath(assetPath))
+        {
+            Sprite sprite = asset as Sprite;
+            if (sprite != null)
+            {
+                sprites[SpriteNumber(sprite)] = sprite;
+            }
+        }
+        return sprites;
+    }
+
+    private static Transform CreateMap1Group(Transform parent, string name)
+    {
+        GameObject group = new GameObject(name);
+        group.transform.SetParent(parent, false);
+        return group.transform;
+    }
+
+    private static void CreateMap1Obstacle(Transform parent, string name, RockPlacement placement,
+        Sprite sprite, int sortingOrder)
+    {
+        if (sprite == null)
+        {
+            Debug.LogError("Cannot create " + name + " because its sprite is missing.");
+            return;
+        }
+
+        GameObject obstacle = new GameObject(name);
+        obstacle.transform.SetParent(parent, false);
+        obstacle.transform.localPosition = new Vector3(placement.position.x, placement.position.y, 0f);
+        obstacle.transform.localRotation = Quaternion.Euler(0f, 0f, placement.rotation);
+
+        // Pillar sprites use a bottom-left pivot while crystal sprites use a centered pivot.
+        // Centering the artwork under a holder keeps every obstacle aligned with its runtime collider.
+        Vector2 spriteSize = sprite.bounds.size;
+        float scale = Mathf.Max(
+            placement.collisionSize.x / Mathf.Max(spriteSize.x, 0.01f),
+            placement.collisionSize.y / Mathf.Max(spriteSize.y, 0.01f));
+        obstacle.transform.localScale = new Vector3(scale, scale, 1f);
+
+        GameObject artwork = new GameObject("Artwork");
+        artwork.transform.SetParent(obstacle.transform, false);
+        artwork.transform.localPosition = -sprite.bounds.center;
+
+        SpriteRenderer renderer = artwork.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = sortingOrder;
+    }
+
     [MenuItem("Battlefield/Setup Map Layouts")]
     public static void SetupMaps()
     {
@@ -109,6 +161,118 @@ public class MapLayoutSetup : EditorWindow
         }
 
         Debug.Log("?? ???????????????????????????????????! ???????????????????????????????!");
+    }
+
+    [MenuItem("Battlefield/Setup Map 1 Prism Obstacles")]
+    public static void SetupMap1Obstacles()
+    {
+        Scene scene = SceneManager.GetActiveScene();
+        if (scene.path != GameplayScenePath)
+        {
+            scene = EditorSceneManager.OpenScene(GameplayScenePath, OpenSceneMode.Single);
+        }
+
+        GameObject mapLayout = FindSceneRoot("Map1_Layout");
+        if (mapLayout == null)
+        {
+            Debug.LogError("Map1_Layout was not found in " + GameplayScenePath);
+            return;
+        }
+
+        Dictionary<int, Sprite> crystals = LoadNumberedSprites("Assets/Resources/Images/Obs_Crystals.png");
+        Dictionary<int, Sprite> pillars = LoadNumberedSprites("Assets/Resources/Images/Obs_Pillars.png");
+        int[] requiredCrystals = { 0, 2, 3, 4 };
+        int[] requiredPillars = { 0, 2, 4, 12, 13, 14 };
+        foreach (int spriteNumber in requiredCrystals)
+        {
+            if (!crystals.ContainsKey(spriteNumber))
+            {
+                Debug.LogError("Obs_Crystals_" + spriteNumber + " is missing; Map1 was not changed.");
+                return;
+            }
+        }
+        foreach (int spriteNumber in requiredPillars)
+        {
+            if (!pillars.ContainsKey(spriteNumber))
+            {
+                Debug.LogError("Obs_Pillars_" + spriteNumber + " is missing; Map1 was not changed.");
+                return;
+            }
+        }
+
+        // This method intentionally replaces only the generated Map1 obstacle artwork.
+        Transform oldContainer = mapLayout.transform.Find("Map1Obstacles");
+        if (oldContainer != null)
+        {
+            DestroyImmediate(oldContainer.gameObject);
+        }
+
+        GameObject container = new GameObject("Map1Obstacles");
+        container.transform.SetParent(mapLayout.transform, false);
+
+        Transform obeliskGroup = CreateMap1Group(container.transform, "CentralObelisk");
+        CreateMap1Obstacle(obeliskGroup, "CentralObelisk", new RockPlacement(0f, 0f, 5.5f, 8f, 0f),
+            pillars[14], 2);
+
+        Transform crystalGroup = CreateMap1Group(container.transform, "CrystalObstacles");
+        RockPlacement[] crystalPlacements =
+        {
+            new RockPlacement(-20f, 12f, 5f, 4f, -8f),
+            new RockPlacement(20f, -12f, 5f, 4f, -8f),
+            new RockPlacement(20f, 12f, 5f, 4f, 8f),
+            new RockPlacement(-20f, -12f, 5f, 4f, 8f),
+            new RockPlacement(-32f, 7f, 4.5f, 4f, -12f),
+            new RockPlacement(32f, -7f, 4.5f, 4f, -12f),
+            new RockPlacement(32f, 7f, 4.5f, 4f, 12f),
+            new RockPlacement(-32f, -7f, 4.5f, 4f, 12f)
+        };
+        int[] crystalSpriteNumbers = { 2, 2, 3, 3, 0, 0, 4, 4 };
+        for (int i = 0; i < crystalPlacements.Length; i++)
+        {
+            CreateMap1Obstacle(crystalGroup, string.Format("CrystalObstacle_{0:00}", i + 1),
+                crystalPlacements[i], crystals[crystalSpriteNumbers[i]], 1);
+        }
+
+        Transform domeGroup = CreateMap1Group(container.transform, "DomeObstacles");
+        RockPlacement[] domePlacements =
+        {
+            new RockPlacement(-40f, 23f, 7f, 5f, 0f),
+            new RockPlacement(40f, -23f, 7f, 5f, 0f),
+            new RockPlacement(40f, 23f, 7f, 5f, 0f),
+            new RockPlacement(-40f, -23f, 7f, 5f, 0f)
+        };
+        for (int i = 0; i < domePlacements.Length; i++)
+        {
+            CreateMap1Obstacle(domeGroup, string.Format("DomeObstacle_{0:00}", i + 1),
+                domePlacements[i], pillars[i % 2 == 0 ? 12 : 13], 1);
+        }
+
+        Transform barrierGroup = CreateMap1Group(container.transform, "EnergyBarriers");
+        RockPlacement[] barrierPlacements =
+        {
+            new RockPlacement(-16f, 0f, 10f, 4.5f, 0f),
+            new RockPlacement(16f, 0f, 10f, 4.5f, 0f),
+            new RockPlacement(0f, 29f, 8f, 4f, 0f),
+            new RockPlacement(0f, -29f, 8f, 4f, 0f),
+            new RockPlacement(-52f, 25f, 8f, 4.5f, -8f),
+            new RockPlacement(52f, -25f, 8f, 4.5f, -8f),
+            new RockPlacement(52f, 25f, 8f, 4.5f, 8f),
+            new RockPlacement(-52f, -25f, 8f, 4.5f, 8f),
+            new RockPlacement(-31f, 16f, 4.5f, 5.5f, 0f),
+            new RockPlacement(31f, -16f, 4.5f, 5.5f, 0f),
+            new RockPlacement(31f, 16f, 4.5f, 5.5f, 0f),
+            new RockPlacement(-31f, -16f, 4.5f, 5.5f, 0f)
+        };
+        int[] barrierSpriteNumbers = { 0, 0, 2, 2, 4, 4, 0, 0, 14, 14, 14, 14 };
+        for (int i = 0; i < barrierPlacements.Length; i++)
+        {
+            CreateMap1Obstacle(barrierGroup, string.Format("EnergyBarrier_{0:00}", i + 1),
+                barrierPlacements[i], pillars[barrierSpriteNumbers[i]], 0);
+        }
+
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+        Debug.Log("Map1 composition created: 1 central obelisk, 8 crystal covers, 4 domes and 12 energy barriers.");
     }
 
     [MenuItem("Battlefield/Setup Map 2 Full Arena Obstacles")]

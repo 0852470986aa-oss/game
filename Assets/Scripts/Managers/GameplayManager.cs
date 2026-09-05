@@ -309,7 +309,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         GameObject obstaclesContainer = new GameObject("Obstacles");
 
         // 2. อ่านค่าว่าห้องนี้เลือกด่านอะไรมา
-        int mapIndex = 2; // เปลี่ยน default เป็น 2 (ด่านหุ่นยนต์) เพื่อให้เทสต์ในหน้า SampleScene ได้เลย
+        int mapIndex = 1; // ⭐ เปลี่ยนเป็น 1 (Map1 - Obelisk Plains) เพื่อทดสอบ
         if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object mapIdxProp))
         {
             mapIndex = (int)mapIdxProp;
@@ -363,29 +363,47 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         {
             // ==========================================
             // แม็พ 1: Obelisk Plains of Prism
-            // แนวคิด: กำแพงแนวนอนกลางแม็พแบ่ง 2 ฝั่ง มีช่องตรงกลางให้ลอดผ่าน (Chokepoint)
+            // ใช้เลย์เอาต์สมมาตร 180 องศา เพื่อให้ผู้เล่นทั้งสองฝั่งมี cover เท่ากัน
             // ==========================================
-            // กำแพงแนวนอนซ้าย/ขวา (แบ่งแม็พ ช่องว่างตรงกลาง 6 units ให้ทุกยานลอดได้)
-            obstacles.Add((new Vector2(-20, 0), new Vector2(16, 3.5f), "large"));
-            obstacles.Add((new Vector2(20, 0), new Vector2(16, 3.5f), "large"));
-            // เสาฝั่งบน/ล่าง (Flank Route)
-            obstacles.Add((new Vector2(-13, 16), new Vector2(5, 10), "large"));
-            obstacles.Add((new Vector2(13, -16), new Vector2(5, 10), "large"));
-            // Cover ใกล้ Spawn (ที่หลบหลัง Respawn)
-            obstacles.Add((new Vector2(0, 28), new Vector2(7, 4), "medium"));
-            obstacles.Add((new Vector2(0, -28), new Vector2(7, 4), "medium"));
-            // เสาเล็กกระจาย (เปลี่ยนทิศทาง)
-            obstacles.Add((new Vector2(-30, 17), new Vector2(4, 4), "small"));
-            obstacles.Add((new Vector2(30, -17), new Vector2(4, 4), "small"));
-            obstacles.Add((new Vector2(14, 19), new Vector2(4, 4), "small"));
-            obstacles.Add((new Vector2(-14, -19), new Vector2(4, 4), "small"));
-            // Wide outer wings unique to the panoramic Map 1 background.
-            obstacles.Add((new Vector2(-49, 12), new Vector2(9, 5), "medium"));
-            obstacles.Add((new Vector2(49, -12), new Vector2(9, 5), "medium"));
-            obstacles.Add((new Vector2(-52, -22), new Vector2(6, 8), "large"));
-            obstacles.Add((new Vector2(52, 22), new Vector2(6, 8), "large"));
-            obstacles.Add((new Vector2(-43, 28), new Vector2(5, 4), "small"));
-            obstacles.Add((new Vector2(43, -28), new Vector2(5, 4), "small"));
+            
+            // === CENTRAL TOWER (หอตรงกลาง) ===
+            obstacles.Add((new Vector2(0, 0), new Vector2(5.5f, 8), "tower"));
+            
+            // === CRYSTAL COVERS ===
+            obstacles.Add((new Vector2(-20, 12), new Vector2(5, 4), "crystal"));
+            obstacles.Add((new Vector2(20, -12), new Vector2(5, 4), "crystal"));
+            obstacles.Add((new Vector2(20, 12), new Vector2(5, 4), "crystal"));
+            obstacles.Add((new Vector2(-20, -12), new Vector2(5, 4), "crystal"));
+            obstacles.Add((new Vector2(-32, 7), new Vector2(4.5f, 4), "crystal"));
+            obstacles.Add((new Vector2(32, -7), new Vector2(4.5f, 4), "crystal"));
+            obstacles.Add((new Vector2(32, 7), new Vector2(4.5f, 4), "crystal"));
+            obstacles.Add((new Vector2(-32, -7), new Vector2(4.5f, 4), "crystal"));
+            
+            // === DOME SHIELDS ===
+            obstacles.Add((new Vector2(-40, 23), new Vector2(7, 5), "dome"));
+            obstacles.Add((new Vector2(40, -23), new Vector2(7, 5), "dome"));
+            obstacles.Add((new Vector2(40, 23), new Vector2(7, 5), "dome"));
+            obstacles.Add((new Vector2(-40, -23), new Vector2(7, 5), "dome"));
+            
+            // === ENERGY BARRIERS ===
+            obstacles.Add((new Vector2(-16, 0), new Vector2(10, 4.5f), "platform"));
+            obstacles.Add((new Vector2(16, 0), new Vector2(10, 4.5f), "platform"));
+            
+            // Cover หลังจุดเกิด โดยเว้นแกนกลาง y = +/-16 ให้บินออกได้
+            obstacles.Add((new Vector2(0, 29), new Vector2(8, 4), "platform"));
+            obstacles.Add((new Vector2(0, -29), new Vector2(8, 4), "platform"));
+            
+            // Cover รอบนอก
+            obstacles.Add((new Vector2(-52, 25), new Vector2(8, 4.5f), "platform"));
+            obstacles.Add((new Vector2(52, -25), new Vector2(8, 4.5f), "platform"));
+            obstacles.Add((new Vector2(52, 25), new Vector2(8, 4.5f), "platform"));
+            obstacles.Add((new Vector2(-52, -25), new Vector2(8, 4.5f), "platform"));
+            
+            // เสาพลังงานคุมทางอ้อมซ้าย/ขวา
+            obstacles.Add((new Vector2(-31, 16), new Vector2(4.5f, 5.5f), "platform"));
+            obstacles.Add((new Vector2(31, -16), new Vector2(4.5f, 5.5f), "platform"));
+            obstacles.Add((new Vector2(31, 16), new Vector2(4.5f, 5.5f), "platform"));
+            obstacles.Add((new Vector2(-31, -16), new Vector2(4.5f, 5.5f), "platform"));
         }
         else if (mapIndex == 2)
         {
@@ -471,6 +489,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         bool hasAuthoredMap2Rocks = map2Layout != null && map2Layout.transform.Find("RockObstacles") != null;
         bool hasAuthoredMap2Turrets = map2Layout != null && map2Layout.transform.Find("TurretObstacles") != null;
         bool hasAuthoredMap2RedCores = map2Layout != null && map2Layout.transform.Find("RedCoreObstacles") != null;
+        GameObject map1Layout = GameObject.Find("Map1_Layout");
+        bool hasAuthoredMap1Obstacles = map1Layout != null && map1Layout.transform.Find("Map1Obstacles") != null;
 
         foreach (var obs in obstacles)
         {
@@ -482,6 +502,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             // Add Collider
             BoxCollider2D col = box.AddComponent<BoxCollider2D>();
             col.size = obs.scale;
+            if (mapIndex == 1)
+            {
+                int obstacleLayer = LayerMask.NameToLayer("Obstacle");
+                if (obstacleLayer >= 0) box.layer = obstacleLayer;
+            }
 
             // Visual Rendering
             if (mapIndex == 2)
@@ -497,42 +522,12 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                 if (obs.type != "wall" && obs.type != "mech" && !usesAuthoredVisual)
                     CreateMechWarzoneLayerVisual(box.transform, obs.type, obs.scale, id, asteroidSprites, turretSprites, coreSprites);
             }
-            else if (mapIndex == 1 && obs.type != "wall" && crystalSprites != null && crystalSprites.Length > 0)
+            else if (mapIndex == 1 && obs.type != "wall")
             {
-                // [NEW] Cluster Spawning for Map 1 (Prism Crystals & Pillars)
-                float area = obs.scale.x * obs.scale.y;
-                int count = Mathf.Max(1, Mathf.RoundToInt(area / 2.5f)); 
-
-                for (int i = 0; i < count; i++)
-                {
-                    GameObject crystal = new GameObject("Crystal_Vis");
-                    crystal.transform.SetParent(box.transform);
-                    
-                    float rx = Random.Range(-obs.scale.x / 2.2f, obs.scale.x / 2.2f);
-                    float ry = Random.Range(-obs.scale.y / 2.2f, obs.scale.y / 2.2f);
-                    crystal.transform.localPosition = new Vector3(rx, ry, 0);
-                    
-                    SpriteRenderer sr = crystal.AddComponent<SpriteRenderer>();
-                    sr.sprite = crystalSprites[Random.Range(0, crystalSprites.Length)];
-                    sr.sortingOrder = -2;
-                    
-                    float rScale = Random.Range(0.7f, 1.3f);
-                    crystal.transform.localScale = new Vector3(rScale, rScale, 1f); 
-                    crystal.transform.localRotation = Quaternion.Euler(0, 0, Random.Range(0, 360));
-                }
-
-                if (obs.type == "large" && pillarSprites != null && pillarSprites.Length > 0)
-                {
-                    GameObject pillar = new GameObject("Pillar_Vis");
-                    pillar.transform.SetParent(box.transform);
-                    pillar.transform.localPosition = new Vector3(0, 0, 0); 
-                    SpriteRenderer psr = pillar.AddComponent<SpriteRenderer>();
-                    psr.sprite = pillarSprites[Random.Range(0, pillarSprites.Length)];
-                    psr.sortingOrder = -1;
-                    float pScale = Random.Range(0.9f, 1.4f);
-                    pillar.transform.localScale = new Vector3(pScale, pScale, 1f);
-                    pillar.transform.localRotation = Quaternion.Euler(0, 0, Random.Range(-20f, 20f));
-                }
+                // Artwork is authored under Map1_Layout so it is visible and editable in the scene.
+                // These runtime objects only provide the authoritative collision layout.
+                if (!hasAuthoredMap1Obstacles)
+                    CreateMap1ObstacleVisual(box.transform, obs.type, obs.scale, id, crystalSprites, pillarSprites);
             }
             else
             {
@@ -576,7 +571,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         }
 
         // --- เพิ่มระบบตกแต่งฉากหลัง (Background Decorator) ---
-        if (mapIndex == 1 && crystalSprites != null && crystalSprites.Length > 0)
+        if (mapIndex == 1 && !hasAuthoredMap1Obstacles && crystalSprites != null && crystalSprites.Length > 0)
         {
             GameObject bgDeco = new GameObject("BackgroundDecorations");
             bgDeco.transform.SetParent(obstaclesContainer.transform);
@@ -624,6 +619,69 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         {
             backgroundSprite.sortingOrder = -6; // ถอยพื้นหลังไปอีกเพื่อหลบ Background Decorator
         }
+    }
+
+    private static Sprite FindNumberedSprite(Sprite[] sprites, string prefix, int number)
+    {
+        if (sprites == null) return null;
+        string targetName = prefix + "_" + number;
+        foreach (Sprite sprite in sprites)
+        {
+            if (sprite != null && sprite.name == targetName) return sprite;
+        }
+        return null;
+    }
+
+    private void CreateMap1ObstacleVisual(Transform parent, string type, Vector2 collisionSize, int id,
+        Sprite[] crystalSprites, Sprite[] pillarSprites)
+    {
+        Sprite sprite = null;
+        float rotation = 0f;
+        int sortingOrder = type == "platform" ? 0 : 1;
+
+        if (type == "tower")
+        {
+            sprite = FindNumberedSprite(pillarSprites, "Obs_Pillars", 14);
+            sortingOrder = 2;
+        }
+        else if (type == "crystal")
+        {
+            int[] spriteNumbers = { 2, 2, 3, 3, 0, 0, 4, 4 };
+            float[] rotations = { -8f, -8f, 8f, 8f, -12f, -12f, 12f, 12f };
+            int index = Mathf.Clamp(id - 6, 0, spriteNumbers.Length - 1);
+            sprite = FindNumberedSprite(crystalSprites, "Obs_Crystals", spriteNumbers[index]);
+            rotation = rotations[index];
+        }
+        else if (type == "dome")
+        {
+            int index = Mathf.Clamp(id - 14, 0, 3);
+            sprite = FindNumberedSprite(pillarSprites, "Obs_Pillars", index % 2 == 0 ? 12 : 13);
+            rotation = 0f;
+        }
+        else if (type == "platform")
+        {
+            int[] spriteNumbers = { 0, 0, 2, 2, 4, 4, 0, 0, 14, 14, 14, 14 };
+            float[] rotations = { 0f, 0f, 0f, 0f, -8f, -8f, 8f, 8f, 0f, 0f, 0f, 0f };
+            int index = Mathf.Clamp(id - 18, 0, spriteNumbers.Length - 1);
+            sprite = FindNumberedSprite(pillarSprites, "Obs_Pillars", spriteNumbers[index]);
+            rotation = rotations[index];
+        }
+
+        if (sprite == null) return;
+
+        GameObject artwork = new GameObject("Artwork");
+        artwork.transform.SetParent(parent, false);
+        Vector2 spriteSize = sprite.bounds.size;
+        float scale = Mathf.Max(
+            collisionSize.x / Mathf.Max(spriteSize.x, 0.01f),
+            collisionSize.y / Mathf.Max(spriteSize.y, 0.01f));
+        artwork.transform.localPosition = -(Vector3)sprite.bounds.center * scale;
+        artwork.transform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        artwork.transform.localScale = new Vector3(scale, scale, 1f);
+
+        SpriteRenderer renderer = artwork.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingOrder = sortingOrder;
     }
 
     private void CreateMechWarzoneLayerVisual(Transform parent, string type, Vector2 collisionSize, int id,
