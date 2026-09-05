@@ -1776,3 +1776,149 @@ public class SceneSetupTool
         return slider;
     }
 }
+
+// Renders an isolated preview scene. It never saves over the user's open scenes.
+public static class LobbyPreviewValidation
+{
+    [InitializeOnLoadMethod]
+    private static void ScheduleRequestedValidation()
+    {
+        EditorApplication.delayCall += () =>
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode
+                && System.IO.File.Exists("Library/LobbyValidation.request"))
+                ValidateAndRender();
+        };
+    }
+
+    [MenuItem("Battlefield/Lobby/Validate and Render Preview")]
+    public static void ValidateAndRender()
+    {
+        var preview = EditorSceneManager.OpenPreviewScene("Assets/Scenes/LobbyScene.unity");
+        string output = "Library/LobbyValidation";
+        System.IO.Directory.CreateDirectory(output);
+        try
+        {
+            LobbyManager manager = null;
+            foreach (GameObject root in preview.GetRootGameObjects())
+            {
+                foreach (Camera camera in root.GetComponentsInChildren<Camera>(true)) camera.enabled = false;
+                var found = root.GetComponentInChildren<LobbyManager>(true);
+                if (found != null) manager = found;
+            }
+            if (manager == null) throw new System.Exception("LobbyManager is missing from LobbyScene.");
+            var ready = new ExitGames.Client.Photon.Hashtable {
+                ["IsReady"] = true, ["LoadoutLoaded"] = true, ["ReadyMap"] = 2, ["ReadyRevision"] = 3 };
+            if (!LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Valid readiness was rejected.");
+            if (LobbyManager.ReadyPropertiesMatch(ready, 1, 3)) throw new System.Exception("Readiness survived a map change.");
+            if (LobbyManager.ReadyPropertiesMatch(ready, 2, 5)) throw new System.Exception("Readiness survived switching away and back.");
+            ready["LoadoutLoaded"] = false;
+            if (LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Unloaded profile was accepted.");
+            ready["LoadoutLoaded"] = true;
+            ready["IsReady"] = false;
+            if (LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Cancelled readiness was accepted.");
+            ready["IsReady"] = "true";
+            if (LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Malformed readiness was accepted.");
+            if (LobbyManager.ReadyPropertiesMatch(null, 0, 0)) throw new System.Exception("Missing readiness was accepted.");
+            var build = typeof(LobbyManager).GetMethod("BuildLobbyUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            build.Invoke(manager, null);
+            if (manager.waitReadyButton == null || manager.waitStartButton == null
+                || manager.waitCancelButton == null || manager.roomSearchInput == null)
+                throw new System.Exception("Required lobby controls are missing.");
+            foreach (var path in new[] { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech",
+                "Images/ship1", "Images/ship2", "Images/ship3" })
+                if (Resources.Load<Sprite>(path) == null) throw new System.Exception("Missing sprite: " + path);
+            manager.mainPanel.SetActive(false);
+            manager.inventoryPanel.SetActive(false);
+            manager.settingsPanel.SetActive(false);
+            if (manager.tutorialPanel != null) manager.tutorialPanel.SetActive(false);
+            manager.waitRoomNumberText.text = "ROOM  653478";
+            manager.waitP1NameText.text = "[HOST] Pilot One (YOU)";
+            manager.waitP1ShipNameText.text = "Nebula Ghost";
+            manager.waitP1StatsText.text = "70 HP  /  ATK 0.8  /  SPD 7.5";
+            manager.waitP1SkillText.text = "EQUIPPED SKILL / STUN";
+            manager.waitP1ReadyText.text = "READY";
+            manager.waitP1ShipImage.sprite = Resources.Load<Sprite>("Images/ship1");
+            manager.waitP1ShipImage.color = Color.white;
+            manager.waitP1ShipImage.preserveAspect = true;
+            manager.waitP2NameText.text = "Pilot Two";
+            manager.waitP2ShipNameText.text = "Stellar Striker";
+            manager.waitP2StatsText.text = "55 HP  /  ATK 1.5  /  SPD 9";
+            manager.waitP2SkillText.text = "EQUIPPED SKILL / NOVA";
+            manager.waitP2ReadyText.text = "NOT READY";
+            manager.waitP2ShipImage.sprite = Resources.Load<Sprite>("Images/ship3");
+            manager.waitP2ShipImage.color = Color.white;
+            manager.waitP2ShipImage.preserveAspect = true;
+            var cameraObject = new GameObject("LobbyPreviewCamera", typeof(Camera));
+            SceneManager.MoveGameObjectToScene(cameraObject, preview);
+            Camera renderCamera = cameraObject.GetComponent<Camera>();
+            renderCamera.scene = preview;
+            renderCamera.overrideSceneCullingMask = EditorSceneManager.GetSceneCullingMask(preview);
+            renderCamera.enabled = false;
+            renderCamera.clearFlags = CameraClearFlags.SolidColor;
+            renderCamera.backgroundColor = new Color(0.01f, 0.02f, 0.04f);
+            renderCamera.orthographic = true;
+            renderCamera.orthographicSize = 360;
+            var canvas = manager.waitingRoomPanel.GetComponentInParent<Canvas>();
+            var scaler = canvas.GetComponent<CanvasScaler>();
+            if (scaler != null) scaler.enabled = false;
+            canvas.renderMode = RenderMode.WorldSpace;
+            canvas.worldCamera = renderCamera;
+            var canvasRect = canvas.GetComponent<RectTransform>();
+            canvasRect.position = new Vector3(0, 0, 10);
+            canvasRect.rotation = Quaternion.identity;
+            canvasRect.localScale = Vector3.one;
+            string report = "Readiness regression checks: 7 PASS\nLobby references and sprites: PASS\n";
+            foreach (Vector2Int size in new[] { new Vector2Int(1280, 720), new Vector2Int(1920, 1080),
+                new Vector2Int(2340, 1080), new Vector2Int(1024, 768) })
+            {
+                foreach (bool waiting in new[] { true, false })
+                {
+                    manager.waitingRoomPanel.SetActive(waiting);
+                    manager.roomPanel.SetActive(!waiting);
+                    var target = new RenderTexture(size.x, size.y, 24);
+                    var pixels = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
+                    var previous = RenderTexture.active;
+                    try
+                    {
+                        renderCamera.targetTexture = target;
+                        renderCamera.orthographicSize = size.y / 2f;
+                        renderCamera.aspect = (float)size.x / size.y;
+                        canvasRect.sizeDelta = size;
+                        target.Create();
+                        Canvas.ForceUpdateCanvases();
+                        typeof(LobbyManager).GetMethod("FitLobbyUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(manager, null);
+                        Canvas.ForceUpdateCanvases();
+                        GameObject visiblePanel = waiting ? manager.waitingRoomPanel : manager.roomPanel;
+                        foreach (TMP_Text text in visiblePanel.GetComponentsInChildren<TMP_Text>())
+                        {
+                            text.ForceMeshUpdate();
+                            if (text.isTextOverflowing) report += "Text overflow: " + text.name + " at " + size + "\n";
+                        }
+                        renderCamera.Render();
+                        RenderTexture.active = target;
+                        pixels.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
+                        pixels.Apply();
+                        System.IO.File.WriteAllBytes(output + "/" + (waiting ? "waiting-" : "rooms-") + size.x + "x" + size.y + ".png", pixels.EncodeToPNG());
+                    }
+                    finally
+                    {
+                        renderCamera.targetTexture = null;
+                        RenderTexture.active = previous;
+                        Object.DestroyImmediate(pixels);
+                        target.Release();
+                        Object.DestroyImmediate(target);
+                    }
+                }
+            }
+            System.IO.File.WriteAllText(output + "/report.txt", report + "Preview render completed. Network play requires two clients.\n");
+            Debug.Log("Lobby preview validation completed: " + output);
+        }
+        catch (System.Exception error)
+        {
+            System.IO.File.WriteAllText(output + "/report.txt", error.ToString());
+            Debug.LogException(error);
+        }
+        finally { EditorSceneManager.ClosePreviewScene(preview); }
+    }
+}
