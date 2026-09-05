@@ -6,8 +6,19 @@ using Photon.Realtime;
 using TMPro;
 using System.Collections.Generic;
 
-public class LobbyManager : MonoBehaviourPunCallbacks
+public partial class LobbyManager : MonoBehaviourPunCallbacks
 {
+    private const string ReadyProperty = "IsReady";
+    private const string ShipProperty = "ShipType";
+    private const string SkillProperty = "SkillType";
+    private const string MapProperty = "MapIndex";
+
+    private readonly Dictionary<string, RoomInfo> cachedRooms = new Dictionary<string, RoomInfo>();
+    private bool isLeavingRoom;
+    private bool isStartingGame;
+    private bool loggingOut;
+    private bool roomRequestPending;
+
     [Header("=== Main Lobby UI ===")]
     public TMP_Text statusText;
     public TMP_Text playerNameText;
@@ -120,10 +131,12 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     void Awake()
     {
         PhotonNetwork.AutomaticallySyncScene = true;
+        BuildLobbyUI();
     }
 
     void Start()
     {
+        Time.timeScale = 1f;
         EnablePlayButtons(false);
         ShowMainPanel();
 
@@ -133,45 +146,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             AudioManager.Instance.PlayBGM("BGM_Lobby");
         }
         
-        // แสดงข้อมูลผู้เล่น
-        if (FirebaseManager.Instance != null)
-        {
-            string username = FirebaseManager.Instance.GetUsername();
-            if (playerNameText != null)
-                playerNameText.text = "Player\n" + username;
-
-            FirebaseManager.Instance.GetCoinBalance(coins =>
-            {
-                if (coinText != null)
-                    coinText.text = "Astronium Coins : " + coins;
-            });
-
-            // โหลดข้อมูลคลังยานจากฐานข้อมูล
-            FirebaseManager.Instance.GetUnlockedShips(ships =>
-            {
-                unlockedShips = ships;
-                
-                // หลังจากโหลดยานที่ปลดล็อกแล้ว โลหดยานที่สวมใส่ต่อ
-                FirebaseManager.Instance.GetSelectedShip(shipIdx =>
-                {
-                    equippedShipIndex = shipIdx;
-                    selectedShipIndex = shipIdx;
-                    UpdateShipDisplay(selectedShipIndex);
-                });
-            });
-
-            // โหลดสกิลที่ติดตั้งล่าสุด
-            FirebaseManager.Instance.GetSelectedSkill(skillIdx =>
-            {
-                equippedSkillIndex = skillIdx;
-                selectedSkillIndex = skillIdx;
-                UpdateSkillDisplay(selectedSkillIndex);
-            });
-        }
-        else
-        {
-            UpdateStatus("Failed to load user data!");
-        }
+        LoadLobbyProfile();
 
         // Initialize Audio Settings
         if (AudioManager.Instance != null)
@@ -201,8 +176,18 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // เชื่อมต่อ Photon
         if (!PhotonNetwork.IsConnected)
         {
+            if (PhotonNetwork.AuthValues == null || string.IsNullOrEmpty(PhotonNetwork.AuthValues.UserId))
+            {
+                string userId = FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUserId() : "";
+                if (string.IsNullOrEmpty(userId)) userId = System.Guid.NewGuid().ToString("N");
+                PhotonNetwork.AuthValues = new AuthenticationValues(userId);
+            }
             UpdateStatus("Connecting to server...");
             PhotonNetwork.ConnectUsingSettings();
+        }
+        else if (PhotonNetwork.InRoom)
+        {
+            OnJoinedRoom();
         }
         else if (PhotonNetwork.InLobby)
         {
@@ -212,15 +197,34 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         else
         {
             UpdateStatus("Entering Lobby...");
-            PhotonNetwork.JoinLobby();
+            if (PhotonNetwork.IsConnectedAndReady) PhotonNetwork.JoinLobby();
         }
 
     }
 
     void Update()
     {
-        if (playersOnlineText != null && PhotonNetwork.IsConnected)
-            playersOnlineText.text = "Players Online: " + PhotonNetwork.CountOfPlayers;
+        FitLobbyUI();
+        if (Time.unscaledTime >= nextStatusRefresh)
+        {
+            nextStatusRefresh = Time.unscaledTime + 1f;
+            string connection = PhotonNetwork.IsConnectedAndReady
+                ? "ONLINE  |  " + PhotonNetwork.GetPing() + " ms"
+                : reconnecting ? "RECONNECTING..." : "OFFLINE";
+            if (playersOnlineText != null) playersOnlineText.text = connection;
+            if (connectionText != null) connectionText.text = connection;
+            if (PhotonNetwork.InRoom) UpdateWaitingRoomUI();
+            if (!profileLoaded && Time.unscaledTime > profileDeadline)
+                UpdateStatus("Loadout is taking longer than expected. Check connection, then Retry.");
+        }
+        if (reconnecting && Time.unscaledTime > reconnectDeadline)
+        {
+            reconnecting = false;
+            previousRoom = null;
+            PhotonNetwork.Disconnect();
+            ShowMainPanel();
+            UpdateStatus("Room recovery timed out. Reconnect to find a new room.");
+        }
     }
 
     // ============================
@@ -262,6 +266,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void ShowMainPanel()
     {
+        if (PhotonNetwork.InRoom || reconnecting) { ShowWaitingRoom(); return; }
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (roomPanel != null) roomPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
@@ -272,6 +277,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void ShowInventoryPanel()
     {
+        if (!profileLoaded || PhotonNetwork.InRoom || roomRequestPending || reconnecting) return;
         if (mainPanel != null) mainPanel.SetActive(false);
         if (roomPanel != null) roomPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
@@ -282,6 +288,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void ShowRoomPanel()
     {
+        if (PhotonNetwork.InRoom || reconnecting) return;
         if (mainPanel != null) mainPanel.SetActive(false);
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
@@ -297,6 +304,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // อัปเดตชื่อด่านให้ตรงกับที่เลือกไว้
         if (createRoomMapNameText != null && mapNames != null)
             createRoomMapNameText.text = mapNames[selectedMapIndex];
+        RefreshMapCards();
     }
 
     public void ShowWaitingRoom()
@@ -518,24 +526,36 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public override void OnConnectedToMaster()
     {
-        UpdateStatus("Connected successfully!");
+        if (loggingOut) return;
+        if (reconnecting && !string.IsNullOrEmpty(previousRoom))
+        {
+            if (!PhotonNetwork.RejoinRoom(previousRoom)) RecoveryFailed("Could not return to the room.");
+            return;
+        }
         PhotonNetwork.JoinLobby();
     }
 
     public override void OnJoinedLobby()
     {
-        UpdateStatus("Ready! Press button to enter room");
+        roomRequestPending = false;
+        cachedRooms.Clear();
+        RenderRoomList();
+        UpdateStatus(profileLoaded ? "Ready! Create or join a room." : "Loading your ship and skill...");
         EnablePlayButtons(true);
     }
 
     public override void OnJoinedRoom()
     {
+        roomRequestPending = false;
+        readyPending = false;
+        reconnecting = false;
+        previousRoom = PhotonNetwork.CurrentRoom.Name;
+        isLeavingRoom = false;
+        isStartingGame = false;
         UpdateStatus($"Joined room! ({PhotonNetwork.CurrentRoom.PlayerCount}/2)");
         
         // ตั้งค่าเริ่มต้น: ยังไม่พร้อม
-        ExitGames.Client.Photon.Hashtable readyProps = new ExitGames.Client.Photon.Hashtable();
-        readyProps["IsReady"] = false;
-        PhotonNetwork.LocalPlayer.SetCustomProperties(readyProps);
+        PublishLocalLoadout(true);
         
         // เปิดหน้า Waiting Room แทนการโหลดเกมทันที
         ShowWaitingRoom();
@@ -543,21 +563,50 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
     {
+        UpdateStatus(newPlayer.NickName + " joined the room");
         UpdateWaitingRoomUI();
     }
 
     public override void OnPlayerLeftRoom(Photon.Realtime.Player otherPlayer)
     {
+        PublishLocalLoadout(true);
+        UpdateStatus(otherPlayer.NickName + (otherPlayer.IsInactive ? " lost connection. Slot reserved for 60 seconds." : " left the room"));
         UpdateWaitingRoomUI();
+    }
+
+    public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient)
+    {
+        if (RoomStarting) { TryLaunchConfirmedRoom(); return; }
+        PublishLocalLoadout(true);
+        UpdateStatus(newMasterClient.IsLocal
+            ? "You are now the room host"
+            : newMasterClient.NickName + " is now the room host");
+        UpdateWaitingRoomUI();
+    }
+
+    public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
+    {
+        if (propertiesThatChanged.ContainsKey("Starting") && RoomStarting && PhotonNetwork.IsMasterClient && !isStartingGame)
+        {
+            TryLaunchConfirmedRoom();
+        }
+        if (propertiesThatChanged.ContainsKey(MapProperty))
+        {
+            PublishLocalLoadout(true);
+            UpdateWaitingRoomUI();
+        }
     }
 
     public override void OnPlayerPropertiesUpdate(Photon.Realtime.Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
+        if (targetPlayer.IsLocal) readyPending = false;
         UpdateWaitingRoomUI();
     }
 
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
+        roomRequestPending = false;
+        if (reconnecting) { RecoveryFailed("The room expired or the slot is no longer available."); return; }
         Debug.LogError($"Join Room Failed: {returnCode} - {message}");
         
         // ErrorCode 32765 is GameFull, 32758 is GameDoesNotExist (Photon ErrorCodes)
@@ -573,73 +622,165 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         EnablePlayButtons(true);
     }
 
+    public override void OnCreateRoomFailed(short returnCode, string message)
+    {
+        roomRequestPending = false;
+        Debug.LogError($"Create Room Failed: {returnCode} - {message}");
+        UpdateStatus("Failed to create room: " + message);
+        EnablePlayButtons(true);
+        ShowRoomPanel();
+    }
+
+    public override void OnLeftRoom()
+    {
+        previousRoom = null;
+        roomRequestPending = false;
+        isLeavingRoom = false;
+        isStartingGame = false;
+        UpdateStatus("Left room successfully");
+        ShowMainPanel();
+        EnablePlayButtons(PhotonNetwork.InLobby);
+    }
+
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
+        if (!roomRequestPending || !PhotonNetwork.IsConnectedAndReady) return;
         UpdateStatus("No room found. Creating a new one...");
         string roomId = Random.Range(100000, 999999).ToString();
 
         ExitGames.Client.Photon.Hashtable roomProps = new ExitGames.Client.Photon.Hashtable();
         // ถ้า Quick Match หาห้องไม่เจอ ให้ใช้ map ที่เลือกไว้ หรือสุ่มก็ได้ (ที่นี่เราใช้อันที่เลือกไว้)
         roomProps.Add("MapIndex", selectedMapIndex);
+        roomProps.Add("MapRevision", 0);
+        roomProps.Add("Starting", false);
 
         RoomOptions options = new RoomOptions 
         { 
+            PlayerTtl = 60000,
+            EmptyRoomTtl = 60000,
             MaxPlayers = 2, 
             IsVisible = true, 
             IsOpen = true,
             CustomRoomProperties = roomProps,
             CustomRoomPropertiesForLobby = new string[] { "MapIndex" }
         };
-        PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default);
+        if (!PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default)) RoomRequestFailed();
     }
 
     public override void OnDisconnected(DisconnectCause cause)
     {
-        UpdateStatus("Disconnected...");
+        roomRequestPending = false;
+        readyPending = false;
         EnablePlayButtons(false);
-        PhotonNetwork.ConnectUsingSettings();
+        cachedRooms.Clear();
+        RenderRoomList();
+        if (loggingOut) return;
+        if (!isLeavingRoom && !isStartingGame && !string.IsNullOrEmpty(previousRoom)
+            && cause != DisconnectCause.DisconnectByClientLogic)
+        {
+            if (!reconnecting) reconnectDeadline = Time.unscaledTime + 50f;
+            reconnecting = true;
+            UpdateStatus("Connection lost. Returning to your room...");
+            UpdateWaitingRoomUI();
+            if (PhotonNetwork.ReconnectAndRejoin()) return;
+            if (PhotonNetwork.Reconnect()) return;
+        }
+        reconnecting = false;
+        previousRoom = null;
+        isLeavingRoom = false;
+        isStartingGame = false;
+        ShowMainPanel();
+        UpdateStatus("Disconnected (" + cause + "). Press Reconnect.");
+    }
+
+    private void RecoveryFailed(string message)
+    {
+        reconnecting = false;
+        previousRoom = null;
+        ShowMainPanel();
+        UpdateStatus(message);
+        if (PhotonNetwork.IsConnectedAndReady) PhotonNetwork.JoinLobby();
     }
 
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
         // อัปเดตรายการห้อง (สำหรับหน้า Room Panel)
-        Debug.Log($"Found {roomList.Count} rooms");
+        foreach (RoomInfo update in roomList)
+        {
+            if (update.RemovedFromList) cachedRooms.Remove(update.Name);
+            else cachedRooms[update.Name] = update;
+        }
 
+        RenderRoomList();
+    }
+
+    private void RenderRoomList()
+    {
         if (roomListContent == null || roomItemPrefab == null) return;
 
         // ลบรายการเดิมทั้งหมด (ยกเว้น RoomItemPrefab ถ้ามันอยู่ในนั้นด้วย)
         foreach (Transform child in roomListContent)
         {
-            Destroy(child.gameObject);
+            if (child.gameObject != roomItemPrefab)
+            {
+                child.gameObject.SetActive(false);
+                Destroy(child.gameObject);
+            }
         }
 
-        foreach (RoomInfo room in roomList)
+        int visibleCount = 0;
+        var rooms = new List<RoomInfo>(cachedRooms.Values);
+        rooms.Sort((a, b) => string.CompareOrdinal(a.Name, b.Name));
+        foreach (RoomInfo room in rooms)
         {
             if (room.RemovedFromList) continue; // ข้ามห้องที่โดนลบไปแล้ว
             if (!room.IsOpen || !room.IsVisible) continue; // ข้ามห้องที่ปิดหรือซ่อนอยู่
 
+            visibleCount++;
             GameObject roomItem = Instantiate(roomItemPrefab, roomListContent);
             roomItem.SetActive(true);
+            LayoutElement rowLayout = roomItem.GetComponent<LayoutElement>();
+            if (rowLayout != null) rowLayout.minHeight = rowLayout.preferredHeight = 76;
 
             // ค้นหา Text ภายในปุ่ม
             TMP_Text[] texts = roomItem.GetComponentsInChildren<TMP_Text>();
             foreach (TMP_Text t in texts)
             {
+                t.richText = false;
                 if (t.name == "RoomNameText") t.text = "Room: " + room.Name;
                 else if (t.name == "RoomPlayersText") t.text = room.PlayerCount + " / " + room.MaxPlayers;
+                else if (t.name == "RoomModeMapText") t.text = "1 VS 1 | " + mapNames[ReadMap(room)];
+                if (t.name == "RoomNameText" || t.name == "RoomModeMapText")
+                {
+                    t.rectTransform.anchoredPosition = new Vector2(-82, t.name == "RoomNameText" ? 15 : -15);
+                    t.rectTransform.sizeDelta = new Vector2(322, 28);
+                    t.enableAutoSizing = true; t.fontSizeMin = 12; t.fontSizeMax = 17;
+                    t.overflowMode = TextOverflowModes.Ellipsis;
+                }
+                else if (t.name == "RoomPlayersText")
+                {
+                    t.rectTransform.anchoredPosition = new Vector2(115, 0);
+                    t.rectTransform.sizeDelta = new Vector2(60, 30);
+                }
             }
 
             // ผูกปุ่ม Join
             Button joinBtn = roomItem.GetComponentInChildren<Button>();
             if (joinBtn != null)
             {
+                joinBtn.GetComponent<RectTransform>().anchoredPosition = new Vector2(205, 0);
+                joinBtn.GetComponent<RectTransform>().sizeDelta = new Vector2(84, 50);
+                joinBtn.interactable = !roomRequestPending && profileLoaded && PhotonNetwork.InLobby && room.PlayerCount < room.MaxPlayers;
                 joinBtn.onClick.AddListener(() => JoinRoomByName(room.Name));
             }
         }
+        if (emptyRoomsText != null) emptyRoomsText.gameObject.SetActive(visibleCount == 0);
     }
 
     public void JoinRoomByName(string roomName)
     {
+        if (string.IsNullOrWhiteSpace(roomName) || !BeginRoomRequest()) return;
+        roomName = roomName.Trim();
         UpdateStatus("Joining room " + roomName + "...");
 
         // Set chosen ship & skill for Gameplay spawn
@@ -648,7 +789,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         props.Add("SkillType", equippedSkillIndex);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-        PhotonNetwork.JoinRoom(roomName);
+        if (!PhotonNetwork.JoinRoom(roomName)) RoomRequestFailed();
     }
 
     // ============================
@@ -657,6 +798,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void OnPlayButtonClicked()
     {
+        if (!BeginRoomRequest()) return;
         EnablePlayButtons(false);
         UpdateStatus("Searching for room (Quick Match)...");
 
@@ -666,7 +808,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         props.Add("SkillType", equippedSkillIndex);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-        PhotonNetwork.JoinRandomRoom();
+        if (!PhotonNetwork.JoinRandomRoom()) RoomRequestFailed();
     }
 
     public void OnCreateRoomClicked()
@@ -676,6 +818,7 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     public void OnCreateRoomConfirm()
     {
+        if (!BeginRoomRequest()) return;
         string roomId = roomNumberText != null ? roomNumberText.text : Random.Range(100000, 999999).ToString();
         UpdateStatus("Creating room " + roomId + "...");
 
@@ -688,9 +831,13 @@ public class LobbyManager : MonoBehaviourPunCallbacks
         // ใส่ข้อมูลด่านลงไปในห้อง
         ExitGames.Client.Photon.Hashtable roomProps = new ExitGames.Client.Photon.Hashtable();
         roomProps.Add("MapIndex", selectedMapIndex);
+        roomProps.Add("MapRevision", 0);
+        roomProps.Add("Starting", false);
 
         RoomOptions options = new RoomOptions 
         { 
+            PlayerTtl = 60000,
+            EmptyRoomTtl = 60000,
             MaxPlayers = 2, 
             IsVisible = true, 
             IsOpen = true,
@@ -698,25 +845,22 @@ public class LobbyManager : MonoBehaviourPunCallbacks
             CustomRoomPropertiesForLobby = new string[] { "MapIndex" }
         };
         
-        PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default);
+        if (!PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default)) RoomRequestFailed();
     }
 
     public void OnSearchRoom()
     {
-        if (roomSearchInput == null || string.IsNullOrEmpty(roomSearchInput.text)) return;
-        UpdateStatus("Searching for room " + roomSearchInput.text + "...");
-
-        // Set chosen ship & skill for Gameplay spawn
-        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
-        props.Add("ShipType", equippedShipIndex);
-        props.Add("SkillType", equippedSkillIndex);
-        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-
-        PhotonNetwork.JoinRoom(roomSearchInput.text);
+        if (roomSearchInput == null || string.IsNullOrWhiteSpace(roomSearchInput.text))
+        {
+            UpdateStatus("Enter a room code first.");
+            return;
+        }
+        JoinRoomByName(roomSearchInput.text);
     }
 
     public void OnLogoutButtonClicked()
     {
+        loggingOut = true;
         if (PhotonNetwork.IsConnected)
             PhotonNetwork.Disconnect();
         SceneManager.LoadScene("LoginScene");
@@ -750,12 +894,17 @@ public class LobbyManager : MonoBehaviourPunCallbacks
     {
         Debug.Log(msg);
         if (statusText != null) statusText.text = msg;
+        if (lobbyMessage != null) lobbyMessage.text = msg;
+        if (browserMessage != null) browserMessage.text = msg;
     }
 
     private void EnablePlayButtons(bool on)
     {
+        on = on && profileLoaded && PhotonNetwork.InLobby && !roomRequestPending && !reconnecting;
         if (playButton != null) playButton.interactable = on;
         if (createRoomButton != null) createRoomButton.interactable = on;
+        if (createRoomConfirmButton != null) createRoomConfirmButton.interactable = on;
+        if (searchRoomButton != null) searchRoomButton.interactable = on;
     }
 
     // ============================
@@ -764,173 +913,208 @@ public class LobbyManager : MonoBehaviourPunCallbacks
 
     private void UpdateWaitingRoomUI()
     {
-        if (waitingRoomPanel == null || !waitingRoomPanel.activeSelf) return;
-
-        // แสดงเลขห้อง
-        if (waitRoomNumberText != null && PhotonNetwork.CurrentRoom != null)
-            waitRoomNumberText.text = "Room: " + PhotonNetwork.CurrentRoom.Name;
-
-        Photon.Realtime.Player[] players = PhotonNetwork.PlayerList;
-
-        // Player 1 (Master Client / ผู้เล่นคนแรก)
-        if (players.Length >= 1)
-        {
-            Photon.Realtime.Player p1 = players[0];
-            if (waitP1NameText != null) waitP1NameText.text = p1.NickName;
-
-            int p1Ship = p1.CustomProperties.ContainsKey("ShipType") ? (int)p1.CustomProperties["ShipType"] : 0;
-            int p1Skill = p1.CustomProperties.ContainsKey("SkillType") ? (int)p1.CustomProperties["SkillType"] : 0;
-            bool p1Ready = p1.CustomProperties.ContainsKey("IsReady") && (bool)p1.CustomProperties["IsReady"];
-
-            if (p1Ship >= 0 && p1Ship < ships.Length)
-            {
-                if (waitP1ShipNameText != null) waitP1ShipNameText.text = ships[p1Ship].name;
-                if (waitP1StatsText != null) waitP1StatsText.text = ships[p1Ship].hp + " HP  |  ATK " + ships[p1Ship].atk + "  |  SPD " + ships[p1Ship].spd;
-                if (waitP1ShipImage != null)
-                {
-                    Sprite sp = Resources.Load<Sprite>(ships[p1Ship].spritePath);
-                    if (sp != null) { waitP1ShipImage.sprite = sp; waitP1ShipImage.color = Color.white; }
-                }
-            }
-            if (p1Skill >= 0 && p1Skill < skills.Length)
-            {
-                if (waitP1SkillText != null) waitP1SkillText.text = skills[p1Skill].name;
-            }
-            if (waitP1ReadyText != null)
-                waitP1ReadyText.text = p1Ready ? "READY" : "NOT READY";
-        }
-
-        // Player 2 (ผู้เล่นคนที่สอง)
-        if (players.Length >= 2)
-        {
-            Photon.Realtime.Player p2 = players[1];
-            if (waitP2NameText != null) waitP2NameText.text = p2.NickName;
-
-            int p2Ship = p2.CustomProperties.ContainsKey("ShipType") ? (int)p2.CustomProperties["ShipType"] : 0;
-            int p2Skill = p2.CustomProperties.ContainsKey("SkillType") ? (int)p2.CustomProperties["SkillType"] : 0;
-            bool p2Ready = p2.CustomProperties.ContainsKey("IsReady") && (bool)p2.CustomProperties["IsReady"];
-
-            if (p2Ship >= 0 && p2Ship < ships.Length)
-            {
-                if (waitP2ShipNameText != null) waitP2ShipNameText.text = ships[p2Ship].name;
-                if (waitP2StatsText != null) waitP2StatsText.text = ships[p2Ship].hp + " HP  |  ATK " + ships[p2Ship].atk + "  |  SPD " + ships[p2Ship].spd;
-                if (waitP2ShipImage != null)
-                {
-                    Sprite sp = Resources.Load<Sprite>(ships[p2Ship].spritePath);
-                    if (sp != null) { waitP2ShipImage.sprite = sp; waitP2ShipImage.color = Color.white; }
-                }
-            }
-            if (p2Skill >= 0 && p2Skill < skills.Length)
-            {
-                if (waitP2SkillText != null) waitP2SkillText.text = skills[p2Skill].name;
-            }
-            if (waitP2ReadyText != null)
-                waitP2ReadyText.text = p2Ready ? "READY" : "NOT READY";
-        }
-        else
-        {
-            // ยังไม่มีผู้เล่นคนที่ 2
-            if (waitP2NameText != null) waitP2NameText.text = "Waiting...";
-            if (waitP2ShipNameText != null) waitP2ShipNameText.text = "";
-            if (waitP2StatsText != null) waitP2StatsText.text = "";
-            if (waitP2SkillText != null) waitP2SkillText.text = "";
-            if (waitP2ReadyText != null) waitP2ReadyText.text = "";
-            if (waitP2ShipImage != null) waitP2ShipImage.color = new Color(1, 1, 1, 0.2f);
-        }
-
-        // อัปเดตข้อมูลด่าน (Map) ในหน้า Waiting Room
-        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object mapProp))
-        {
-            int mapIdx = (int)mapProp;
-
-            // พยายามหาจากชื่อในฉาก ถ้าคุณลืมลากใส่ช่อง
-            if (waitMapNameText == null)
-            {
-                TMP_Text[] allTexts = Resources.FindObjectsOfTypeAll<TMP_Text>();
-                foreach (var t in allTexts)
-                {
-                    if (t.name.Contains("MapNameText") || t.text.Contains("Prism") || t.text.Contains("Mech"))
-                    {
-                        waitMapNameText = t;
-                        break;
-                    }
-                }
-            }
-
-            // ดึงค่า MapName Text และ Map Image ที่อยู่ใน Waiting Room
-            if (waitMapNameText != null) waitMapNameText.text = mapNames[mapIdx];
-            
-            if (waitMapImage != null)
-            {
-                Sprite s = Resources.Load<Sprite>(mapImages[mapIdx]);
-                if (s != null) waitMapImage.sprite = s;
-            }
-        }
-
-        // ตรวจสอบความพร้อมเพื่อเปิดปุ่ม Start Game (เฉพาะ MasterClient) + ทุกคนพร้อม)
-        if (waitStartButton != null)
-        {
-            bool allReady = true;
-            foreach (Photon.Realtime.Player p in players)
-            {
-                if (!p.CustomProperties.ContainsKey("IsReady") || !(bool)p.CustomProperties["IsReady"])
-                {
-                    allReady = false;
-                    break;
-                }
-            }
-            waitStartButton.gameObject.SetActive(PhotonNetwork.IsMasterClient);
-            waitStartButton.interactable = allReady && players.Length >= 2;
-        }
-
-        // ปุ่ม Ready ของตัวเอง
+        bool inRoom = PhotonNetwork.InRoom;
+        bool busy = !inRoom || reconnecting || isLeavingRoom || isStartingGame || RoomStarting;
+        Player[] players = inRoom ? PhotonNetwork.PlayerList : new Player[0];
+        System.Array.Sort(players, (a, b) => a.ActorNumber.CompareTo(b.ActorNumber));
+        RenderPlayer(players.Length > 0 ? players[0] : null, waitP1NameText, waitP1ShipNameText,
+            waitP1StatsText, waitP1SkillText, waitP1ShipImage, waitP1ReadyText);
+        RenderPlayer(players.Length > 1 ? players[1] : null, waitP2NameText, waitP2ShipNameText,
+            waitP2StatsText, waitP2SkillText, waitP2ShipImage, waitP2ReadyText);
+        if (waitRoomNumberText != null) waitRoomNumberText.text = inRoom ? "ROOM  " + PhotonNetwork.CurrentRoom.Name : "ROOM RECOVERY";
         if (waitReadyButton != null)
         {
-            bool myReady = PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("IsReady")
-                && (bool)PhotonNetwork.LocalPlayer.CustomProperties["IsReady"];
-            TMP_Text readyBtnText = waitReadyButton.GetComponentInChildren<TMP_Text>();
-            if (readyBtnText != null)
-                readyBtnText.text = myReady ? "Cancel Ready" : "Ready";
-            waitReadyButton.GetComponent<Image>().color = myReady ? new Color(0.8f, 0.5f, 0.2f) : new Color(0.2f, 0.7f, 0.3f);
+            waitReadyButton.interactable = !busy && profileLoaded && !readyPending;
+            SetButtonLabel(waitReadyButton, readyPending ? "SYNCING..." : IsPlayerReady(PhotonNetwork.LocalPlayer) ? "CANCEL READY" : "READY");
+        }
+        if (waitStartButton != null)
+        {
+            waitStartButton.gameObject.SetActive(true);
+            waitStartButton.interactable = !busy && CanStartGame();
+            SetButtonLabel(waitStartButton, RoomStarting || isStartingGame ? "STARTING..." : inRoom && PhotonNetwork.IsMasterClient ? "START BATTLE" : "HOST STARTS");
+        }
+        if (waitCancelButton != null) waitCancelButton.interactable = !busy;
+        if (readyHint != null) readyHint.text = busy ? "Connecting or preparing battle..."
+            : players.Length < 2 ? "Invite a friend using the room code."
+            : CanStartGame() ? "All pilots ready. Host can launch the battle."
+            : "Both pilots must confirm READY for the selected battlefield.";
+        RefreshMapCards();
+    }
+
+    private bool IsPlayerReady(Player player)
+    {
+        return PhotonNetwork.InRoom && player != null && !player.IsInactive
+            && ReadyPropertiesMatch(player.CustomProperties, ReadMap(PhotonNetwork.CurrentRoom), MapRevision);
+    }
+
+    public static bool ReadyPropertiesMatch(ExitGames.Client.Photon.Hashtable properties, int map, int revision)
+    {
+        return properties != null && BoolProperty(properties, ReadyProperty)
+            && IntProperty(properties, "ReadyRevision", -1) == revision
+            && IntProperty(properties, "ReadyMap", -1) == map
+            && BoolProperty(properties, "LoadoutLoaded");
+    }
+
+    private void RenderPlayer(Player player, TMP_Text nameText, TMP_Text shipText, TMP_Text stats,
+        TMP_Text skillText, Image picture, TMP_Text readyText)
+    {
+        bool present = player != null;
+        int ship = present ? Mathf.Clamp(IntProperty(player.CustomProperties, ShipProperty, 0), 0, ships.Length - 1) : 0;
+        int skill = present ? Mathf.Clamp(IntProperty(player.CustomProperties, SkillProperty, 0), 0, skills.Length - 1) : 0;
+        if (nameText != null)
+        {
+            nameText.richText = false;
+            nameText.text = present ? (player.IsMasterClient ? "[HOST] " : "") + player.NickName + (player.IsLocal ? " (YOU)" : "") : "OPEN SLOT";
+        }
+        if (shipText != null) shipText.text = present ? ships[ship].name : "Waiting for a pilot";
+        if (stats != null) stats.text = present ? ships[ship].hp + " HP   /   ATK " + ships[ship].atk + "   /   SPD " + ships[ship].spd : "Share the room code to invite a friend";
+        if (skillText != null) skillText.text = present ? "EQUIPPED SKILL  /  " + skills[skill].name : "1 VS 1";
+        if (picture != null)
+        {
+            picture.sprite = present ? Resources.Load<Sprite>(ships[ship].spritePath) : null;
+            picture.color = present ? Color.white : Color.clear;
+            picture.preserveAspect = true;
+        }
+        if (readyText != null)
+        {
+            bool ready = IsPlayerReady(player);
+            readyText.text = !present ? "WAITING" : player.IsInactive ? "RECONNECTING (60s slot)" : ready ? "READY" : "NOT READY";
+            readyText.color = ready ? new Color(0.35f, 1f, 0.7f) : new Color(1f, 0.73f, 0.35f);
         }
     }
 
     public void OnReadyButtonClicked()
     {
-        bool currentReady = PhotonNetwork.LocalPlayer.CustomProperties.ContainsKey("IsReady")
-            && (bool)PhotonNetwork.LocalPlayer.CustomProperties["IsReady"];
-        ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
-        props["IsReady"] = !currentReady;
-        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+        if (!PhotonNetwork.InRoom || isLeavingRoom || isStartingGame || RoomStarting || reconnecting || !profileLoaded || readyPending) return;
+        readyPending = true;
+        var props = new ExitGames.Client.Photon.Hashtable
+        {
+            [ReadyProperty] = !IsPlayerReady(PhotonNetwork.LocalPlayer),
+            ["ReadyMap"] = ReadMap(PhotonNetwork.CurrentRoom),
+            ["ReadyRevision"] = MapRevision,
+            ["LoadoutLoaded"] = profileLoaded
+        };
+        if (!PhotonNetwork.LocalPlayer.SetCustomProperties(props)) readyPending = false;
+        UpdateWaitingRoomUI();
     }
 
     public void OnStartGameClicked()
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        if (!CanStartGame()) { UpdateStatus("Both players must be ready before starting."); return; }
+        if (!Application.CanStreamedLevelBeLoaded("SampleScene")) { UpdateStatus("Gameplay scene is missing from Build Profiles."); return; }
+        // Wait for the server acknowledgement before loading; a map change invalidates this request.
+        var expected = new ExitGames.Client.Photon.Hashtable { ["Starting"] = false, ["MapRevision"] = MapRevision };
+        if (PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["Starting"] = true }, expected))
+            UpdateStatus("Preparing battle...");
+    }
+
+    public void NextMap()
+    {
+        if (PhotonNetwork.InRoom) { ChangeRoomMap(1); return; }
+        selectedMapIndex++;
+        if (selectedMapIndex >= mapNames.Length) selectedMapIndex = 0;
+        if (createRoomMapNameText != null) createRoomMapNameText.text = mapNames[selectedMapIndex];
+        RefreshMapCards();
+    }
+
+    public void PrevMap()
+    {
+        if (PhotonNetwork.InRoom) { ChangeRoomMap(-1); return; }
+        selectedMapIndex--;
+        if (selectedMapIndex < 0) selectedMapIndex = mapNames.Length - 1;
+        if (createRoomMapNameText != null) createRoomMapNameText.text = mapNames[selectedMapIndex];
+        RefreshMapCards();
+    }
+
+    public void OnLeaveWaitingRoom()
+    {
+        if (!PhotonNetwork.InRoom || isLeavingRoom || isStartingGame || RoomStarting) return;
+        isLeavingRoom = PhotonNetwork.LeaveRoom(false);
+        if (isLeavingRoom) UpdateStatus("Leaving room...");
+        UpdateWaitingRoomUI();
+    }
+
+    private int ReadMap(RoomInfo room)
+    {
+        return room != null && room.CustomProperties.TryGetValue(MapProperty, out object value) && value is int index
+            ? Mathf.Clamp(index, 0, mapNames.Length - 1) : 2;
+    }
+
+    private bool CanStartGame()
+    {
+        if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient || isStartingGame || isLeavingRoom || RoomStarting || reconnecting || PhotonNetwork.PlayerList.Length != 2) return false;
+        foreach (Player player in PhotonNetwork.PlayerList) if (!IsPlayerReady(player)) return false;
+        return true;
+    }
+
+    private void TryLaunchConfirmedRoom()
+    {
+        if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient || !RoomStarting || isStartingGame) return;
+        bool ready = PhotonNetwork.PlayerList.Length == 2;
+        foreach (Player player in PhotonNetwork.PlayerList) ready &= IsPlayerReady(player);
+        if (!ready || isLeavingRoom)
+        {
+            PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["Starting"] = false });
+            UpdateStatus("A pilot is no longer ready. Confirm readiness again.");
+            return;
+        }
+        isStartingGame = true;
         PhotonNetwork.CurrentRoom.IsOpen = false;
         PhotonNetwork.CurrentRoom.IsVisible = false;
         PhotonNetwork.LoadLevel("SampleScene");
     }
 
-    public void NextMap()
+    private void ChangeRoomMap(int direction)
     {
-        selectedMapIndex++;
-        if (selectedMapIndex >= mapNames.Length) selectedMapIndex = 0;
-        if (createRoomMapNameText != null) createRoomMapNameText.text = mapNames[selectedMapIndex];
+        SelectLobbyMap((ReadMap(PhotonNetwork.CurrentRoom) + direction + mapNames.Length) % mapNames.Length);
     }
 
-    public void PrevMap()
+    public void SelectLobbyMap(int index)
     {
-        selectedMapIndex--;
-        if (selectedMapIndex < 0) selectedMapIndex = mapNames.Length - 1;
-        if (createRoomMapNameText != null) createRoomMapNameText.text = mapNames[selectedMapIndex];
+        if (index < 0 || index >= mapNames.Length) return;
+        if (!PhotonNetwork.InRoom)
+        {
+            if (roomRequestPending || reconnecting) return;
+            selectedMapIndex = index;
+            if (createRoomMapNameText != null) createRoomMapNameText.text = mapNames[index];
+            RefreshMapCards();
+            return;
+        }
+        if (!PhotonNetwork.IsMasterClient || isStartingGame || isLeavingRoom || RoomStarting || reconnecting || index == ReadMap(PhotonNetwork.CurrentRoom)) return;
+        var expected = new ExitGames.Client.Photon.Hashtable { ["MapRevision"] = MapRevision, ["Starting"] = false };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(
+            new ExitGames.Client.Photon.Hashtable { [MapProperty] = index, ["MapRevision"] = MapRevision + 1 }, expected);
     }
 
-    public void OnLeaveWaitingRoom()
+    private bool RoomStarting => PhotonNetwork.InRoom && BoolProperty(PhotonNetwork.CurrentRoom.CustomProperties, "Starting");
+    private int MapRevision => PhotonNetwork.InRoom ? IntProperty(PhotonNetwork.CurrentRoom.CustomProperties, "MapRevision", 0) : 0;
+    private static bool BoolProperty(ExitGames.Client.Photon.Hashtable props, string key)
+        => props.TryGetValue(key, out object value) && value is bool flag && flag;
+    private static int IntProperty(ExitGames.Client.Photon.Hashtable props, string key, int fallback)
+        => props.TryGetValue(key, out object value) && value is int number ? number : fallback;
+
+    private void PublishLocalLoadout(bool resetReady)
     {
-        PhotonNetwork.LeaveRoom();
-        ShowMainPanel();
-        EnablePlayButtons(true);
+        var props = new ExitGames.Client.Photon.Hashtable
+        {
+            [ShipProperty] = Mathf.Clamp(equippedShipIndex, 0, ships.Length - 1),
+            ["LoadoutLoaded"] = profileLoaded,
+            [SkillProperty] = Mathf.Clamp(equippedSkillIndex, 0, skills.Length - 1)
+        };
+        if (resetReady) props[ReadyProperty] = false;
+        PhotonNetwork.LocalPlayer.SetCustomProperties(props);
+    }
+
+
+
+    private bool BeginRoomRequest()
+    {
+        if (!profileLoaded) { UpdateStatus("Wait for your loadout to finish loading."); return false; }
+        if (roomRequestPending || reconnecting || !PhotonNetwork.InLobby || !PhotonNetwork.IsConnectedAndReady) return false;
+        roomRequestPending = true;
+        EnablePlayButtons(false);
+        RefreshMapCards();
+        return true;
     }
 }
 
@@ -972,5 +1156,347 @@ public class SkillData
         this.name = name;
         this.description = desc;
         this.iconPath = iconPath;
+    }
+}
+
+
+
+// Runtime view keeps existing scene button bindings and inventory intact.
+public partial class LobbyManager
+{
+    private bool profileLoaded;
+    private bool shipLoaded, skillLoaded, readyPending, reconnecting;
+    private int profileGeneration;
+    private string previousRoom;
+    private float profileDeadline, reconnectDeadline, nextStatusRefresh;
+    private TMP_Text lobbyMessage, browserMessage, connectionText, readyHint, emptyRoomsText;
+    private readonly List<RectTransform> fittedRoots = new List<RectTransform>();
+    private readonly List<Button[]> mapCardGroups = new List<Button[]>();
+    private readonly List<TMP_Text[]> mapLabelGroups = new List<TMP_Text[]>();
+    private readonly string[] mapDescriptions = {
+        "Cover and side routes.\nEnergy core: trade HP for fire rate.\nHazard: lightning strikes.",
+        "Obelisks and crystal cover.\nWide routes for flanking.\nHazard: slowing zones.",
+        "12 rocks / 2 turrets / 6 red cores.\nUse cover around the wreck.\nHazard: falling lava asteroids."
+    };
+    private readonly string[] mapShortNames = { "JELLYFISH CORE", "PRISM PLAINS", "MECH WARZONE" };
+    private readonly Color panelColor = new Color(0.035f, 0.065f, 0.12f, 0.97f);
+    private readonly Color accentColor = new Color(0.23f, 0.82f, 0.92f);
+    private TMP_FontAsset lobbyFont;
+
+    private void LoadLobbyProfile()
+    {
+        int generation = ++profileGeneration;
+        profileLoaded = shipLoaded = skillLoaded = false;
+        if (inventoryButton != null) inventoryButton.interactable = false;
+        profileDeadline = Time.unscaledTime + 20f;
+        EnablePlayButtons(false);
+        UpdateStatus("Loading your ship and skill...");
+        if (FirebaseManager.Instance == null)
+        {
+            // Direct editor entry uses an explicit default loadout.
+            equippedShipIndex = equippedSkillIndex = 0;
+            shipLoaded = skillLoaded = true;
+            FinishProfileLoad();
+            return;
+        }
+        if (playerNameText != null)
+        {
+            playerNameText.richText = false;
+            playerNameText.text = FirebaseManager.Instance.GetUsername();
+        }
+        FirebaseManager.Instance.GetCoinBalance(coins => {
+            if (this == null || generation != profileGeneration) return;
+            if (coinText != null) coinText.text = "Astronium Coins : " + coins;
+        });
+        FirebaseManager.Instance.GetUnlockedShips(result => {
+            if (this == null || generation != profileGeneration) return;
+            unlockedShips = result ?? new List<int> { 0 };
+            if (!unlockedShips.Contains(0)) unlockedShips.Add(0);
+            FirebaseManager.Instance.GetSelectedShip(index => {
+                if (this == null || generation != profileGeneration) return;
+                equippedShipIndex = index >= 0 && index < ships.Length && unlockedShips.Contains(index) ? index : 0;
+                selectedShipIndex = equippedShipIndex;
+                shipLoaded = true;
+                FinishProfileLoad();
+            });
+        });
+        FirebaseManager.Instance.GetSelectedSkill(index => {
+            if (this == null || generation != profileGeneration) return;
+            equippedSkillIndex = Mathf.Clamp(index, 0, skills.Length - 1);
+            selectedSkillIndex = equippedSkillIndex;
+            skillLoaded = true;
+            FinishProfileLoad();
+        });
+    }
+
+    private void FinishProfileLoad()
+    {
+        profileLoaded = shipLoaded && skillLoaded;
+        if (!profileLoaded) return;
+        if (inventoryButton != null) inventoryButton.interactable = true;
+        UpdateShipDisplay(equippedShipIndex);
+        UpdateSkillDisplay(equippedSkillIndex);
+        if (PhotonNetwork.InRoom) PublishLocalLoadout(true);
+        EnablePlayButtons(true);
+        RenderRoomList();
+        UpdateStatus(PhotonNetwork.IsConnectedAndReady ? "Loadout ready. Create or join a room." : "Loadout ready. Connecting...");
+    }
+
+    public void RetryLobbyConnection()
+    {
+        if (roomRequestPending || reconnecting || PhotonNetwork.InRoom) return;
+        if (!profileLoaded) LoadLobbyProfile();
+        if (!PhotonNetwork.IsConnected)
+        {
+            UpdateStatus("Connecting...");
+            PhotonNetwork.ConnectUsingSettings();
+        }
+        else if (PhotonNetwork.IsConnectedAndReady && !PhotonNetwork.InLobby) PhotonNetwork.JoinLobby();
+    }
+
+    private void RoomRequestFailed()
+    {
+        roomRequestPending = false;
+        EnablePlayButtons(true);
+        RenderRoomList();
+        UpdateStatus("Could not send the request. Please try again.");
+    }
+
+    public void CopyRoomCode()
+    {
+        if (!PhotonNetwork.InRoom) return;
+        GUIUtility.systemCopyBuffer = PhotonNetwork.CurrentRoom.Name;
+        UpdateStatus("Room code copied. Share it with your friend.");
+    }
+
+    private static void SetButtonLabel(Button button, string label)
+    {
+        TMP_Text text = button.GetComponentInChildren<TMP_Text>(true);
+        if (text != null) text.text = label;
+    }
+
+    private RectTransform UIRect(string name, Transform parent, float x, float y, float width, float height)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        go.layer = parent.gameObject.layer;
+        var rect = go.GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(width, height);
+        rect.anchoredPosition = new Vector2(x, y);
+        return rect;
+    }
+
+    private Image UIPanel(string name, Transform parent, float x, float y, float width, float height, Color color)
+    {
+        Image img = UIRect(name, parent, x, y, width, height).gameObject.AddComponent<Image>();
+        img.color = color;
+        img.raycastTarget = false;
+        return img;
+    }
+
+    private TMP_Text UILabel(string name, Transform parent, string value, float x, float y, float w, float h, int size, Color color)
+    {
+        var text = UIRect(name, parent, x, y, w, h).gameObject.AddComponent<TextMeshProUGUI>();
+        if (lobbyFont != null) text.font = lobbyFont;
+        text.text = value;
+        text.fontSize = size;
+        text.enableAutoSizing = true;
+        text.fontSizeMin = Mathf.Max(12, size - 5);
+        text.fontSizeMax = size;
+        text.textWrappingMode = TextWrappingModes.Normal;
+        text.color = color;
+        text.alignment = TextAlignmentOptions.Center;
+        text.overflowMode = TextOverflowModes.Ellipsis;
+        text.raycastTarget = false;
+        return text;
+    }
+
+    private Button UIButton(string name, Transform parent, string value, float x, float y, float w, float h, UnityEngine.Events.UnityAction action)
+    {
+        Image image = UIPanel(name, parent, x, y, w, h, new Color(0.08f, 0.26f, 0.36f));
+        image.raycastTarget = true;
+        Button button = image.gameObject.AddComponent<Button>();
+        button.targetGraphic = image;
+        var colors = button.colors;
+        colors.highlightedColor = new Color(0.65f, 1f, 1f);
+        colors.pressedColor = new Color(0.35f, 0.65f, 0.8f);
+        colors.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
+        button.colors = colors;
+        button.onClick.AddListener(action);
+        UILabel("Label", image.transform, value, 0, 0, w - 16, h - 8, 20, Color.white);
+        return button;
+    }
+
+    private RectTransform BuildSurface(GameObject panel)
+    {
+        foreach (Transform child in panel.transform) child.gameObject.SetActive(false);
+        var shade = UIPanel("LobbyBackdrop", panel.transform, 0, 0, 0, 0, new Color(0.015f, 0.025f, 0.06f, 0.98f));
+        shade.rectTransform.anchorMin = Vector2.zero;
+        shade.rectTransform.anchorMax = Vector2.one;
+        shade.rectTransform.offsetMin = shade.rectTransform.offsetMax = Vector2.zero;
+        shade.raycastTarget = true;
+        RectTransform root = UIRect("LobbySurface", panel.transform, 0, 0, 1280, 720);
+        fittedRoots.Add(root);
+        UIPanel("TopLine", root, 0, 274, 1200, 2, accentColor);
+        return root;
+    }
+
+    private void BuildLobbyUI()
+    {
+        lobbyFont = statusText != null ? statusText.font : TMP_Settings.defaultFontAsset;
+        if (waitingRoomPanel != null)
+        {
+            RectTransform root = BuildSurface(waitingRoomPanel);
+            UILabel("Title", root, "BATTLE PREPARATION", -350, 314, 500, 42, 32, Color.white);
+            waitRoomNumberText = UILabel("RoomCode", root, "ROOM", 190, 314, 300, 40, 24, accentColor);
+            UIButton("CopyCode", root, "COPY CODE", 485, 314, 200, 48, CopyRoomCode);
+            connectionText = UILabel("Connection", root, "CONNECTING", 420, 246, 340, 30, 16, accentColor);
+            UILabel("Mode", root, "1 VS 1  /  PILOT LOADOUTS", -390, 246, 420, 30, 18, accentColor);
+            BuildPilotCard(root, -306, true);
+            BuildPilotCard(root, 306, false);
+            UILabel("MapsHeading", root, "SELECT BATTLEFIELD  /  HOST CONTROLS MAP", 0, -37, 900, 28, 17, accentColor);
+            BuildMapCards(root, -158, false);
+            readyHint = UILabel("ReadyHint", root, "", 0, -288, 1150, 28, 17, Color.white);
+            waitCancelButton = UIButton("LeaveRoom", root, "LEAVE ROOM", -420, -334, 270, 52, OnLeaveWaitingRoom);
+            waitReadyButton = UIButton("Ready", root, "READY", 0, -334, 270, 52, OnReadyButtonClicked);
+            waitStartButton = UIButton("StartBattle", root, "START BATTLE", 420, -334, 270, 52, OnStartGameClicked);
+            lobbyMessage = UILabel("Message", root, "", 0, -263, 1160, 24, 15, new Color(1f, 0.77f, 0.43f));
+        }
+        if (roomPanel != null)
+        {
+            RectTransform root = BuildSurface(roomPanel);
+            UILabel("Title", root, "FIND YOUR BATTLE", -340, 314, 540, 42, 32, Color.white);
+            backFromRoomButton = UIButton("Back", root, "BACK", 490, 314, 190, 48, ShowMainPanel);
+            UILabel("CreateTitle", root, "CREATE ROOM", -305, 235, 540, 36, 24, accentColor);
+            roomNumberText = UILabel("RoomNumber", root, "000000", -305, 189, 540, 36, 28, Color.white);
+            roomModeText = UILabel("RoomMode", root, "1 VS 1", -305, 150, 540, 28, 18, Color.white);
+            createRoomMapNameText = UILabel("SelectedMap", root, "", -305, 105, 540, 36, 20, accentColor);
+            createRoomConfirmButton = UIButton("Create", root, "CREATE ROOM", -305, 46, 510, 54, OnCreateRoomConfirm);
+            UILabel("JoinTitle", root, "JOIN WITH ROOM CODE", 305, 235, 540, 36, 24, accentColor);
+            // Reuse the existing input field so keyboard and font setup are retained.
+            if (roomSearchInput != null)
+            {
+                roomSearchInput.transform.SetParent(root, false);
+                var rect = roomSearchInput.GetComponent<RectTransform>();
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = new Vector2(220, 180);
+                rect.sizeDelta = new Vector2(340, 52);
+                roomSearchInput.characterLimit = 32;
+                roomSearchInput.gameObject.SetActive(true);
+            }
+            searchRoomButton = UIButton("Join", root, "JOIN", 489, 180, 160, 52, OnSearchRoom);
+            // Use a masked scroll area; the original inactive template is preserved.
+            var viewport = UIPanel("RoomViewport", root, 305, 57, 540, 164, panelColor);
+            viewport.raycastTarget = true;
+            viewport.gameObject.AddComponent<RectMask2D>();
+            var content = UIRect("RoomEntries", viewport.transform, 0, 0, 540, 0);
+            content.anchorMin = new Vector2(0, 1); content.anchorMax = Vector2.one;
+            content.pivot = new Vector2(0.5f, 1); content.sizeDelta = Vector2.zero;
+            var layout = content.gameObject.AddComponent<VerticalLayoutGroup>();
+            layout.childControlHeight = true; layout.childForceExpandHeight = false;
+            layout.spacing = 8; layout.padding = new RectOffset(6, 6, 6, 6);
+            var fitter = content.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var scroll = viewport.gameObject.AddComponent<ScrollRect>();
+            scroll.viewport = viewport.rectTransform; scroll.content = content; scroll.horizontal = false;
+            scroll.movementType = ScrollRect.MovementType.Clamped;
+            if (roomItemPrefab != null) { roomItemPrefab.transform.SetParent(root, false); roomItemPrefab.SetActive(false); }
+            roomListContent = content;
+            emptyRoomsText = UILabel("EmptyRooms", viewport.transform, "No open rooms yet. Create one or enter a code.", 0, 0, 500, 70, 18, Color.gray);
+            UILabel("MapHeading", root, "CHOOSE YOUR BATTLEFIELD", 0, -53, 1100, 30, 18, accentColor);
+            BuildMapCards(root, -175, true);
+            browserMessage = UILabel("BrowserMessage", root, "", 0, -307, 1140, 32, 18, Color.white);
+            UIButton("RetryBrowser", root, "RECONNECT / RETRY", 0, -345, 250, 44, RetryLobbyConnection);
+        }
+        // Common recovery action remains visible when the main menu is disconnected.
+        if (mainPanel != null)
+        {
+            Button retry = UIButton("RetryConnection", mainPanel.transform, "RECONNECT / RETRY", 0, 0, 240, 48, RetryLobbyConnection);
+            RectTransform rect = retry.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0);
+            rect.anchoredPosition = new Vector2(0, 85);
+        }
+        FitLobbyUI();
+    }
+
+    private void BuildPilotCard(Transform parent, float x, bool first)
+    {
+        Image card = UIPanel(first ? "PilotOne" : "PilotTwo", parent, x, 108, 586, 222, panelColor);
+        UIPanel("Accent", card.transform, -286, 0, 3, 214, accentColor);
+        TMP_Text name = UILabel("PilotName", card.transform, "", 0, 85, 548, 38, 23, Color.white);
+        Image ship = UIPanel("ShipPreview", card.transform, -187, -15, 270, 196, Color.clear);
+        TMP_Text shipName = UILabel("ShipName", card.transform, "", 85, 40, 340, 35, 24, accentColor);
+        TMP_Text stats = UILabel("Stats", card.transform, "", 85, 4, 340, 30, 16, Color.white);
+        TMP_Text skill = UILabel("Skill", card.transform, "", 85, -30, 340, 30, 16, Color.white);
+        TMP_Text ready = UILabel("ReadyState", card.transform, "", 85, -75, 340, 32, 19, accentColor);
+        if (first)
+        {
+            waitP1NameText = name; waitP1ShipNameText = shipName; waitP1StatsText = stats;
+            waitP1SkillText = skill; waitP1ShipImage = ship; waitP1ReadyText = ready;
+        }
+        else
+        {
+            waitP2NameText = name; waitP2ShipNameText = shipName; waitP2StatsText = stats;
+            waitP2SkillText = skill; waitP2ShipImage = ship; waitP2ReadyText = ready;
+        }
+    }
+
+    private void BuildMapCards(Transform parent, float y, bool browser)
+    {
+        var buttons = new Button[3];
+        var labels = new TMP_Text[3];
+        for (int i = 0; i < 3; i++)
+        {
+            int index = i;
+            Button button = UIButton("MapCard" + i, parent, "", (i - 1) * 405, y, 392, 202, () => SelectLobbyMap(index));
+            Image art = UIPanel("MapPreview", button.transform, -130, 8, 112, 168, Color.white);
+            art.sprite = Resources.Load<Sprite>(mapImages[i]); art.preserveAspect = true;
+            labels[i] = UILabel("MapName", button.transform, mapShortNames[i], 61, 64, 246, 34, 19, accentColor);
+            UILabel("Description", button.transform, mapDescriptions[i], 61, -1, 238, 90, 17, Color.white);
+            UILabel("SelectionHint", button.transform, "SELECT MAP", 61, -70, 238, 26, 15, Color.gray);
+            buttons[i] = button;
+        }
+        mapCardGroups.Add(buttons);
+        mapLabelGroups.Add(labels);
+        RefreshMapCards();
+    }
+
+    private void RefreshMapCards()
+    {
+        int index = PhotonNetwork.InRoom ? ReadMap(PhotonNetwork.CurrentRoom) : selectedMapIndex;
+        bool editable = !roomRequestPending && !reconnecting && !isStartingGame && !isLeavingRoom && !RoomStarting
+            && (!PhotonNetwork.InRoom || PhotonNetwork.IsMasterClient);
+        for (int group = 0; group < mapCardGroups.Count; group++)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                Button button = mapCardGroups[group][i];
+                button.interactable = editable;
+                button.GetComponent<Image>().color = i == index ? new Color(0.10f, 0.38f, 0.46f) : panelColor;
+                mapLabelGroups[group][i].text = mapShortNames[i];
+                TMP_Text hint = button.transform.Find("SelectionHint").GetComponent<TMP_Text>();
+                hint.text = i == index ? "SELECTED" : editable ? "SELECT MAP" : "HOST SELECTS";
+                hint.color = i == index ? new Color(0.4f, 1f, 0.73f) : Color.gray;
+            }
+        }
+    }
+
+    private void FitLobbyUI()
+    {
+        Rect safe = Screen.safeArea;
+        if (Screen.width <= 0 || Screen.height <= 0) return;
+        foreach (RectTransform root in fittedRoots)
+        {
+            RectTransform parent = root.parent as RectTransform;
+            if (parent == null) continue;
+            float w = parent.rect.width * safe.width / Screen.width;
+            float h = parent.rect.height * safe.height / Screen.height;
+            float scale = Mathf.Min((w - 24f) / 1280f, (h - 24f) / 720f);
+            root.localScale = Vector3.one * Mathf.Max(0.01f, scale);
+            root.anchoredPosition = new Vector2(
+                (safe.center.x / Screen.width - 0.5f) * parent.rect.width,
+                (safe.center.y / Screen.height - 0.5f) * parent.rect.height);
+        }
     }
 }
