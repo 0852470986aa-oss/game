@@ -50,6 +50,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                 SpriteRenderer renderer = background != null ? background.GetComponent<SpriteRenderer>() : null;
                 FitBackgroundToArena(renderer);
                 root.SetActive(i == selectedMapIndex);
+                if (i == 1 && i == selectedMapIndex) DecoratePrism(root.transform);
 
                 if (i == selectedMapIndex && renderer != null)
                     backgroundSprite = renderer;
@@ -59,6 +60,92 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     }
 
     public static GameplayManager Instance;
+
+    // Deterministic visual dressing: no colliders, network objects or per-frame effects.
+    // Keeping everything under Map1_Layout prevents decorations leaking into other maps.
+    public static void DecoratePrism(Transform layout)
+    {
+        if (layout == null || layout.Find("PrismAtmosphere") != null) return;
+        Sprite[] crystals = Resources.LoadAll<Sprite>("Images/Obs_Crystals");
+        System.Array.Sort(crystals, (a, b) => string.CompareOrdinal(a.name, b.name));
+        if (crystals.Length == 0) return;
+        var group = new GameObject("PrismAtmosphere");
+        group.transform.SetParent(layout, false);
+        Color cyan = new Color(0.25f, 0.95f, 1f, 0.24f);
+        // Halos identify the real cover clusters, with no extra walls across routes.
+        Vector2[] covers = { new Vector2(20, 12), new Vector2(-20, 12),
+            new Vector2(32, 7), new Vector2(-32, 7), new Vector2(40, 23), new Vector2(-40, 23) };
+        Material lineMaterial = null;
+        foreach (Vector2 point in covers)
+        {
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Vector2 position = new Vector2(point.x, point.y * side);
+                var halo = PrismSprite(group.transform, "CrystalLight", crystals[2 % crystals.Length],
+                    position, 6.8f, new Color(0.2f, 0.95f, 1f, 0.13f), -4);
+                lineMaterial = halo.sharedMaterial;
+                PrismRing(group.transform, position, 4.1f, 1.65f, cyan, lineMaterial);
+            }
+        }
+        PrismRing(group.transform, Vector2.zero, 8.4f, 5.7f, new Color(0.3f, 1f, 1f, 0.32f), lineMaterial);
+        PrismRing(group.transform, Vector2.zero, 9.2f, 6.2f, new Color(0.7f, 0.4f, 1f, 0.17f), lineMaterial);
+        // Tiny edge shards frame the panorama; opposite pairs retain visual balance.
+        Vector2[] edgePoints = { new Vector2(59, 30), new Vector2(57, 13), new Vector2(60, -5),
+            new Vector2(54, -32), new Vector2(43, 32), new Vector2(29, 33),
+            new Vector2(16, 33), new Vector2(46, 4), new Vector2(46, -12), new Vector2(9, 32) };
+        for (int i = 0; i < edgePoints.Length; i++)
+        {
+            for (int side = -1; side <= 1; side += 2)
+            {
+                Vector2 point = edgePoints[i] * side;
+                for (int fragment = 0; fragment < 2; fragment++)
+                {
+                    Vector2 offset = new Vector2(fragment * 1.7f * side, fragment * -1.1f * side);
+                    PrismSprite(group.transform, "EdgeShard", crystals[(i + fragment) % Mathf.Min(6, crystals.Length)],
+                        point + offset, fragment == 0 ? 2.3f : 1.1f,
+                        new Color(0.55f, 0.8f, 1f, fragment == 0 ? 0.64f : 0.38f), -3);
+                }
+            }
+        }
+    }
+
+    private static SpriteRenderer PrismSprite(Transform parent, string name, Sprite sprite,
+        Vector2 position, float height, Color color, int order)
+    {
+        var holder = new GameObject(name);
+        holder.transform.SetParent(parent, false);
+        holder.transform.localPosition = position;
+        var art = new GameObject("Artwork");
+        art.transform.SetParent(holder.transform, false);
+        float scale = height / Mathf.Max(sprite.bounds.size.y, 0.01f);
+        art.transform.localPosition = -sprite.bounds.center * scale;
+        art.transform.localScale = Vector3.one * scale;
+        var renderer = art.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.color = color;
+        renderer.sortingOrder = order;
+        return renderer;
+    }
+
+    private static void PrismRing(Transform parent, Vector2 center, float width, float height, Color color, Material material)
+    {
+        var go = new GameObject("PrismGroundRing");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = center;
+        var line = go.AddComponent<LineRenderer>();
+        line.sharedMaterial = material;
+        line.useWorldSpace = false;
+        line.loop = true;
+        line.positionCount = 48;
+        line.widthMultiplier = 0.10f;
+        line.startColor = line.endColor = color;
+        line.sortingOrder = -4;
+        for (int i = 0; i < line.positionCount; i++)
+        {
+            float angle = i * Mathf.PI * 2f / line.positionCount;
+            line.SetPosition(i, new Vector3(Mathf.Cos(angle) * width, Mathf.Sin(angle) * height, 0));
+        }
+    }
 
     [Header("UI Controls")]
     public UIJoystick joystick;
@@ -158,6 +245,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if(p2fill) p2HpFill = p2fill.GetComponent<RectTransform>();
 
         CreateMatchUI();
+        StyleBattleHUD();
+        BuildResultUI();
 
         // PHASE 5: เล่นเพลงตอนสู้
         if (AudioManager.Instance != null)
@@ -251,6 +340,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     void Update()
     {
+        FitBattleHUD();
         if (pingText != null && PhotonNetwork.IsConnected)
         {
             pingText.text = "Ping: " + PhotonNetwork.GetPing() + " ms";
@@ -706,6 +796,229 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         renderer.sortingOrder = -1;
     }
 
+    private RectTransform battleHud;
+    private RectTransform resultSurface;
+    private TMP_Text resultHeadline, resultScore;
+    private bool resultShown;
+    private TMP_Text battleSkillStatus, battleRivalName;
+
+    private RectTransform BattleRect(string name, Transform parent, float x, float y, float w, float h)
+    {
+        var rect = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(x, y);
+        rect.sizeDelta = new Vector2(w, h);
+        return rect;
+    }
+
+    private Image BattlePanel(string name, Transform parent, float x, float y, float w, float h, Color color)
+    {
+        var img = BattleRect(name, parent, x, y, w, h).gameObject.AddComponent<Image>();
+        img.color = color;
+        img.raycastTarget = false;
+        return img;
+    }
+
+    private TMP_Text BattleLabel(string name, Transform parent, string value, float x, float y, float w, float h, int size)
+    {
+        var label = BattleRect(name, parent, x, y, w, h).gameObject.AddComponent<TextMeshProUGUI>();
+        if (matchTimerText != null) label.font = matchTimerText.font;
+        label.text = value;
+        label.fontSize = size;
+        label.enableAutoSizing = true;
+        label.fontSizeMin = 12;
+        label.fontSizeMax = size;
+        label.alignment = TextAlignmentOptions.Center;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.overflowMode = TextOverflowModes.Ellipsis;
+        label.color = Color.white;
+        label.raycastTarget = false;
+        return label;
+    }
+
+    private void PlaceBattleControl(Transform control, float x, float y, float scale = 1f)
+    {
+        if (control == null) return;
+        control.SetParent(battleHud, false);
+        var rect = control.GetComponent<RectTransform>();
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = new Vector2(x, y);
+        rect.localScale = Vector3.one * scale;
+    }
+
+    private void BuildBattleHealth(string name, float x, bool local)
+    {
+        var card = BattlePanel(name, battleHud, x, 295, 360, 94, new Color(0.035f, 0.065f, 0.12f, 0.9f));
+        var title = BattleLabel("Pilot", card.transform, local ? "YOUR SHIP" : "WAITING FOR RIVAL", 0, 24, 332, 30, 21);
+        title.richText = false;
+        if (local) playerInfoText = title; else battleRivalName = title;
+        var bar = BattlePanel("Hull", card.transform, 0, -14, 328, 25, new Color(0.12f, 0.15f, 0.22f));
+        var fill = BattlePanel("Fill", bar.transform, 0, 0, 328, 25, local ? Color.cyan : new Color(1f, 0.4f, 0.5f));
+        fill.rectTransform.pivot = new Vector2(0, 0.5f);
+        fill.rectTransform.anchoredPosition = new Vector2(-164, 0);
+        fill.rectTransform.localScale = new Vector3(0, 1, 1);
+        var hp = BattleLabel("HullValue", bar.transform, "-- / --", 0, 0, 310, 25, 17);
+        if (local) { p1HpText = hp; p1HpFill = fill.rectTransform; }
+        else { p2HpText = hp; p2HpFill = fill.rectTransform; }
+    }
+
+    private void StyleBattleHUD()
+    {
+        if (matchTimerText == null || battleHud != null) return;
+        var canvas = matchTimerText.canvas;
+        foreach (string name in new[] { "Player1HUD", "Player2HUD" })
+        {
+            var old = canvas.transform.Find(name);
+            if (old != null) old.gameObject.SetActive(false);
+        }
+        battleHud = BattleRect("BattleHUD", canvas.transform, 0, 0, 1280, 720);
+        // Keep the results dialog above the in-match controls.
+        if (resultPanel != null) resultPanel.transform.SetAsLastSibling();
+        BuildBattleHealth("LocalHull", -438, true);
+        BuildBattleHealth("RivalHull", 438, false);
+        BattlePanel("MatchPlate", battleHud, 0, 291, 460, 102, new Color(0.035f, 0.065f, 0.12f, 0.9f));
+        PlaceBattleControl(matchTimerText.transform, 0, 314);
+        matchTimerText.fontSize = 32;
+        matchTimerText.text = "--:--";
+        matchTimerText.raycastTarget = false;
+        PlaceBattleControl(scoreText.transform, 0, 281);
+        scoreText.fontSize = 20;
+        scoreText.color = new Color(0.23f, 0.82f, 0.92f);
+        scoreText.text = "YOU  0  :  0  RIVAL";
+        scoreText.raycastTarget = false;
+        BattleLabel("Objective", battleHud, "FIRST TO " + targetKills + " KILLS", 0, 252, 360, 24, 14);
+        if (pingText != null)
+        {
+            PlaceBattleControl(pingText.transform, 0, 218);
+            pingText.fontSize = 14;
+            pingText.color = new Color(0.65f, 0.75f, 0.85f);
+            pingText.raycastTarget = false;
+        }
+        var exit = canvas.transform.Find("TopCenter/Btn_Exit");
+        if (exit != null) PlaceBattleControl(exit, 553, 219);
+        if (joystick != null) PlaceBattleControl(joystick.transform, -485, -203, 0.8f);
+        if (fireButton != null) PlaceBattleControl(fireButton.transform, 494, -233, 0.9f);
+        if (skillButton != null)
+        {
+            PlaceBattleControl(skillButton.transform, 552, -67);
+            battleSkillStatus = BattleLabel("SkillStatus", skillButton.transform, "WAITING", 0, -70, 145, 28, 21);
+            if (skillCooldownImage != null) skillCooldownImage.raycastTarget = false;
+        }
+        FitBattleHUD();
+    }
+
+    private void FitBattleHUD()
+    {
+        FitResultUI();
+        if (battleHud == null || Screen.width <= 0 || Screen.height <= 0) return;
+        var parent = battleHud.parent as RectTransform;
+        if (parent == null) return;
+        Rect safe = Screen.safeArea;
+        Vector2 units = new Vector2(parent.rect.width / Screen.width, parent.rect.height / Screen.height);
+        float scale = Mathf.Max(0.01f, Mathf.Min((safe.width - 24) * units.x / 1280f, (safe.height - 24) * units.y / 720f));
+        battleHud.localScale = Vector3.one * scale;
+        battleHud.anchoredPosition = Vector2.Scale(safe.center - new Vector2(Screen.width, Screen.height) * 0.5f, units);
+    }
+
+    private void BuildResultUI()
+    {
+        if (resultPanel == null || resultSurface != null) return;
+        foreach (Transform child in resultPanel.transform) child.gameObject.SetActive(false);
+        var overlay = resultPanel.GetComponent<Image>();
+        if (overlay != null) { overlay.color = new Color(0.015f, 0.025f, 0.05f, 0.96f); overlay.raycastTarget = true; }
+        var panelRect = resultPanel.GetComponent<RectTransform>();
+        panelRect.anchorMin = Vector2.zero; panelRect.anchorMax = Vector2.one;
+        panelRect.offsetMin = panelRect.offsetMax = Vector2.zero;
+        resultSurface = BattleRect("ResultSurface", resultPanel.transform, 0, 0, 1280, 720);
+        resultHeadline = BattleLabel("Outcome", resultSurface, "MATCH COMPLETE", 0, 292, 1100, 64, 46);
+        resultRoomNumber = BattleLabel("Room", resultSurface, "", 0, 242, 1050, 28, 17);
+        resultRoomNumber.richText = false;
+        resultScore = BattleLabel("FinalScore", resultSurface, "", 0, 196, 1000, 42, 27);
+        BuildResultCard(true, -278);
+        BuildResultCard(false, 278);
+        BattleLabel("Versus", resultSurface, "VS", 0, -5, 70, 45, 25);
+        var back = BattlePanel("ReturnToLobby", resultSurface, 0, -270, 440, 60, new Color(0.08f, 0.32f, 0.42f));
+        back.raycastTarget = true;
+        btnReturnToMenu = back.gameObject.AddComponent<Button>();
+        btnReturnToMenu.targetGraphic = back;
+        BattleLabel("Label", back.transform, "BACK TO LOBBY", 0, 0, 415, 52, 25);
+        btnReturnToMenu.onClick.AddListener(LeaveRoom);
+        BattleLabel("Footer", resultSurface, "BATTLEFIELD OF THE STARS / MATCH REPORT", 0, -324, 1100, 25, 14);
+        FitResultUI();
+    }
+
+    private void BuildResultCard(bool local, float x)
+    {
+        var card = BattlePanel(local ? "YourResult" : "RivalResult", resultSurface, x, -24, 470, 390, new Color(0.035f, 0.065f, 0.12f));
+        var border = card.gameObject.AddComponent<UnityEngine.UI.Outline>();
+        border.effectDistance = new Vector2(2, -2);
+        BattleLabel("Side", card.transform, local ? "YOUR PILOT" : "RIVAL PILOT", 0, 162, 420, 25, 16);
+        var name = BattleLabel("Name", card.transform, "--", 0, 124, 420, 38, 27);
+        name.richText = false;
+        var ship = BattlePanel("Ship", card.transform, 0, 18, 280, 160, Color.white);
+        ship.preserveAspect = true;
+        ship.enabled = false;
+        var status = BattleLabel("Status", card.transform, "", 0, -90, 420, 38, 28);
+        var coins = BattleLabel("Reward", card.transform, "0", -75, -146, 150, 40, 30);
+        coins.color = new Color(1f, 0.8f, 0.35f);
+        BattleLabel("Currency", card.transform, "ASTRONIUM", 85, -146, 170, 32, 19);
+        if (local)
+        {
+            localResultOutline = border; localResultName = name; localResultShip = ship;
+            localResultStatus = status; localResultCoins = coins;
+        }
+        else
+        {
+            remoteResultOutline = border; remoteResultName = name; remoteResultShip = ship;
+            remoteResultStatus = status; remoteResultCoins = coins;
+        }
+    }
+
+    private void FitResultUI()
+    {
+        if (resultSurface == null || Screen.width <= 0 || Screen.height <= 0) return;
+        var parent = resultSurface.parent as RectTransform;
+        if (parent == null) return;
+        Rect safe = Screen.safeArea;
+        Vector2 units = new Vector2(parent.rect.width / Screen.width, parent.rect.height / Screen.height);
+        float scale = Mathf.Max(0.01f, Mathf.Min((safe.width - 24) * units.x / 1280f, (safe.height - 24) * units.y / 720f));
+        resultSurface.localScale = Vector3.one * scale;
+        resultSurface.anchoredPosition = Vector2.Scale(safe.center - new Vector2(Screen.width, Screen.height) * 0.5f, units);
+    }
+
+    private void PresentResult(bool? won)
+    {
+        if (battleHud != null) battleHud.gameObject.SetActive(false);
+        if (resultPanel != null) resultPanel.transform.SetAsLastSibling();
+        if (resultHeadline != null)
+        {
+            resultHeadline.text = !won.HasValue ? "DRAW" : won.Value ? "VICTORY" : "DEFEAT";
+            resultHeadline.color = !won.HasValue ? Color.white : won.Value ? new Color(1f, 0.8f, 0.35f) : new Color(1f, 0.4f, 0.45f);
+        }
+        if (localResultStatus != null) localResultStatus.text = !won.HasValue ? "DRAW" : won.Value ? "WINNER" : "DEFEATED";
+        if (remoteResultStatus != null) remoteResultStatus.text = !won.HasValue ? "DRAW" : won.Value ? "DEFEATED" : "WINNER";
+        if (resultRoomNumber != null) resultRoomNumber.text = "MATCH COMPLETE / ROOM " + (PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.Name : "--");
+        int yours = 0, rival = 0;
+        if (PhotonNetwork.LocalPlayer != null && PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("Kills", out object kills) && kills is int k) yours = k;
+        var other = PhotonNetwork.PlayerListOthers.Length > 0 ? PhotonNetwork.PlayerListOthers[0] : null;
+        if (other != null && other.CustomProperties.TryGetValue("Kills", out object enemyKills) && enemyKills is int e) rival = e;
+        if (resultScore != null) resultScore.text = "FINAL SCORE  /  " + yours + " : " + rival;
+        SetResultShip(localResultShip, PhotonNetwork.LocalPlayer);
+        SetResultShip(remoteResultShip, other);
+        FitResultUI();
+    }
+
+    private void SetResultShip(Image image, Photon.Realtime.Player player)
+    {
+        if (image == null) return;
+        Sprite sprite = null;
+        if (player != null && player.CustomProperties.TryGetValue("ShipType", out object value) && value is int index && index >= 0 && index < 3)
+            sprite = Resources.Load<Sprite>("Images/ship" + (index + 1));
+        image.sprite = sprite;
+        image.enabled = sprite != null;
+    }
+
     private void CreateMatchUI()
     {
         Canvas canvas = null;
@@ -765,7 +1078,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
         if (scoreText != null)
         {
-            scoreText.text = $"Me: {myKills} - Enemy: {enemyKills}";
+            scoreText.text = $"YOU  {myKills}  :  {enemyKills}  RIVAL";
         }
 
         // เช็คเงื่อนไขจบเกม: First to 3 Kills
@@ -836,6 +1149,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     private void ShowDrawResultScreen(string remotePlayerName)
     {
+        if (resultShown) return;
+        resultShown = true;
         if (resultPanel != null)
         {
             resultPanel.SetActive(true);
@@ -848,6 +1163,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (remoteResultStatus != null) { remoteResultStatus.text = "เสมอ"; remoteResultStatus.color = Color.white; }
         if (localResultCoins != null) localResultCoins.text = "0";
         if (remoteResultCoins != null) remoteResultCoins.text = "0";
+        PresentResult(null);
         if (btnReturnToMenu != null)
         {
             btnReturnToMenu.onClick.RemoveAllListeners();
@@ -883,11 +1199,21 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     private void UpdateSkillUI()
     {
+        if (battleSkillStatus != null)
+        {
+            bool ready = localPlayer != null && !localPlayer.isDead && localPlayer.currentCooldown <= 0;
+            battleSkillStatus.text = localPlayer == null ? "WAITING" : localPlayer.isDead ? "OFFLINE"
+                : ready ? "READY" : Mathf.CeilToInt(localPlayer.currentCooldown) + "s";
+            battleSkillStatus.color = ready ? new Color(0.23f, 0.82f, 0.92f) : Color.white;
+        }
+        if (battleRivalName != null)
+            battleRivalName.text = remotePlayer != null && remotePlayer.photonView.Owner != null
+                ? remotePlayer.photonView.Owner.NickName : "WAITING FOR RIVAL";
         if (localPlayer != null && skillCooldownImage != null)
         {
             if (localPlayer.currentCooldown > 0)
             {
-                skillCooldownImage.fillAmount = localPlayer.currentCooldown / localPlayer.maxCooldown;
+                skillCooldownImage.fillAmount = Mathf.Clamp01(localPlayer.currentCooldown / Mathf.Max(0.01f, localPlayer.maxCooldown));
             }
             else
             {
@@ -900,7 +1226,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     {
         localPlayer = player;
         if (playerInfoText != null)
-            playerInfoText.text = "Player: " + PhotonNetwork.NickName + " | Ship: " + player.gameObject.name.Replace("(Clone)","");
+            playerInfoText.text = "YOU / " + PhotonNetwork.NickName;
 
         // โหลดรูปไอคอนสกิล
         if (skillIconImage != null)
@@ -919,7 +1245,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     {
         if (localPlayer != null)
         {
-            float hpRatio = localPlayer.currentHp / localPlayer.maxHp;
+            float hpRatio = Mathf.Clamp01(localPlayer.currentHp / Mathf.Max(1f, localPlayer.maxHp));
             if (p1HpText) p1HpText.text = $"{Mathf.Ceil(localPlayer.currentHp)} / {localPlayer.maxHp}";
             if (p1HpFill)
             {
@@ -957,7 +1283,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
         if (remotePlayer != null)
         {
-            float hpRatio2 = remotePlayer.currentHp / remotePlayer.maxHp;
+            float hpRatio2 = Mathf.Clamp01(remotePlayer.currentHp / Mathf.Max(1f, remotePlayer.maxHp));
             if (p2HpText) p2HpText.text = $"{Mathf.Ceil(remotePlayer.currentHp)} / {remotePlayer.maxHp}";
             if (p2HpFill)
             {
@@ -984,6 +1310,9 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     public void ShowResultScreen(bool isWinner, string localShipName, string remoteShipName, string remotePlayerName)
     {
+        if (resultShown) return;
+        resultShown = true;
+        isMatchEnding = true;
         if (resultPanel != null) 
         {
             resultPanel.SetActive(true);
@@ -1036,6 +1365,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         }
 
         if (remoteResultName != null) remoteResultName.text = remotePlayerName;
+        PresentResult(isWinner);
 
         if (btnReturnToMenu != null)
         {

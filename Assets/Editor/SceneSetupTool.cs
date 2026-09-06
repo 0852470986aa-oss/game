@@ -1872,10 +1872,15 @@ public static class LobbyPreviewValidation
             foreach (Vector2Int size in new[] { new Vector2Int(1280, 720), new Vector2Int(1920, 1080),
                 new Vector2Int(2340, 1080), new Vector2Int(1024, 768) })
             {
-                foreach (bool waiting in new[] { true, false })
+                foreach (int screen in new[] { 0, 1, 2, 3, 4 })
                 {
+                    bool waiting = screen == 0;
                     manager.waitingRoomPanel.SetActive(waiting);
-                    manager.roomPanel.SetActive(!waiting);
+                    manager.roomPanel.SetActive(screen == 1);
+                    manager.mainPanel.SetActive(screen == 2);
+                    manager.inventoryPanel.SetActive(screen >= 3);
+                    if (screen >= 3)
+                        typeof(LobbyManager).GetMethod("SetHangarPage", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(manager, new object[] { screen == 4 });
                     var target = new RenderTexture(size.x, size.y, 24);
                     var pixels = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
                     var previous = RenderTexture.active;
@@ -1889,7 +1894,7 @@ public static class LobbyPreviewValidation
                         Canvas.ForceUpdateCanvases();
                         typeof(LobbyManager).GetMethod("FitLobbyUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(manager, null);
                         Canvas.ForceUpdateCanvases();
-                        GameObject visiblePanel = waiting ? manager.waitingRoomPanel : manager.roomPanel;
+                        GameObject visiblePanel = waiting ? manager.waitingRoomPanel : screen == 1 ? manager.roomPanel : screen == 2 ? manager.mainPanel : manager.inventoryPanel;
                         foreach (TMP_Text text in visiblePanel.GetComponentsInChildren<TMP_Text>())
                         {
                             text.ForceMeshUpdate();
@@ -1899,7 +1904,7 @@ public static class LobbyPreviewValidation
                         RenderTexture.active = target;
                         pixels.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
                         pixels.Apply();
-                        System.IO.File.WriteAllBytes(output + "/" + (waiting ? "waiting-" : "rooms-") + size.x + "x" + size.y + ".png", pixels.EncodeToPNG());
+                        System.IO.File.WriteAllBytes(output + "/" + (waiting ? "waiting-" : screen == 1 ? "rooms-" : screen == 2 ? "home-" : screen == 3 ? "ships-" : "skills-") + size.x + "x" + size.y + ".png", pixels.EncodeToPNG());
                     }
                     finally
                     {

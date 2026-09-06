@@ -45,8 +45,15 @@ public class RadarMinimap : MonoBehaviour
         radarBG.pivot = new Vector2(0, 1);
         radarBG.anchoredPosition = new Vector2(10, -10); // ขยับออกจากขอบซ้าย 10
         radarBG.sizeDelta = new Vector2(radarUIRadius * 2, radarUIRadius * 2);
+        var battleHud = canvas.transform.Find("BattleHUD");
+        if (battleHud != null)
+        {
+            radarBG.SetParent(battleHud, false);
+            radarBG.anchoredPosition = new Vector2(22, -130);
+        }
 
         Image bgImg = bgObj.AddComponent<Image>();
+        bgImg.raycastTarget = false;
         bgImg.color = new Color(0, 0, 0, 0.4f); // พื้นหลังโปร่งใส (40% opacity)
         
         // ทำให้เป็นวงกลมถ้ามี Sprite วงกลม (ถ้าไม่มีมันจะเป็นสี่เหลี่ยมมืดๆ ไปก่อน)
@@ -60,6 +67,7 @@ public class RadarMinimap : MonoBehaviour
         centerRect.anchoredPosition = Vector2.zero;
         centerRect.sizeDelta = new Vector2(10, 10);
         Image centerImg = centerBlip.AddComponent<Image>();
+        centerImg.raycastTarget = false;
         centerImg.color = Color.green;
         if (circleSprite != null) centerImg.sprite = circleSprite;
     }

@@ -367,6 +367,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
 
     private void UpdateInventoryActionButton(int index)
     {
+        RefreshHangarCards();
         if (inventoryActionButton == null) return;
         
         if (inventoryActionText == null)
@@ -398,12 +399,14 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
 
     public void SelectShip(int index)
     {
+        if (hangarBusy || index < 0 || index >= ships.Length) return;
         selectedShipIndex = index;
         UpdateInventoryDisplay(index);
     }
 
     public void OnInventoryActionClicked()
     {
+        if (hangarBusy || !profileLoaded) return;
         int index = selectedShipIndex;
         if (index < 0 || index >= ships.Length) return;
 
@@ -424,6 +427,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             ShipData ship = ships[index];
             if (FirebaseManager.Instance != null)
             {
+                hangarBusy = true;
                 inventoryActionButton.interactable = false; // ป้องกันการกดเบิ้ล
                 FirebaseManager.Instance.GetCoinBalance(coins =>
                 {
@@ -437,14 +441,14 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
                                 // ปลดล็อกยาน
                                 FirebaseManager.Instance.UnlockShip(index, unlockSuccess =>
                                 {
+                                    hangarBusy = false;
                                     if (unlockSuccess)
                                     {
                                         unlockedShips.Add(index);
                                         UpdateInventoryActionButton(index);
                                         
                                         // อัปเดตเงินใน UI ด่วน
-                                        if (coinText != null)
-                                            coinText.text = "Astronium Coins : " + (coins - ship.price);
+                                        UpdateCoinDisplay(coins - ship.price);
                                             
                                         UpdateStatus("Purchased " + ship.name + "!");
                                     }
@@ -458,6 +462,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
                             }
                             else
                             {
+                                hangarBusy = false;
                                 inventoryActionButton.interactable = true;
                                 UpdateStatus("Could not update coin balance.");
                             }
@@ -465,6 +470,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
                     }
                     else
                     {
+                        hangarBusy = false;
                         UpdateStatus("Not enough coins!");
                         inventoryActionButton.interactable = true;
                     }
@@ -488,6 +494,14 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     {
         if (index < 0 || index >= skills.Length) return;
         SkillData skill = skills[index];
+        if (hangarSkillCards != null)
+            for (int i = 0; i < hangarSkillCards.Length; i++)
+            {
+                hangarSkillCards[i].GetComponent<Image>().color = i == index ? new Color(0.1f, 0.38f, 0.46f) : panelColor;
+                hangarSkillStates[i].text = i == equippedSkillIndex ? "INSTALLED" : i == index ? "SELECTED" : "AVAILABLE";
+            }
+        if (homeSkillText != null)
+            homeSkillText.text = "EQUIPPED  /  " + skills[equippedSkillIndex].name;
 
         if (skillDescText != null)
             skillDescText.text = skill.name + " - " + skill.description;
@@ -895,6 +909,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         Debug.Log(msg);
         if (statusText != null) statusText.text = msg;
         if (lobbyMessage != null) lobbyMessage.text = msg;
+        if (hangarMessage != null) hangarMessage.text = msg;
         if (browserMessage != null) browserMessage.text = msg;
     }
 
@@ -1182,6 +1197,20 @@ public partial class LobbyManager
     private readonly Color panelColor = new Color(0.035f, 0.065f, 0.12f, 0.97f);
     private readonly Color accentColor = new Color(0.23f, 0.82f, 0.92f);
     private TMP_FontAsset lobbyFont;
+    private TMP_Text homeSkillText;
+    private TMP_Text hangarMessage;
+    private TMP_Text hangarCoinText;
+
+    private void UpdateCoinDisplay(int coins)
+    {
+        if (coinText != null) coinText.text = "Astronium Coins : " + coins;
+        if (hangarCoinText != null) hangarCoinText.text = "ASTRONIUM  /  " + coins.ToString("N0");
+    }
+    private bool hangarBusy;
+    private Button[] hangarSkillCards;
+    private TMP_Text[] hangarSkillStates;
+    private TMP_Text[] hangarCardLabels;
+    private GameObject hangarShipsPage, hangarSkillsPage;
 
     private void LoadLobbyProfile()
     {
@@ -1206,7 +1235,7 @@ public partial class LobbyManager
         }
         FirebaseManager.Instance.GetCoinBalance(coins => {
             if (this == null || generation != profileGeneration) return;
-            if (coinText != null) coinText.text = "Astronium Coins : " + coins;
+            UpdateCoinDisplay(coins);
         });
         FirebaseManager.Instance.GetUnlockedShips(result => {
             if (this == null || generation != profileGeneration) return;
@@ -1409,15 +1438,126 @@ public partial class LobbyManager
             browserMessage = UILabel("BrowserMessage", root, "", 0, -307, 1140, 32, 18, Color.white);
             UIButton("RetryBrowser", root, "RECONNECT / RETRY", 0, -345, 250, 44, RetryLobbyConnection);
         }
-        // Common recovery action remains visible when the main menu is disconnected.
         if (mainPanel != null)
         {
-            Button retry = UIButton("RetryConnection", mainPanel.transform, "RECONNECT / RETRY", 0, 0, 240, 48, RetryLobbyConnection);
-            RectTransform rect = retry.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0);
-            rect.anchoredPosition = new Vector2(0, 85);
+            BuildHomeScreen();
         }
+        if (inventoryPanel != null) BuildHangarScreen();
         FitLobbyUI();
+    }
+
+    private void BuildHangarScreen()
+    {
+        RectTransform root = BuildSurface(inventoryPanel);
+        UILabel("HangarTitle", root, "PILOT HANGAR", -355, 315, 480, 45, 33, Color.white);
+        hangarCoinText = UILabel("HangarCoins", root, "ASTRONIUM  /  ...", 110, 315, 390, 45, 23, new Color(1f, 0.8f, 0.35f));
+        backFromInventoryButton = UIButton("Back", root, "BACK", 485, 315, 200, 50, () => { if (!hangarBusy) ShowMainPanel(); });
+        UIButton("ShipsTab", root, "SHIPS", -180, 231, 280, 50, () => SetHangarPage(false));
+        UIButton("SkillsTab", root, "SKILLS", 180, 231, 280, 50, () => SetHangarPage(true));
+        hangarShipsPage = UIRect("ShipsPage", root, 0, -15, 1200, 430).gameObject;
+        hangarSkillsPage = UIRect("SkillsPage", root, 0, -15, 1200, 430).gameObject;
+        shipButtons = new Button[ships.Length];
+        hangarCardLabels = new TMP_Text[ships.Length];
+        for (int i = 0; i < ships.Length; i++)
+        {
+            int index = i;
+            var card = UIButton("ShipCard" + i, hangarShipsPage.transform, "", -405, 140 - i * 142, 370, 126, () => SelectShip(index));
+            var art = UIPanel("ShipArt", card.transform, -120, 0, 140, 115, Color.white);
+            art.sprite = Resources.Load<Sprite>(ships[i].spritePath); art.preserveAspect = true;
+            UILabel("Name", card.transform, ships[i].name, 53, 26, 245, 45, 23, Color.white);
+            hangarCardLabels[i] = UILabel("Ownership", card.transform, "", 53, -27, 235, 34, 17, accentColor);
+            shipButtons[i] = card;
+        }
+        var details = UIPanel("ShipDetails", hangarShipsPage.transform, 200, 0, 760, 415, panelColor);
+        inventoryShipName = UILabel("Name", details.transform, "", 0, 165, 700, 50, 32, Color.white);
+        inventoryShipImage = UIPanel("Preview", details.transform, -192, -12, 350, 275, Color.white);
+        inventoryShipImage.preserveAspect = true;
+        inventoryShipHP = UILabel("HP", details.transform, "", 170, 88, 310, 40, 25, Color.white);
+        inventoryShipATK = UILabel("ATK", details.transform, "", 170, 33, 310, 40, 25, Color.white);
+        inventoryShipSPD = UILabel("SPD", details.transform, "", 170, -22, 310, 40, 25, Color.white);
+        inventoryShipSkill = null;
+        UILabel("Tip", details.transform, "Choose a ship, then equip it for your next battle.", 0, -170, 690, 32, 17, Color.gray);
+        inventoryActionButton = UIButton("EquipBuy", details.transform, "EQUIP", 170, -98, 320, 62, OnInventoryActionClicked);
+        inventoryActionText = inventoryActionButton.GetComponentInChildren<TMP_Text>();
+        hangarSkillCards = new Button[skills.Length];
+        hangarSkillStates = new TMP_Text[skills.Length];
+        for (int i = 0; i < skills.Length; i++)
+        {
+            int index = i;
+            var card = UIButton("SkillCard" + i, hangarSkillsPage.transform, "", -435 + i * 290, 116, 270, 160, () => SelectSkill(index));
+            hangarSkillCards[i] = card;
+            hangarSkillStates[i] = UILabel("State", card.transform, "", 0, 65, 245, 22, 13, Color.white);
+            var icon = UIPanel("Icon", card.transform, 0, 20, 88, 88, Color.white);
+            icon.sprite = Resources.Load<Sprite>(skills[i].iconPath); icon.preserveAspect = true;
+            UILabel("SkillName", card.transform, skills[i].name, 0, -55, 245, 35, 22, accentColor);
+        }
+        skillDescText = UILabel("SkillDetails", hangarSkillsPage.transform, "", -170, -85, 770, 150, 28, Color.white);
+        installSkillButton = UIButton("Install", hangarSkillsPage.transform, "INSTALL", 415, -88, 280, 70, OnInstallSkillClicked);
+        installSkillText = installSkillButton.GetComponentInChildren<TMP_Text>();
+        UILabel("SkillHint", hangarSkillsPage.transform, "Select a skill to see its effect and cooldown. Install it to change your loadout.", 0, -196, 1150, 32, 17, Color.gray);
+        hangarMessage = UILabel("HangarMessage", root, "Choose a ship or open the SKILLS tab.", 0, -288, 1150, 44, 19, Color.white);
+        UILabel("HangarFooter", root, "LOADOUT / YOUR NEXT BATTLE STARTS HERE", 0, -340, 1150, 24, 14, Color.gray);
+        SetHangarPage(false);
+    }
+
+    private void SetHangarPage(bool skillsPage)
+    {
+        if (hangarBusy) return;
+        hangarShipsPage.SetActive(!skillsPage);
+        hangarSkillsPage.SetActive(skillsPage);
+        UpdateInventoryDisplay(selectedShipIndex);
+        UpdateSkillDisplay(selectedSkillIndex);
+    }
+
+    private void RefreshHangarCards()
+    {
+        if (hangarCardLabels == null) return;
+        for (int i = 0; i < ships.Length; i++)
+        {
+            hangarCardLabels[i].text = i == equippedShipIndex ? "EQUIPPED"
+                : unlockedShips.Contains(i) ? "OWNED" : ships[i].price + " COINS";
+            shipButtons[i].GetComponent<Image>().color = i == selectedShipIndex
+                ? new Color(0.1f, 0.38f, 0.46f) : panelColor;
+        }
+    }
+
+    private void BuildHomeScreen()
+    {
+        RectTransform root = BuildSurface(mainPanel);
+        UILabel("GameTitle", root, "BATTLEFIELD OF THE STARS", -225, 315, 760, 48, 33, Color.white);
+        settingsButton = UIButton("Settings", root, "SETTINGS", 465, 315, 220, 50, OnSettingsClicked);
+        var profile = UIPanel("PilotProfile", root, -330, 222, 550, 74, panelColor);
+        playerNameText = UILabel("PilotName", profile.transform, "LOADING PILOT...", 0, 15, 520, 34, 24, Color.white);
+        playerNameText.richText = false;
+        playersOnlineText = UILabel("OnlineStatus", profile.transform, "CONNECTING...", 0, -20, 520, 25, 15, accentColor);
+        coinText = UILabel("CoinBalance", root, "Astronium Coins : ...", 305, 230, 550, 40, 24, new Color(1f, 0.8f, 0.35f));
+        UILabel("CurrencyHint", root, "YOUR PILOT WALLET", 305, 195, 550, 24, 14, Color.gray);
+
+        var hangar = UIPanel("ActiveShip", root, -235, -45, 740, 400, panelColor);
+        UILabel("HangarTitle", hangar.transform, "ACTIVE SHIP / HANGAR", 0, 167, 680, 32, 18, accentColor);
+        shipNameText = UILabel("ShipName", hangar.transform, "Loading ship...", 0, 120, 680, 45, 34, Color.white);
+        // Imported art contains transparent margins; reserve a large preview area.
+        shipImage = UIPanel("ShipPreview", hangar.transform, -190, -30, 340, 280, Color.clear);
+        shipImage.preserveAspect = true;
+        shipHPText = UILabel("HP", hangar.transform, "HP: --", 150, 55, 290, 38, 25, Color.white);
+        shipATKText = UILabel("ATK", hangar.transform, "ATK: --", 150, 4, 290, 38, 25, Color.white);
+        shipSPDText = UILabel("SPD", hangar.transform, "SPD: --", 150, -47, 290, 38, 25, Color.white);
+        homeSkillText = UILabel("ActiveSkill", hangar.transform, "LOADING SKILL...", 150, -104, 310, 38, 19, accentColor);
+        shipSkillText = null;
+        UILabel("LoadoutHint", hangar.transform, "Change your ship and skill in the hangar.", 0, -169, 670, 26, 16, Color.gray);
+
+        UILabel("BattleTitle", root, "READY FOR BATTLE?", 395, 127, 370, 44, 26, Color.white);
+        playButton = UIButton("QuickMatch", root, "QUICK MATCH", 395, 50, 370, 82, OnPlayButtonClicked);
+        playButton.GetComponent<Image>().color = new Color(0.1f, 0.49f, 0.5f);
+        createRoomButton = UIButton("CreateJoin", root, "CREATE / JOIN ROOM", 395, -47, 370, 64, OnCreateRoomClicked);
+        inventoryButton = UIButton("OpenHangar", root, "SHIPS & SKILLS", 395, -129, 370, 64, ShowInventoryPanel);
+        UIButton("HowToPlay", root, "HOW TO PLAY", 395, -205, 370, 52, OnTutorialClicked);
+        statusText = UILabel("HomeStatus", root, "Loading pilot data...", -170, -292, 840, 38, 18, Color.white);
+        statusText.richText = false;
+        UIButton("RetryConnection", root, "RECONNECT / RETRY", 445, -294, 290, 48, RetryLobbyConnection);
+        UILabel("Footer", root, "PILOT HUB  /  1 VS 1 MULTIPLAYER", 0, -339, 1150, 24, 14, Color.gray);
+        UpdateShipDisplay(equippedShipIndex);
+        UpdateSkillDisplay(equippedSkillIndex);
     }
 
     private void BuildPilotCard(Transform parent, float x, bool first)

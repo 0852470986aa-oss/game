@@ -9,6 +9,81 @@ public class MapLayoutSetup : EditorWindow
     private const string GameplayScenePath = "Assets/Scenes/SampleScene.unity";
     private const float TargetBackgroundHeight = 75f;
 
+    [InitializeOnLoadMethod]
+    private static void QueuePrismPreview()
+    {
+        EditorApplication.delayCall += () => {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode && System.IO.File.Exists("Library/PrismPreview.request"))
+                RenderPrismPreview();
+        };
+    }
+
+    [MenuItem("Battlefield/Preview Prism Atmosphere")]
+    public static void RenderPrismPreview()
+    {
+        Scene scene = EditorSceneManager.OpenPreviewScene(GameplayScenePath);
+        RenderTexture target = null;
+        Texture2D pixels = null;
+        RenderTexture previous = RenderTexture.active;
+        try
+        {
+            GameObject layout = null;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                bool selected = root.name == "Map1_Layout";
+                root.SetActive(selected);
+                if (selected) layout = root;
+            }
+            if (layout == null) throw new System.Exception("Missing Map1_Layout");
+            GameplayManager.DecoratePrism(layout.transform);
+            Transform decor = layout.transform.Find("PrismAtmosphere");
+            if (decor == null || decor.GetComponentsInChildren<Collider2D>().Length != 0)
+                throw new System.Exception("Decoration missing or unexpected blocking collider.");
+            int count = decor.childCount;
+            GameplayManager.DecoratePrism(layout.transform);
+            if (decor.childCount != count) throw new System.Exception("Decoration duplicated.");
+            var go = new GameObject("PrismPreviewCamera", typeof(Camera));
+            SceneManager.MoveGameObjectToScene(go, scene);
+            Camera camera = go.GetComponent<Camera>();
+            camera.scene = scene;
+            camera.overrideSceneCullingMask = EditorSceneManager.GetSceneCullingMask(scene);
+            camera.enabled = false; camera.orthographic = true; camera.orthographicSize = 39;
+            camera.transform.position = new Vector3(0, 0, -100);
+            camera.farClipPlane = 200; camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(0.025f, 0.03f, 0.07f);
+            Material unlit = decor.GetComponentInChildren<SpriteRenderer>().sharedMaterial;
+            foreach (SpriteRenderer renderer in layout.GetComponentsInChildren<SpriteRenderer>()) renderer.sharedMaterial = unlit;
+            target = new RenderTexture(1400, 840, 24);
+            target.Create(); camera.targetTexture = target;
+            camera.Render();
+            pixels = new Texture2D(1400, 840, TextureFormat.RGB24, false);
+            RenderTexture.active = target;
+            pixels.ReadPixels(new Rect(0, 0, 1400, 840), 0, 0); pixels.Apply();
+            System.IO.File.WriteAllBytes("Library/PrismPreview.png", pixels.EncodeToPNG());
+            System.IO.File.WriteAllText("Library/PrismPreview.txt", "PASS: " + count + " decorative elements, no added colliders, duplicate generation prevented.");
+        }
+        catch (System.Exception error) { System.IO.File.WriteAllText("Library/PrismPreview.txt", error.ToString()); Debug.LogException(error); }
+        finally
+        {
+            RenderTexture.active = previous;
+            if (pixels != null) DestroyImmediate(pixels);
+            if (target != null) { target.Release(); DestroyImmediate(target); }
+            EditorSceneManager.ClosePreviewScene(scene);
+        }
+    }
+
+    [MenuItem("Battlefield/Decorate Prism Atmosphere")]
+    public static void DecoratePrismAtmosphere()
+    {
+        GameObject layout = FindSceneRoot("Map1_Layout");
+        if (layout == null) { Debug.LogWarning("Open SampleScene to decorate Map1_Layout."); return; }
+        if (layout.transform.Find("PrismAtmosphere") != null) return;
+        GameplayManager.DecoratePrism(layout.transform);
+        Transform created = layout.transform.Find("PrismAtmosphere");
+        if (created != null) Undo.RegisterCreatedObjectUndo(created.gameObject, "Decorate Prism Atmosphere");
+        EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
+    }
+
     private struct RockPlacement
     {
         public Vector2 position;
