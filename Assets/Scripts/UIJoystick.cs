@@ -8,20 +8,19 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
     private RectTransform background;
     private RectTransform handle;
     private Vector2 inputVector;
+    private int activePointerId = int.MinValue;
 
     private void Awake()
     {
         Instance = this;
         background = GetComponent<RectTransform>();
-        if (transform.childCount > 0)
-        {
-            handle = transform.GetChild(0).GetComponent<RectTransform>();
-        }
+        // The first child may be the MOVE label, not the joystick handle.
+        handle = transform.Find("JoystickHandle") as RectTransform;
     }
 
     public virtual void OnDrag(PointerEventData ped)
     {
-        if (handle == null) return;
+        if (ped.pointerId != activePointerId) return;
         
         Vector2 pos;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(background, ped.position, ped.pressEventCamera, out pos))
@@ -34,7 +33,7 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
             inputVector = (inputVector.magnitude > 1.0f) ? inputVector.normalized : inputVector;
 
             // Move the handle
-            handle.anchoredPosition = new Vector2(
+            if (handle != null) handle.anchoredPosition = new Vector2(
                 inputVector.x * (background.sizeDelta.x / 2.5f),
                 inputVector.y * (background.sizeDelta.y / 2.5f));
         }
@@ -42,11 +41,15 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
 
     public virtual void OnPointerDown(PointerEventData ped)
     {
+        if (activePointerId != int.MinValue) return;
+        activePointerId = ped.pointerId;
         OnDrag(ped);
     }
 
     public virtual void OnPointerUp(PointerEventData ped)
     {
+        if (ped.pointerId != activePointerId) return;
+        activePointerId = int.MinValue;
         inputVector = Vector2.zero;
         if (handle != null)
             handle.anchoredPosition = Vector2.zero;
@@ -54,20 +57,26 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
 
     private void OnDisable()
     {
+        activePointerId = int.MinValue;
         inputVector = Vector2.zero;
         if (handle != null) handle.anchoredPosition = Vector2.zero;
     }
 
+    private void OnApplicationFocus(bool focused)
+    {
+        if (!focused) OnDisable();
+    }
+
     public float GetHorizontal()
     {
-        if (inputVector.x != 0) return inputVector.x;
+        if (activePointerId != int.MinValue) return inputVector.x;
         // Fallback for Keyboard testing in editor
         return Input.GetAxis("Horizontal");
     }
 
     public float GetVertical()
     {
-        if (inputVector.y != 0) return inputVector.y;
+        if (activePointerId != int.MinValue) return inputVector.y;
         return Input.GetAxis("Vertical");
     }
 }

@@ -10,6 +10,8 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 
     void Awake()
     {
+        var body = GetComponent<Rigidbody2D>();
+        if (body != null) body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         // PHASE 4: เพิ่มหางแสง (Trail) ให้กระสุนดูพุ่งเร็วและแรงขึ้น
         if (GetComponent<TrailRenderer>() == null)
         {

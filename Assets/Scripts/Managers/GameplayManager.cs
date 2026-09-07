@@ -38,7 +38,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     private void ApplySelectedMapLayout(int selectedMapIndex)
     {
-        GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
+        GameObject[] roots = gameObject.scene.GetRootGameObjects();
         for (int i = 0; i < 3; i++)
         {
             string layoutName = "Map" + i + "_Layout";
@@ -51,6 +51,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                 FitBackgroundToArena(renderer);
                 root.SetActive(i == selectedMapIndex);
                 if (i == 1 && i == selectedMapIndex) DecoratePrism(root.transform);
+                // Authored cover needs collision even when procedural generation is disabled.
+                if (i == 2 && i == selectedMapIndex) PrepareMechCover(root.transform);
 
                 if (i == selectedMapIndex && renderer != null)
                     backgroundSprite = renderer;
@@ -254,10 +256,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             AudioManager.Instance.PlayBGM("BGM_Battle");
         }
 
+        // Scene setup must also run in offline previews, before spawning any player.
+        ApplySelectedMapLayout(GetCurrentMapIndex());
+
         if (PhotonNetwork.IsConnected && PhotonNetwork.LocalPlayer != null)
         {
-            int selectedMapIndex = GetCurrentMapIndex();
-            ApplySelectedMapLayout(selectedMapIndex);
             // สร้างสิ่งกีดขวาง (ทำแค่ครั้งเดียวตอนเริ่มเกม)
             if (autoGenerateMap)
             {
@@ -329,7 +332,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             // Spawn Player (Vertical Layout - ห่างกันมากขึ้นเพื่อไม่ให้โดนยิงทันที)
             Vector3 spawnPos = PhotonNetwork.IsMasterClient ? new Vector3(0f, -16f, 0f) : new Vector3(0f, 16f, 0f);
             Quaternion spawnRot = PhotonNetwork.IsMasterClient ? Quaternion.identity : Quaternion.Euler(0f, 0f, 180f);
-            PhotonNetwork.Instantiate(prefabName, spawnPos, spawnRot);
+            if (GetCurrentMapIndex() == 2) StartCoroutine(SpawnMechPlayerWhenClear(prefabName, spawnRot));
+            else PhotonNetwork.Instantiate(prefabName, spawnPos, spawnRot);
 
             if (playerInfoText != null)
                 playerInfoText.text = "Player: " + PhotonNetwork.NickName;
@@ -584,6 +588,10 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
         foreach (var obs in obstacles)
         {
+            // Use the visible sprite's collider, never an additional invisible box with a different size.
+            if (mapIndex == 2 && ((obs.type == "asteroid" && hasAuthoredMap2Rocks)
+                || (obs.type == "turret" && hasAuthoredMap2Turrets)
+                || (obs.type == "core" && hasAuthoredMap2RedCores))) continue;
             // สร้าง Core (ตัวกำแพงหลัก)
             GameObject box = new GameObject("Wall_" + obs.type + "_" + id);
             box.transform.position = new Vector3(obs.pos.x, obs.pos.y, 0);
@@ -609,6 +617,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                     (obs.type == "asteroid" && hasAuthoredMap2Rocks) ||
                     (obs.type == "turret" && hasAuthoredMap2Turrets) ||
                     (obs.type == "core" && hasAuthoredMap2RedCores);
+                if (obs.type == "asteroid") box.AddComponent<MoltenContactSurface>();
                 if (obs.type != "wall" && obs.type != "mech" && !usesAuthoredVisual)
                     CreateMechWarzoneLayerVisual(box.transform, obs.type, obs.scale, id, asteroidSprites, turretSprites, coreSprites);
             }
@@ -774,6 +783,140 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         renderer.sortingOrder = sortingOrder;
     }
 
+    public static void PrepareMechCover(Transform layout)
+    {
+        if (layout == null) return;
+        var rocks = layout.Find("RockObstacles");
+        // Stagger the inner cover around an open central route and two outer flanking routes.
+        Vector2[] innerRocks = {
+            new Vector2(-15, 11), new Vector2(15, -11), new Vector2(15, 11), new Vector2(-15, -11),
+            new Vector2(-35, 31), new Vector2(35, 31), new Vector2(-35, -31), new Vector2(35, -31),
+            new Vector2(-11, 33), new Vector2(11, -33), new Vector2(-36, 4), new Vector2(36, -4)
+        };
+        if (rocks != null)
+            for (int i = 0; i < innerRocks.Length; i++)
+            {
+                var rock = rocks.Find("RockObstacle_" + (i + 1).ToString("00"));
+                if (rock != null)
+                {
+                    rock.localPosition = innerRocks[i];
+                    FitMechObstacle(rock, i < 4 ? new Vector2(7, 6) : i < 8 ? new Vector2(10, 8) : new Vector2(6, 6));
+                }
+            }
+        var cores = layout.Find("RedCoreObstacles");
+        if (cores != null)
+            foreach (Transform core in cores)
+            {
+                FitMechObstacle(core, new Vector2(2.8f, 2.8f));
+                // Keep side cores within existing cover clusters, not across the outer flight lanes.
+                if (Mathf.Abs(core.localPosition.x) > 20f)
+                    core.localPosition = new Vector3(Mathf.Sign(core.localPosition.x) * 15, Mathf.Sign(core.localPosition.x) * 11, 0);
+                if (Mathf.Abs(core.localPosition.x) < 1f && Mathf.Abs(core.localPosition.y) > 15f)
+                    core.localPosition = new Vector3(0, Mathf.Sign(core.localPosition.y) * 25f, 0);
+            }
+        var turrets = layout.Find("TurretObstacles");
+        if (turrets != null)
+            foreach (Transform turret in turrets)
+            {
+                turret.localPosition = new Vector3(Mathf.Sign(turret.localPosition.x) * 35, 30, 0);
+                FitMechObstacle(turret, new Vector2(4, 3.5f));
+            }
+        // Preserve authored art and rotations; attach solid collision to those exact objects.
+        foreach (string groupName in new[] { "RockObstacles", "TurretObstacles", "RedCoreObstacles" })
+        {
+            var group = layout.Find(groupName);
+            if (group == null) continue;
+            foreach (Transform obstacle in group)
+            {
+                var renderer = obstacle.GetComponent<SpriteRenderer>();
+                if (renderer == null || renderer.sprite == null) continue;
+                var collider = obstacle.GetComponent<PolygonCollider2D>();
+                if (collider == null) collider = obstacle.gameObject.AddComponent<PolygonCollider2D>();
+                foreach (var other in obstacle.GetComponents<Collider2D>())
+                    if (other != collider) other.enabled = false;
+                collider.isTrigger = false;
+                collider.enabled = true;
+                // No extra damage on turrets or red cores: they are permanent cover only.
+                if (groupName == "RockObstacles" && obstacle.GetComponent<MoltenContactSurface>() == null)
+                    obstacle.gameObject.AddComponent<MoltenContactSurface>();
+            }
+        }
+        // Tiny decorative rocks used to look solid while ships could pass through them.
+        // Hide that visual-only layer so the playable lanes remain clear and unambiguous.
+        var debris = layout.Find("RockDecorations");
+        if (debris != null) debris.gameObject.SetActive(false);
+        Physics2D.SyncTransforms();
+    }
+
+    private static void FitMechObstacle(Transform obstacle, Vector2 maximumSize)
+    {
+        var art = obstacle.GetComponent<SpriteRenderer>();
+        if (art == null || art.sprite == null) return;
+        Vector2 size = art.sprite.bounds.size;
+        float angle = obstacle.localEulerAngles.z * Mathf.Deg2Rad;
+        float width = Mathf.Abs(Mathf.Cos(angle)) * size.x + Mathf.Abs(Mathf.Sin(angle)) * size.y;
+        float height = Mathf.Abs(Mathf.Sin(angle)) * size.x + Mathf.Abs(Mathf.Cos(angle)) * size.y;
+        float scale = Mathf.Min(maximumSize.x / Mathf.Max(.01f, width), maximumSize.y / Mathf.Max(.01f, height));
+        obstacle.localScale = new Vector3(scale, scale, 1);
+    }
+
+    private static readonly Vector2[] MechSpawnPads = {
+        new Vector2(-23, -20), new Vector2(23, 20), new Vector2(23, -20), new Vector2(-23, 20),
+        new Vector2(0, -14), new Vector2(0, 14), new Vector2(-24, -12), new Vector2(24, 12)
+    };
+
+    public static bool TryFindMechSpawn(GameObject ship, bool lowerSide, out Vector2 position)
+    {
+        // Clearance includes the entire solid hull around its pivot, even while the dead hull is disabled.
+        float radius = 2.5f;
+        if (ship != null)
+            foreach (var polygon in ship.GetComponentsInChildren<PolygonCollider2D>(true))
+                for (int path = 0; path < polygon.pathCount; path++)
+                    foreach (Vector2 point in polygon.GetPath(path))
+                        radius = Mathf.Max(radius, ((Vector2)polygon.transform.TransformPoint(point + polygon.offset) - (Vector2)ship.transform.position).magnitude);
+        radius += .65f;
+        var players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        float best = float.NegativeInfinity;
+        position = default;
+        // Pads first, then a deterministic fallback grid; never return an unchecked center position.
+        for (int i = 0; i < MechSpawnPads.Length + 121; i++)
+        {
+            int grid = i - MechSpawnPads.Length;
+            Vector2 candidate = i < MechSpawnPads.Length ? MechSpawnPads[i] : new Vector2(-30 + (grid % 11) * 6, -30 + (grid / 11) * 6);
+            if (Mathf.Abs(candidate.x) + radius > 39 || Mathf.Abs(candidate.y) + radius > ArenaHalfHeight) continue;
+            bool blocked = false;
+            foreach (var hit in Physics2D.OverlapCircleAll(candidate, radius))
+            {
+                if (ship != null && hit.transform.IsChildOf(ship.transform)) continue;
+                if (!hit.isTrigger || hit.GetComponentInParent<HazardController>() != null) { blocked = true; break; }
+            }
+            if (blocked) continue;
+            float nearest = 60;
+            foreach (var player in players)
+                if (!player.isDead && player.gameObject != ship)
+                    nearest = Mathf.Min(nearest, Vector2.Distance(candidate, player.transform.position));
+            if (nearest < 14) continue;
+            float score = nearest + (i < MechSpawnPads.Length ? 8 : 0) + ((candidate.y < 0) == lowerSide ? 3 : 0);
+            if (score > best) { best = score; position = candidate; }
+        }
+        return !float.IsNegativeInfinity(best);
+    }
+
+    private System.Collections.IEnumerator SpawnMechPlayerWhenClear(string prefabName, Quaternion rotation)
+    {
+        GameObject prefab = GetPrefab(prefabName);
+        Physics2D.SyncTransforms();
+        while (PhotonNetwork.InRoom && !isMatchEnding)
+        {
+            if (TryFindMechSpawn(prefab, PhotonNetwork.IsMasterClient, out Vector2 position))
+            {
+                PhotonNetwork.Instantiate(prefabName, position, rotation);
+                yield break;
+            }
+            yield return new WaitForSeconds(.5f);
+        }
+    }
+
     private void CreateMechWarzoneLayerVisual(Transform parent, string type, Vector2 collisionSize, int id,
         Sprite[] asteroidSprites, Sprite[] turretSprites, Sprite[] coreSprites)
     {
@@ -801,6 +944,9 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     private TMP_Text resultHeadline, resultScore;
     private bool resultShown;
     private TMP_Text battleSkillStatus, battleRivalName;
+    private Image combatStatusPanel;
+    private TMP_Text[] combatStatusLabels;
+    private int previousCombatStatus = -1;
 
     private RectTransform BattleRect(string name, Transform parent, float x, float y, float w, float h)
     {
@@ -877,6 +1023,14 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (resultPanel != null) resultPanel.transform.SetAsLastSibling();
         BuildBattleHealth("LocalHull", -438, true);
         BuildBattleHealth("RivalHull", 438, false);
+        combatStatusPanel = BattlePanel("CombatStatuses", battleHud, 0, -264, 640, 86, new Color(.035f, .065f, .12f, .85f));
+        combatStatusLabels = new TMP_Text[6];
+        for (int i = 0; i < combatStatusLabels.Length; i++)
+        {
+            combatStatusLabels[i] = BattleLabel("State" + i, combatStatusPanel.transform, "", 0, 0, 198, 32, 17);
+            combatStatusLabels[i].gameObject.SetActive(false);
+        }
+        combatStatusPanel.gameObject.SetActive(false);
         BattlePanel("MatchPlate", battleHud, 0, 291, 460, 102, new Color(0.035f, 0.065f, 0.12f, 0.9f));
         PlaceBattleControl(matchTimerText.transform, 0, 314);
         matchTimerText.fontSize = 32;
@@ -898,7 +1052,15 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         var exit = canvas.transform.Find("TopCenter/Btn_Exit");
         if (exit != null) PlaceBattleControl(exit, 553, 219);
         if (joystick != null) PlaceBattleControl(joystick.transform, -485, -203, 0.8f);
-        if (fireButton != null) PlaceBattleControl(fireButton.transform, 494, -233, 0.9f);
+        if (fireButton != null)
+        {
+            PlaceBattleControl(fireButton.transform, 494, -233, 0.9f);
+            fireButton.enableDragAim = true;
+            var aimHandle = BattlePanel("AimHandle", fireButton.transform, 0, 0, 18, 18, new Color(.4f, 1f, 1f, .85f));
+            fireButton.aimHandle = aimHandle.rectTransform;
+            foreach (var label in fireButton.GetComponentsInChildren<TMP_Text>()) label.gameObject.SetActive(false);
+            BattleLabel("AimHint", fireButton.transform, "DRAG TO AIM / FIRE", 0, -100, 230, 28, 16);
+        }
         if (skillButton != null)
         {
             PlaceBattleControl(skillButton.transform, 552, -67);
@@ -1197,12 +1359,54 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         }
     }
 
+    private void UpdateCombatStatuses()
+    {
+        if (combatStatusPanel == null || combatStatusLabels == null) return;
+        int mask = 0;
+        if (localPlayer != null && !localPlayer.isDead && !localPlayer.HasMatchEnded)
+        {
+            if (localPlayer.IsStunned) mask |= 1;
+            if (localPlayer.IsSpawnProtected) mask |= 2;
+            if (localPlayer.IsShielded) mask |= 4;
+            if (localPlayer.IsSlowed) mask |= 8;
+            if (localPlayer.isEnergyOverloaded) mask |= 16;
+            if (localPlayer.currentHp > 0 && localPlayer.currentHp / Mathf.Max(1f, localPlayer.maxHp) <= .35f) mask |= 32;
+        }
+        if (mask == previousCombatStatus) return;
+        previousCombatStatus = mask;
+        combatStatusPanel.gameObject.SetActive(mask != 0);
+        for (int i = 0; i < combatStatusLabels.Length; i++) combatStatusLabels[i].gameObject.SetActive(false);
+        int slot = 0;
+        for (int bit = 0; bit < 6; bit++)
+        {
+            if ((mask & (1 << bit)) == 0) continue;
+            var label = combatStatusLabels[slot];
+            label.gameObject.SetActive(true);
+            label.rectTransform.anchoredPosition = new Vector2((slot % 3 - 1) * 210, slot < 3 ? 19 : -19);
+            switch (bit)
+            {
+                case 0: label.text = "STUN / NO CONTROL"; label.color = new Color(1f, .8f, .25f); break;
+                case 1: label.text = "SPAWN PROTECTED"; label.color = new Color(.55f, 1f, .8f); break;
+                case 2: label.text = "SHIELD ACTIVE"; label.color = new Color(.35f, .85f, 1f); break;
+                case 3: label.text = "SLOW / SPEED -30%"; label.color = new Color(.6f, 1f, .4f); break;
+                case 4:
+                    label.text = (mask & 4) != 0 ? "OVERLOAD / RAPID FIRE" : "OVERLOAD / HP DRAIN";
+                    label.color = new Color(1f, .6f, .25f); break;
+                default: label.text = "LOW HULL"; label.color = new Color(1f, .35f, .4f); break;
+            }
+            slot++;
+        }
+    }
+
     private void UpdateSkillUI()
     {
+        UpdateCombatStatuses();
         if (battleSkillStatus != null)
         {
-            bool ready = localPlayer != null && !localPlayer.isDead && localPlayer.currentCooldown <= 0;
+            bool ready = localPlayer != null && !localPlayer.isDead && !localPlayer.IsStunned
+                && !localPlayer.HasMatchEnded && localPlayer.currentCooldown <= 0;
             battleSkillStatus.text = localPlayer == null ? "WAITING" : localPlayer.isDead ? "OFFLINE"
+                : localPlayer.HasMatchEnded ? "OFFLINE" : localPlayer.IsStunned ? "STUNNED"
                 : ready ? "READY" : Mathf.CeilToInt(localPlayer.currentCooldown) + "s";
             battleSkillStatus.color = ready ? new Color(0.23f, 0.82f, 0.92f) : Color.white;
         }

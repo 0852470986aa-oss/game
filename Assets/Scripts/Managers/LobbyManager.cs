@@ -102,12 +102,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
 
     // ข้อมูลยาน
     private int selectedShipIndex = 0;
-    private ShipData[] ships = new ShipData[]
-    {
-        new ShipData("Nebula Ghost", 70, 0.8f, 7.5f, "STUN", 0, "Images/ship1"),
-        new ShipData("Comet Crusher", 90, 1.0f, 5.0f, "SHIELD", 2800, "Images/ship2"),
-        new ShipData("Stellar Striker", 55, 1.5f, 9.0f, "NOVA", 3089, "Images/ship3"),
-    };
+    private ShipData[] ships = BattleLoadoutCatalog.Ships;
     // ข้อมูลผู้เล่นจากฐานข้อมูล
     private List<int> unlockedShips = new List<int> { 0 };
     private int equippedShipIndex = 0;
@@ -115,13 +110,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     // ข้อมูลสกิล
     private int selectedSkillIndex = 0;
     private int equippedSkillIndex = 0;
-    private SkillData[] skills = new SkillData[]
-    {
-        new SkillData("STUN", "Paralyze wave\nCooldown 12 sec", "Images/icon_stun"),
-        new SkillData("SHIELD", "Invincibility Bubble\nCooldown 20 sec", "Images/icon_shield"),
-        new SkillData("NOVA", "AoE Explosion\nCooldown 15 sec", "Images/icon_nova"),
-        new SkillData("SEEKER", "Homing Missile\nCooldown 10 sec", "Images/icon_seeker")
-    };
+    private SkillData[] skills = BattleLoadoutCatalog.Skills;
 
     [Header("=== Skill UI ===")]
     public TMP_Text skillDescText;
@@ -1146,8 +1135,10 @@ public class ShipData
     public string skill;
     public int price;
     public string spritePath;
+    public float shotInterval, acceleration, turnSpeed;
 
-    public ShipData(string name, int hp, float atk, float spd, string skill, int price, string spritePath)
+    public ShipData(string name, int hp, float atk, float spd, string skill, int price, string spritePath,
+        float shotInterval = .2f, float acceleration = 18f, float turnSpeed = 10f)
     {
         this.name = name;
         this.hp = hp;
@@ -1156,6 +1147,9 @@ public class ShipData
         this.skill = skill;
         this.price = price;
         this.spritePath = spritePath;
+        this.shotInterval = shotInterval;
+        this.acceleration = acceleration;
+        this.turnSpeed = turnSpeed;
     }
 }
 
@@ -1165,16 +1159,36 @@ public class SkillData
     public string name;
     public string description;
     public string iconPath;
+    public float cooldown;
 
-    public SkillData(string name, string desc, string iconPath)
+    public SkillData(string name, string desc, string iconPath, float cooldown = 10f)
     {
         this.name = name;
-        this.description = desc;
+        this.description = desc + "\nCooldown " + cooldown.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + " sec";
         this.iconPath = iconPath;
+        this.cooldown = cooldown;
     }
 }
 
 
+
+// Gameplay values are intentionally preserved here; balance changes now have one source.
+public static class BattleLoadoutCatalog
+{
+    public static readonly ShipData[] Ships = {
+        new ShipData("Nebula Ghost", 80, 1f, 6f, "STUN", 0, "Images/ship1", .12f, 25f, 14f),
+        new ShipData("Comet Crusher", 180, 2.5f, 3.5f, "SHIELD", 2800, "Images/ship2", .45f, 12f, 6f),
+        new ShipData("Stellar Striker", 120, 1.5f, 4.5f, "NOVA", 3089, "Images/ship3", .2f, 18f, 10f)
+    };
+    public static readonly SkillData[] Skills = {
+        new SkillData("STUN", "Paralyze wave", "Images/icon_stun", 12f),
+        new SkillData("SHIELD", "Invincibility bubble", "Images/icon_shield", 20f),
+        new SkillData("NOVA", "Area explosion", "Images/icon_nova", 15f),
+        new SkillData("SEEKER", "Homing missile", "Images/icon_seeker", 10f)
+    };
+    public static int ValidShip(int index) => index >= 0 && index < Ships.Length ? index : 0;
+    public static int ValidSkill(int index) => index >= 0 && index < Skills.Length ? index : 0;
+}
 
 // Runtime view keeps existing scene button bindings and inventory intact.
 public partial class LobbyManager

@@ -3,6 +3,19 @@ using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 
+// Static arena rocks exist on each client; only the owning ship applies contact damage.
+public class MoltenContactSurface : MonoBehaviour
+{
+    private float nextDamageTime;
+    private void OnCollisionStay2D(Collision2D collision)
+    {
+        var player = collision.gameObject.GetComponentInParent<PlayerController>();
+        if (player == null || !player.photonView.IsMine || player.isDead || Time.time < nextDamageTime) return;
+        nextDamageTime = Time.time + 1f;
+        player.TakeDamage(10f, -1);
+    }
+}
+
 public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCallback
 {
     public enum HazardType { Lightning, SlowZone, Meteor, MoltenAsteroid, EnergyCore }
@@ -11,6 +24,28 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
     private float lifetime = 5f;
     private float warningTime = 1.5f; // Time before effect happens
     private bool isEffectActive = false;
+    private bool permanent;
+    private readonly HashSet<PlayerController> zonePlayers = new HashSet<PlayerController>();
+
+    private bool UpdateZone(Collider2D other, bool inside)
+    {
+        if (type != HazardType.SlowZone && type != HazardType.EnergyCore) return false;
+        var player = other.GetComponentInParent<PlayerController>();
+        if (player != null && player.photonView.IsMine)
+        {
+            if (inside) zonePlayers.Add(player); else zonePlayers.Remove(player);
+            player.SetBattlefieldZone(GetInstanceID(), type == HazardType.EnergyCore, inside);
+        }
+        return true;
+    }
+
+    public override void OnDisable()
+    {
+        foreach (var player in zonePlayers)
+            if (player != null) player.SetBattlefieldZone(GetInstanceID(), type == HazardType.EnergyCore, false);
+        zonePlayers.Clear();
+        base.OnDisable();
+    }
     private readonly Dictionary<int, float> nextSlowRefreshTimes = new Dictionary<int, float>();
 
     // Visuals (to be set in Editor script)
@@ -20,6 +55,9 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 
     public void OnPhotonInstantiate(PhotonMessageInfo info)
     {
+        permanent = type == HazardType.EnergyCore || (type == HazardType.SlowZone
+            && photonView.InstantiationData != null && photonView.InstantiationData.Length > 0
+            && photonView.InstantiationData[0] is bool persistent && persistent);
         // Setup based on type
         if (type == HazardType.Lightning)
         {
@@ -95,6 +133,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             }
         }
 
+        if (permanent) yield break;
         yield return new WaitForSeconds(lifetime - warningTime);
 
         // 3. Cleanup
@@ -121,6 +160,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
+        if (isEffectActive && UpdateZone(hitInfo, true)) return;
         if (!isEffectActive || !photonView.IsMine) return;
 
         PlayerController hitPlayer = hitInfo.GetComponent<PlayerController>();
@@ -150,6 +190,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 
     void OnTriggerStay2D(Collider2D hitInfo)
     {
+        if (isEffectActive && UpdateZone(hitInfo, true)) return;
         if (!isEffectActive || !photonView.IsMine) return;
 
         PlayerController hitPlayer = hitInfo.GetComponent<PlayerController>();
@@ -172,6 +213,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 
     void OnTriggerExit2D(Collider2D hitInfo)
     {
+        if (UpdateZone(hitInfo, false)) return;
         if (!isEffectActive || !photonView.IsMine) return;
 
         PlayerController hitPlayer = hitInfo.GetComponent<PlayerController>();

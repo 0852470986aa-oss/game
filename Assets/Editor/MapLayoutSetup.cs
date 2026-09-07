@@ -620,3 +620,107 @@ public class MapLayoutSetup : EditorWindow
     }
 }
 
+// Render-only inspection: never starts gameplay, saves the active scene, or joins Photon.
+public static class MechThrusterPreview
+{
+    [MenuItem("Battlefield/Mech/Render Thrusters")]
+    public static void Render()
+    {
+        if (EditorApplication.isPlayingOrWillChangePlaymode)
+            throw new System.InvalidOperationException("Stop Play Mode before rendering the isolated thruster preview.");
+
+        Scene preview = EditorSceneManager.NewPreviewScene();
+        RenderTexture target = null;
+        Texture2D pixels = null;
+        RenderTexture previous = RenderTexture.active;
+        const string output = "Library/MechValidation/thrusters.png";
+        try
+        {
+            var container = new GameObject("DisabledGameplayPreview");
+            container.SetActive(false);
+            SceneManager.MoveGameObjectToScene(container, preview);
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var type = typeof(PlayerController);
+            var ships = new List<PlayerController>();
+            var hulls = new List<SpriteRenderer>();
+            float largestHeight = 0f;
+            float largestWidth = 0f;
+            for (int i = 1; i <= 3; i++)
+            {
+                GameObject prefab = Resources.Load<GameObject>("ShipPrefabs/Ship" + i);
+                if (prefab == null) throw new System.Exception("Missing preview prefab Ship" + i);
+                GameObject ship = Object.Instantiate(prefab, container.transform);
+                ship.name = "Ship" + i + "_FullThrustPreview";
+                // Inactive ancestry prevents Photon OnEnable; disabling components also prevents Start.
+                foreach (Behaviour behaviour in ship.GetComponentsInChildren<Behaviour>(true)) behaviour.enabled = false;
+                foreach (Rigidbody2D body in ship.GetComponentsInChildren<Rigidbody2D>(true)) body.simulated = false;
+                foreach (ParticleSystem particle in ship.GetComponentsInChildren<ParticleSystem>(true))
+                    particle.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+                foreach (Renderer child in ship.GetComponentsInChildren<Renderer>(true)) child.enabled = false;
+                var hull = ship.GetComponent<SpriteRenderer>();
+                var controller = ship.GetComponent<PlayerController>();
+                if (hull == null || hull.sprite == null || controller == null)
+                    throw new System.Exception("Missing hull/controller on Ship" + i);
+                hull.enabled = true;
+                hull.color = Color.white;
+                type.GetField("spriteRenderer", flags).SetValue(controller, hull);
+                type.GetField("movementInput", flags).SetValue(controller, Vector2.up);
+                type.GetField("displayedThrust", flags).SetValue(controller, 1f);
+                largestHeight = Mathf.Max(largestHeight, hull.sprite.bounds.size.y * Mathf.Abs(ship.transform.lossyScale.y));
+                largestWidth = Mathf.Max(largestWidth, hull.sprite.bounds.size.x * Mathf.Abs(ship.transform.lossyScale.x));
+                ships.Add(controller);
+                hulls.Add(hull);
+            }
+
+            float spacing = Mathf.Max(largestWidth * 1.1f, largestHeight * .74f);
+            container.SetActive(true);
+            Bounds frame = new Bounds(Vector3.zero, Vector3.zero);
+            bool first = true;
+            for (int i = 0; i < ships.Count; i++)
+            {
+                ships[i].transform.position = new Vector3((i - 1) * spacing, 0, 0) - hulls[i].bounds.center;
+                // Keep remote/offline preview at full thrust without running Update or network code.
+                type.GetField("previousVfxPosition", flags).SetValue(ships[i], ships[i].transform.position - Vector3.up * 1000f);
+                type.GetMethod("LateUpdate", flags).Invoke(ships[i], null);
+                foreach (SpriteRenderer renderer in ships[i].GetComponentsInChildren<SpriteRenderer>())
+                {
+                    if (!renderer.enabled) continue;
+                    if (first) { frame = renderer.bounds; first = false; }
+                    else frame.Encapsulate(renderer.bounds);
+                }
+            }
+
+            var cameraObject = new GameObject("IsolatedThrusterCamera", typeof(Camera));
+            SceneManager.MoveGameObjectToScene(cameraObject, preview);
+            Camera camera = cameraObject.GetComponent<Camera>();
+            camera.scene = preview;
+            camera.overrideSceneCullingMask = EditorSceneManager.GetSceneCullingMask(preview);
+            camera.enabled = false;
+            camera.orthographic = true;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = new Color(.018f, .033f, .07f, 1);
+            camera.transform.position = new Vector3(frame.center.x, frame.center.y, -20);
+            camera.aspect = 2f;
+            camera.orthographicSize = Mathf.Max(frame.extents.y, frame.extents.x / camera.aspect) * 1.08f;
+            target = new RenderTexture(2000, 1000, 24);
+            target.Create();
+            camera.targetTexture = target;
+            camera.Render();
+            RenderTexture.active = target;
+            pixels = new Texture2D(2000, 1000, TextureFormat.RGB24, false);
+            pixels.ReadPixels(new Rect(0, 0, 2000, 1000), 0, 0);
+            pixels.Apply();
+            System.IO.Directory.CreateDirectory("Library/MechValidation");
+            System.IO.File.WriteAllBytes(output, pixels.EncodeToPNG());
+            Debug.Log("Thruster preview rendered (Ship1 / Ship2 / Ship3, full thrust): " + output);
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            if (pixels != null) Object.DestroyImmediate(pixels);
+            if (target != null) { target.Release(); Object.DestroyImmediate(target); }
+            EditorSceneManager.ClosePreviewScene(preview);
+        }
+    }
+}
+

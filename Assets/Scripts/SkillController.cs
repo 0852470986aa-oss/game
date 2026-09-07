@@ -85,6 +85,8 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
     void Update()
     {
         if (!photonView.IsMine) return;
+        if (isDestroyed) return;
+        Vector2 movementStart = transform.position;
 
         if (behavior == SkillBehavior.StunWave)
         {
@@ -110,6 +112,18 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             }
         }
         // Nova Blast ไม่ต้องขยับ เพราะจะขยายตัวหรือคงที่
+        if (behavior == SkillBehavior.SeekerMissile || behavior == SkillBehavior.StunWave)
+        {
+            Vector2 travel = (Vector2)transform.position - movementStart;
+            foreach (var hit in Physics2D.RaycastAll(movementStart, travel.normalized, travel.magnitude))
+            {
+                if (hit.collider.isTrigger || hit.collider.GetComponentInParent<PlayerController>() != null) continue;
+                if (hit.collider.transform.IsChildOf(transform)) continue;
+                transform.position = hit.point;
+                OnTriggerEnter2D(hit.collider);
+                if (isDestroyed) return;
+            }
+        }
         if (behavior == SkillBehavior.NovaBlast && warningVisual != null && !novaArmed)
         {
             // ให้วงกลมคำเตือนกระพริบ

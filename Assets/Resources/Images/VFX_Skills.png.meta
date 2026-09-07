@@ -1,253 +1,253 @@
 fileFormatVersion: 2
-guid: f07c872811219bf4ebd03fcb3189a2af
+guid: d09ee9f83b3d489408f6102a7238f0ef
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -549374950969206922
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_0
+      213: -9195436002208125222
+    second: VFX_Skills_0
   - first:
-      213: -3818716476202463981
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_1
+      213: 4134710237793518646
+    second: VFX_Skills_1
   - first:
-      213: 8066385585461385408
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_2
+      213: -7773917164979425736
+    second: VFX_Skills_2
   - first:
-      213: 8965010839386489355
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_3
+      213: -907760025381380373
+    second: VFX_Skills_3
   - first:
-      213: -949280546210364345
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_4
+      213: -146897874051811060
+    second: VFX_Skills_4
   - first:
-      213: 3021923151493085981
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_5
+      213: 5300211650437769211
+    second: VFX_Skills_5
   - first:
-      213: 4401689809237545221
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_6
+      213: -8705736836083673961
+    second: VFX_Skills_6
   - first:
-      213: -3383554662421993590
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_7
+      213: 4645728105538393047
+    second: VFX_Skills_7
   - first:
-      213: 8150461286944031391
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_8
+      213: 7427769636091304078
+    second: VFX_Skills_8
   - first:
-      213: -244135646846178203
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_9
+      213: -7842787965015755438
+    second: VFX_Skills_9
   - first:
-      213: -9173806690703980118
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_10
+      213: 4830184609335295895
+    second: VFX_Skills_10
   - first:
-      213: -7251942203842117418
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_11
+      213: -4579274489931388152
+    second: VFX_Skills_11
   - first:
-      213: -8852232130975233519
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_12
+      213: -74500032245941460
+    second: VFX_Skills_12
   - first:
-      213: -8887699878959474426
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_13
+      213: -319774164379276397
+    second: VFX_Skills_13
   - first:
-      213: 6152019499632013881
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_14
+      213: 8353395849111290159
+    second: VFX_Skills_14
   - first:
-      213: -8772185548637523158
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_15
+      213: -355932502892658759
+    second: VFX_Skills_15
   - first:
-      213: -942898595418356469
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_16
+      213: -7703971301271376292
+    second: VFX_Skills_16
   - first:
-      213: -8119954344079299063
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_17
+      213: -5952194890900258789
+    second: VFX_Skills_17
   - first:
-      213: 3038045896527211727
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_18
+      213: -6301425129996370300
+    second: VFX_Skills_18
   - first:
-      213: -1937803949343279078
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_19
+      213: 6820998168541139240
+    second: VFX_Skills_19
   - first:
-      213: 5548166027486491999
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_20
+      213: 9092354135924616965
+    second: VFX_Skills_20
   - first:
-      213: -8608196567005178800
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_21
+      213: 6055433873987632712
+    second: VFX_Skills_21
   - first:
-      213: 8902333050606676908
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_22
+      213: -7626550470839636033
+    second: VFX_Skills_22
   - first:
-      213: -4149849312018671117
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_23
+      213: -4376972531777484275
+    second: VFX_Skills_23
   - first:
-      213: 710361453498162932
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_24
+      213: -5917451054404959987
+    second: VFX_Skills_24
   - first:
-      213: 5696971755928028013
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_25
+      213: -157724188097342325
+    second: VFX_Skills_25
   - first:
-      213: -6639554325177465103
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_26
+      213: 2255263504794739882
+    second: VFX_Skills_26
   - first:
-      213: -6366147745804165252
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_27
+      213: 8277068729885958451
+    second: VFX_Skills_27
   - first:
-      213: -1233052612409133783
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_28
+      213: 7490554516214463432
+    second: VFX_Skills_28
   - first:
-      213: -5691040504397732680
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_29
+      213: -7816846677865518732
+    second: VFX_Skills_29
   - first:
-      213: -1173141522645508474
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_30
+      213: 4493761180605988167
+    second: VFX_Skills_30
   - first:
-      213: -1750934105027930001
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_31
+      213: -7856954444072737003
+    second: VFX_Skills_31
   - first:
-      213: 6719401940324434005
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_32
+      213: -8894634985099412291
+    second: VFX_Skills_32
   - first:
-      213: 6415205753887998578
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_33
+      213: 3509611037733193150
+    second: VFX_Skills_33
   - first:
-      213: 3154196917938707952
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_34
+      213: -1513364643494810503
+    second: VFX_Skills_34
   - first:
-      213: 3480282069516506011
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_35
+      213: 1696556407990743203
+    second: VFX_Skills_35
   - first:
-      213: 5613425150420598759
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_36
+      213: -482788596211911387
+    second: VFX_Skills_36
   - first:
-      213: -975848580641970961
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_37
+      213: 6528916092592577742
+    second: VFX_Skills_37
   - first:
-      213: 2517070955825192563
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_38
+      213: 6655356752740233051
+    second: VFX_Skills_38
   - first:
-      213: -5792838343777999483
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_39
+      213: 8830555295588831163
+    second: VFX_Skills_39
   - first:
-      213: 1327053878987718099
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_40
+      213: 5174522016195489572
+    second: VFX_Skills_40
   - first:
-      213: -2604969336096290147
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_41
+      213: -6591011820599312223
+    second: VFX_Skills_41
   - first:
-      213: 6314062787081380960
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_42
+      213: 9143457619988981933
+    second: VFX_Skills_42
   - first:
-      213: -5088208714503326207
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_43
+      213: -642325265431664963
+    second: VFX_Skills_43
   - first:
-      213: 5510827760850464697
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_44
+      213: 4494793464998895132
+    second: VFX_Skills_44
   - first:
-      213: 8184249214674444492
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_45
+      213: 6496165892549608777
+    second: VFX_Skills_45
   - first:
-      213: -7267915299949968782
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_46
+      213: 2018494619068132251
+    second: VFX_Skills_46
   - first:
-      213: 6060293458616162345
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_47
+      213: -8644719519452966662
+    second: VFX_Skills_47
   - first:
-      213: 7439670319687587289
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_48
+      213: 5428821058173511243
+    second: VFX_Skills_48
   - first:
-      213: 5016408449279906099
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_49
+      213: 585897994621887521
+    second: VFX_Skills_49
   - first:
-      213: 4178692603177648337
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_50
+      213: -696691810839845080
+    second: VFX_Skills_50
   - first:
-      213: 8429910108010133163
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_51
+      213: 3011943127613974814
+    second: VFX_Skills_51
   - first:
-      213: 8597569779290217964
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_52
+      213: -758021661115208382
+    second: VFX_Skills_52
   - first:
-      213: 7212200822571316201
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_53
+      213: -7585407859178524105
+    second: VFX_Skills_53
   - first:
-      213: 5309527510851931739
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_54
+      213: -2704197586698338676
+    second: VFX_Skills_54
   - first:
-      213: -6119241304272386391
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_55
+      213: -7201477671429709387
+    second: VFX_Skills_55
   - first:
-      213: 1117983321087531989
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_56
+      213: -6851109885151315439
+    second: VFX_Skills_56
   - first:
-      213: -3599539964571997784
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_57
+      213: -8409710093352892810
+    second: VFX_Skills_57
   - first:
-      213: -184935064718678624
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_58
+      213: -3832167277858897143
+    second: VFX_Skills_58
   - first:
-      213: -2725864387006970146
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_59
+      213: -8018953493127157969
+    second: VFX_Skills_59
   - first:
-      213: 4555172606889436835
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_60
+      213: -7054023999362580016
+    second: VFX_Skills_60
   - first:
-      213: -172195977751562071
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_61
+      213: -1699859341866170653
+    second: VFX_Skills_61
   - first:
-      213: -4430195140497707794
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_62
+      213: 2525088629036538993
+    second: VFX_Skills_62
   - first:
-      213: -2139396736362868726
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_63
+      213: -6579337721573780526
+    second: VFX_Skills_63
   - first:
-      213: 6141114449368035174
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_64
+      213: 8616210137746483592
+    second: VFX_Skills_64
   - first:
-      213: -3812771741244375271
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_65
+      213: 3618794114512575535
+    second: VFX_Skills_65
   - first:
-      213: 642105262481502484
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_66
+      213: 9162859509998930311
+    second: VFX_Skills_66
   - first:
-      213: -7119759710904861610
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_67
+      213: -5398108176507679039
+    second: VFX_Skills_67
   - first:
-      213: -6999923953110936015
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_68
+      213: 4434914529213397819
+    second: VFX_Skills_68
   - first:
-      213: 9139655815252087022
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_69
+      213: 5260205417115069244
+    second: VFX_Skills_69
   - first:
-      213: -7745905317612768717
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_70
+      213: -959796956749083043
+    second: VFX_Skills_70
   - first:
-      213: 8464807729512492576
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_71
+      213: -2605577050515440974
+    second: VFX_Skills_71
   - first:
-      213: -5485079199380654634
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_72
+      213: 8789555790919343604
+    second: VFX_Skills_72
   - first:
-      213: 673290606966162619
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_73
+      213: 8411031429181605336
+    second: VFX_Skills_73
   - first:
-      213: 5658004794690933227
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_74
+      213: -9207630193265309888
+    second: VFX_Skills_74
   - first:
-      213: -993296157379160242
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_75
+      213: -7057169928272092817
+    second: VFX_Skills_75
   - first:
-      213: 3485222150298443139
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_76
+      213: 8804878254706923136
+    second: VFX_Skills_76
   - first:
-      213: 7732554721668282205
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_77
+      213: 4013699828199593493
+    second: VFX_Skills_77
   - first:
-      213: -571410571584103797
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_78
+      213: 2867265438047240274
+    second: VFX_Skills_78
   - first:
-      213: 8401411204989349707
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_79
+      213: 3743909478064339823
+    second: VFX_Skills_79
   - first:
-      213: 2314358378818113722
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_80
+      213: -6748709794183969199
+    second: VFX_Skills_80
   - first:
-      213: 5656831433004961304
-    second: file_00000000dfb88207868256dd1a037295-Photoroom_81
+      213: -6671825400844450827
+    second: VFX_Skills_81
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -382,7 +382,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_0
+      name: VFX_Skills_0
       rect:
         serializedVersion: 2
         x: 0
@@ -397,14 +397,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6779bfe846a3068f0800000000000000
-      internalID: -549374950969206922
+      spriteID: adeeb8decaf336080800000000000000
+      internalID: -9195436002208125222
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_1
+      name: VFX_Skills_1
       rect:
         serializedVersion: 2
         x: 139
@@ -419,14 +419,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 31d450ae891310bc0800000000000000
-      internalID: -3818716476202463981
+      spriteID: 6348adcfd01716930800000000000000
+      internalID: 4134710237793518646
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_2
+      name: VFX_Skills_2
       rect:
         serializedVersion: 2
         x: 688
@@ -441,14 +441,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0c8d1c2d3fe81ff60800000000000000
-      internalID: 8066385585461385408
+      spriteID: 83ee614c68f7d1490800000000000000
+      internalID: -7773917164979425736
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_3
+      name: VFX_Skills_3
       rect:
         serializedVersion: 2
         x: 783
@@ -463,14 +463,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b0288291cdd1a6c70800000000000000
-      internalID: 8965010839386489355
+      spriteID: beed7d1011df663f0800000000000000
+      internalID: -907760025381380373
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_4
+      name: VFX_Skills_4
       rect:
         serializedVersion: 2
         x: 30
@@ -485,14 +485,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 74441fa6f5a73d2f0800000000000000
-      internalID: -949280546210364345
+      spriteID: c09b1ee692d16fdf0800000000000000
+      internalID: -146897874051811060
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_5
+      name: VFX_Skills_5
       rect:
         serializedVersion: 2
         x: 49
@@ -507,14 +507,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d1b364f681700f920800000000000000
-      internalID: 3021923151493085981
+      spriteID: bf7eab21a622e8940800000000000000
+      internalID: 5300211650437769211
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_6
+      name: VFX_Skills_6
       rect:
         serializedVersion: 2
         x: 78
@@ -529,14 +529,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5019f037f81f51d30800000000000000
-      internalID: 4401689809237545221
+      spriteID: 7941339f8720f2780800000000000000
+      internalID: -8705736836083673961
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_7
+      name: VFX_Skills_7
       rect:
         serializedVersion: 2
         x: 384
@@ -551,14 +551,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a87683c16f23b01d0800000000000000
-      internalID: -3383554662421993590
+      spriteID: 7d31aad0911f87040800000000000000
+      internalID: 4645728105538393047
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_8
+      name: VFX_Skills_8
       rect:
         serializedVersion: 2
         x: 644
@@ -573,14 +573,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f924fd38b514c1170800000000000000
-      internalID: 8150461286944031391
+      spriteID: e8897a8412db41760800000000000000
+      internalID: 7427769636091304078
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_9
+      name: VFX_Skills_9
       rect:
         serializedVersion: 2
         x: 44
@@ -595,14 +595,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 56c29b43ce7ac9cf0800000000000000
-      internalID: -244135646846178203
+      spriteID: 255f68016e1d82390800000000000000
+      internalID: -7842787965015755438
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_10
+      name: VFX_Skills_10
       rect:
         serializedVersion: 2
         x: 29
@@ -617,14 +617,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: aa9cc727b6710b080800000000000000
-      internalID: -9173806690703980118
+      spriteID: 79f3dfe8f43480340800000000000000
+      internalID: 4830184609335295895
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_11
+      name: VFX_Skills_11
       rect:
         serializedVersion: 2
         x: 70
@@ -639,14 +639,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6d0c350fcfceb5b90800000000000000
-      internalID: -7251942203842117418
+      spriteID: 80ba1aa0d162370c0800000000000000
+      internalID: -4579274489931388152
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_12
+      name: VFX_Skills_12
       rect:
         serializedVersion: 2
         x: 19
@@ -661,14 +661,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 11a0ceb27cd862580800000000000000
-      internalID: -8852232130975233519
+      spriteID: c2bb93a8d9257fef0800000000000000
+      internalID: -74500032245941460
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_13
+      name: VFX_Skills_13
       rect:
         serializedVersion: 2
         x: 19
@@ -683,14 +683,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 60996549c0c88a480800000000000000
-      internalID: -8887699878959474426
+      spriteID: 39b63db771fef8bf0800000000000000
+      internalID: -319774164379276397
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_14
+      name: VFX_Skills_14
       rect:
         serializedVersion: 2
         x: 19
@@ -705,14 +705,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 932b7ded32d506550800000000000000
-      internalID: 6152019499632013881
+      spriteID: f21408e34493de370800000000000000
+      internalID: 8353395849111290159
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_15
+      name: VFX_Skills_15
       rect:
         serializedVersion: 2
         x: 43
@@ -727,14 +727,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a2335a578bfe24680800000000000000
-      internalID: -8772185548637523158
+      spriteID: 9bf311146497f0bf0800000000000000
+      internalID: -355932502892658759
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_16
+      name: VFX_Skills_16
       rect:
         serializedVersion: 2
         x: 125
@@ -749,14 +749,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b05cfd029b62ae2f0800000000000000
-      internalID: -942898595418356469
+      spriteID: c5e6aeb3beef51590800000000000000
+      internalID: -7703971301271376292
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_17
+      name: VFX_Skills_17
       rect:
         serializedVersion: 2
         x: 231
@@ -771,14 +771,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 90e63c0ab80205f80800000000000000
-      internalID: -8119954344079299063
+      spriteID: b10cef5684e856da0800000000000000
+      internalID: -5952194890900258789
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_18
+      name: VFX_Skills_18
       rect:
         serializedVersion: 2
         x: 349
@@ -793,14 +793,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fcc66d985ae492a20800000000000000
-      internalID: 3038045896527211727
+      spriteID: 48eb8db0b37dc88a0800000000000000
+      internalID: -6301425129996370300
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_19
+      name: VFX_Skills_19
       rect:
         serializedVersion: 2
         x: 510
@@ -815,14 +815,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a187b0333998b15e0800000000000000
-      internalID: -1937803949343279078
+      spriteID: 8211c71f1bd09ae50800000000000000
+      internalID: 6820998168541139240
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_20
+      name: VFX_Skills_20
       rect:
         serializedVersion: 2
         x: 651
@@ -837,14 +837,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f55f8374b9b0ffc40800000000000000
-      internalID: 5548166027486491999
+      spriteID: 50f27dbc9e78e2e70800000000000000
+      internalID: 9092354135924616965
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_21
+      name: VFX_Skills_21
       rect:
         serializedVersion: 2
         x: 692
@@ -859,14 +859,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0545bea94da898880800000000000000
-      internalID: -8608196567005178800
+      spriteID: 84e76eb7609390450800000000000000
+      internalID: 6055433873987632712
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_22
+      name: VFX_Skills_22
       rect:
         serializedVersion: 2
         x: 702
@@ -881,14 +881,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cab61a13eb07b8b70800000000000000
-      internalID: 8902333050606676908
+      spriteID: fbfe30401cc092690800000000000000
+      internalID: -7626550470839636033
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_23
+      name: VFX_Skills_23
       rect:
         serializedVersion: 2
         x: 4
@@ -903,14 +903,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3f95abd9906c866c0800000000000000
-      internalID: -4149849312018671117
+      spriteID: d0ac2cb2caed143c0800000000000000
+      internalID: -4376972531777484275
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_24
+      name: VFX_Skills_24
       rect:
         serializedVersion: 2
         x: 44
@@ -925,14 +925,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4fe53e17af5bbd900800000000000000
-      internalID: 710361453498162932
+      spriteID: d018e663e9df0eda0800000000000000
+      internalID: -5917451054404959987
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_25
+      name: VFX_Skills_25
       rect:
         serializedVersion: 2
         x: 224
@@ -947,14 +947,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d63068fc0a5bf0f40800000000000000
-      internalID: 5696971755928028013
+      spriteID: b8498f3cfa6afcdf0800000000000000
+      internalID: -157724188097342325
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_26
+      name: VFX_Skills_26
       rect:
         serializedVersion: 2
         x: 318
@@ -969,14 +969,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1f683e4e4809bd3a0800000000000000
-      internalID: -6639554325177465103
+      spriteID: aa4613e653e4c4f10800000000000000
+      internalID: 2255263504794739882
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_27
+      name: VFX_Skills_27
       rect:
         serializedVersion: 2
         x: 400
@@ -991,14 +991,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c7f50bfba56e6a7a0800000000000000
-      internalID: -6366147745804165252
+      spriteID: 331a852f72e0ed270800000000000000
+      internalID: 8277068729885958451
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_28
+      name: VFX_Skills_28
       rect:
         serializedVersion: 2
         x: 525
@@ -1013,14 +1013,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9257cf79e2153eee0800000000000000
-      internalID: -1233052612409133783
+      spriteID: 8cb39a555abc3f760800000000000000
+      internalID: 7490554516214463432
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_29
+      name: VFX_Skills_29
       rect:
         serializedVersion: 2
         x: 643
@@ -1035,14 +1035,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8b4630d40dc5501b0800000000000000
-      internalID: -5691040504397732680
+      spriteID: 4792226ac5bf48390800000000000000
+      internalID: -7816846677865518732
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_30
+      name: VFX_Skills_30
       rect:
         serializedVersion: 2
         x: 760
@@ -1057,14 +1057,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 68e147f200a28bfe0800000000000000
-      internalID: -1173141522645508474
+      spriteID: 74db57b1cfb0d5e30800000000000000
+      internalID: 4493761180605988167
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_31
+      name: VFX_Skills_31
       rect:
         serializedVersion: 2
         x: 116
@@ -1079,14 +1079,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f6891b455be63b7e0800000000000000
-      internalID: -1750934105027930001
+      spriteID: 5172e90af8d76f290800000000000000
+      internalID: -7856954444072737003
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_32
+      name: VFX_Skills_32
       rect:
         serializedVersion: 2
         x: 34
@@ -1101,14 +1101,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 550cb1cb67c104d50800000000000000
-      internalID: 6719401940324434005
+      spriteID: dbc336a5b98ef8480800000000000000
+      internalID: -8894634985099412291
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_33
+      name: VFX_Skills_33
       rect:
         serializedVersion: 2
         x: 19
@@ -1123,14 +1123,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2724989d4a3670950800000000000000
-      internalID: 6415205753887998578
+      spriteID: eb580e3e4a4a4b030800000000000000
+      internalID: 3509611037733193150
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_34
+      name: VFX_Skills_34
       rect:
         serializedVersion: 2
         x: 20
@@ -1145,14 +1145,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0fd5e5d9265f5cb20800000000000000
-      internalID: 3154196917938707952
+      spriteID: 97c2bd8ffd27ffae0800000000000000
+      internalID: -1513364643494810503
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_35
+      name: VFX_Skills_35
       rect:
         serializedVersion: 2
         x: 45
@@ -1167,14 +1167,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b9351b75a127c4030800000000000000
-      internalID: 3480282069516506011
+      spriteID: 3a073b770116b8710800000000000000
+      internalID: 1696556407990743203
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_36
+      name: VFX_Skills_36
       rect:
         serializedVersion: 2
         x: 218
@@ -1189,14 +1189,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7ef3010ee64e6ed40800000000000000
-      internalID: 5613425150420598759
+      spriteID: 525fd25645acc49f0800000000000000
+      internalID: -482788596211911387
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_37
+      name: VFX_Skills_37
       rect:
         serializedVersion: 2
         x: 315
@@ -1211,14 +1211,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: fe4244cd2e61572f0800000000000000
-      internalID: -975848580641970961
+      spriteID: eccdf43389e5b9a50800000000000000
+      internalID: 6528916092592577742
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_38
+      name: VFX_Skills_38
       rect:
         serializedVersion: 2
         x: 359
@@ -1233,14 +1233,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 37ed964c2be6ee220800000000000000
-      internalID: 2517070955825192563
+      spriteID: b5f249c74b39c5c50800000000000000
+      internalID: 6655356752740233051
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_39
+      name: VFX_Skills_39
       rect:
         serializedVersion: 2
         x: 495
@@ -1255,14 +1255,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 585a9d5d734bb9fa0800000000000000
-      internalID: -5792838343777999483
+      spriteID: bbf440b414f6c8a70800000000000000
+      internalID: 8830555295588831163
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_40
+      name: VFX_Skills_40
       rect:
         serializedVersion: 2
         x: 629
@@ -1277,14 +1277,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3ddfddec874aa6210800000000000000
-      internalID: 1327053878987718099
+      spriteID: 42f25c1ab589fc740800000000000000
+      internalID: 5174522016195489572
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_41
+      name: VFX_Skills_41
       rect:
         serializedVersion: 2
         x: 46
@@ -1299,14 +1299,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d9a0237c03a49dbd0800000000000000
-      internalID: -2604969336096290147
+      spriteID: 1a007ca7ba50884a0800000000000000
+      internalID: -6591011820599312223
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_42
+      name: VFX_Skills_42
       rect:
         serializedVersion: 2
         x: 116
@@ -1321,14 +1321,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 064af79c6ae00a750800000000000000
-      internalID: 6314062787081380960
+      spriteID: da82842e24614ee70800000000000000
+      internalID: 9143457619988981933
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_43
+      name: VFX_Skills_43
       rect:
         serializedVersion: 2
         x: 588
@@ -1343,14 +1343,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1067bf4f12d0369b0800000000000000
-      internalID: -5088208714503326207
+      spriteID: db6efa303900617f0800000000000000
+      internalID: -642325265431664963
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_44
+      name: VFX_Skills_44
       rect:
         serializedVersion: 2
         x: 44
@@ -1365,14 +1365,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9bf6adf96a46a7c40800000000000000
-      internalID: 5510827760850464697
+      spriteID: c1e910c87d6b06e30800000000000000
+      internalID: 4494793464998895132
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_45
+      name: VFX_Skills_45
       rect:
         serializedVersion: 2
         x: 331
@@ -1387,14 +1387,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: cc0a0f97c4b449170800000000000000
-      internalID: 8184249214674444492
+      spriteID: 9458d6b0674072a50800000000000000
+      internalID: 6496165892549608777
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_46
+      name: VFX_Skills_46
       rect:
         serializedVersion: 2
         x: 512
@@ -1409,14 +1409,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2720bd0ba8d232b90800000000000000
-      internalID: -7267915299949968782
+      spriteID: b9be79e5922230c10800000000000000
+      internalID: 2018494619068132251
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_47
+      name: VFX_Skills_47
       rect:
         serializedVersion: 2
         x: 38
@@ -1431,14 +1431,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9289073bacc7a1450800000000000000
-      internalID: 6060293458616162345
+      spriteID: af0de141669c70880800000000000000
+      internalID: -8644719519452966662
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_48
+      name: VFX_Skills_48
       rect:
         serializedVersion: 2
         x: 78
@@ -1453,14 +1453,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9d5defa1db40f3760800000000000000
-      internalID: 7439670319687587289
+      spriteID: b46a7914dfb075b40800000000000000
+      internalID: 5428821058173511243
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_49
+      name: VFX_Skills_49
       rect:
         serializedVersion: 2
         x: 19
@@ -1475,14 +1475,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 331d89318ecdd9540800000000000000
-      internalID: 5016408449279906099
+      spriteID: 1242d043f17812800800000000000000
+      internalID: 585897994621887521
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_50
+      name: VFX_Skills_50
       rect:
         serializedVersion: 2
         x: 45
@@ -1497,14 +1497,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 1d0c4fd68c2bdf930800000000000000
-      internalID: 4178692603177648337
+      spriteID: 827a7f04d7ad456f0800000000000000
+      internalID: -696691810839845080
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_51
+      name: VFX_Skills_51
       rect:
         serializedVersion: 2
         x: 95
@@ -1519,14 +1519,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ba63b64649e0df470800000000000000
-      internalID: 8429910108010133163
+      spriteID: e192c1d01529cc920800000000000000
+      internalID: 3011943127613974814
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_52
+      name: VFX_Skills_52
       rect:
         serializedVersion: 2
         x: 206
@@ -1541,14 +1541,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ced1a329924b05770800000000000000
-      internalID: 8597569779290217964
+      spriteID: 24d2d2db057fa75f0800000000000000
+      internalID: -758021661115208382
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_53
+      name: VFX_Skills_53
       rect:
         serializedVersion: 2
         x: 305
@@ -1563,14 +1563,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9e3b42eaf62e61460800000000000000
-      internalID: 7212200822571316201
+      spriteID: 7323535cdb73bb690800000000000000
+      internalID: -7585407859178524105
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_54
+      name: VFX_Skills_54
       rect:
         serializedVersion: 2
         x: 503
@@ -1585,14 +1585,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b5e4e79d32b3fa940800000000000000
-      internalID: 5309527510851931739
+      spriteID: c8e70625f92c87ad0800000000000000
+      internalID: -2704197586698338676
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_55
+      name: VFX_Skills_55
       rect:
         serializedVersion: 2
         x: 591
@@ -1607,14 +1607,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9a642f37476141ba0800000000000000
-      internalID: -6119241304272386391
+      spriteID: 5b1668086363f0c90800000000000000
+      internalID: -7201477671429709387
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_56
+      name: VFX_Skills_56
       rect:
         serializedVersion: 2
         x: 44
@@ -1629,14 +1629,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5dbdb3e38efd38f00800000000000000
-      internalID: 1117983321087531989
+      spriteID: 11a7362bbd7fbe0a0800000000000000
+      internalID: -6851109885151315439
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_57
+      name: VFX_Skills_57
       rect:
         serializedVersion: 2
         x: 778
@@ -1651,14 +1651,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 8a92dd0397ddb0ec0800000000000000
-      internalID: -3599539964571997784
+      spriteID: 6760fa50a35ba4b80800000000000000
+      internalID: -8409710093352892810
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_58
+      name: VFX_Skills_58
       rect:
         serializedVersion: 2
         x: 770
@@ -1673,14 +1673,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 0a5ede8d98afe6df0800000000000000
-      internalID: -184935064718678624
+      spriteID: 903485b1a2861dac0800000000000000
+      internalID: -3832167277858897143
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_59
+      name: VFX_Skills_59
       rect:
         serializedVersion: 2
         x: 40
@@ -1695,14 +1695,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ed6cf8248c8cb2ad0800000000000000
-      internalID: -2725864387006970146
+      spriteID: f2727c3c844f6b090800000000000000
+      internalID: -8018953493127157969
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_60
+      name: VFX_Skills_60
       rect:
         serializedVersion: 2
         x: 45
@@ -1717,14 +1717,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a62c340a59373f30800000000000000
-      internalID: 4555172606889436835
+      spriteID: 0d1c9e0eb821b1e90800000000000000
+      internalID: -7054023999362580016
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_61
+      name: VFX_Skills_61
       rect:
         serializedVersion: 2
         x: 19
@@ -1739,14 +1739,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 9a8fd5aabac3c9df0800000000000000
-      internalID: -172195977751562071
+      spriteID: 3e600ff4fe2e868e0800000000000000
+      internalID: -1699859341866170653
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_62
+      name: VFX_Skills_62
       rect:
         serializedVersion: 2
         x: 32
@@ -1761,14 +1761,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: eece8fcedf8c482c0800000000000000
-      internalID: -4430195140497707794
+      spriteID: 17cd918cabaea0320800000000000000
+      internalID: 2525088629036538993
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_63
+      name: VFX_Skills_63
       rect:
         serializedVersion: 2
         x: 46
@@ -1783,14 +1783,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: a001677d0065f42e0800000000000000
-      internalID: -2139396736362868726
+      spriteID: 2d35448733f71b4a0800000000000000
+      internalID: -6579337721573780526
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_64
+      name: VFX_Skills_64
       rect:
         serializedVersion: 2
         x: 67
@@ -1805,14 +1805,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 66fa99ffd0f993550800000000000000
-      internalID: 6141114449368035174
+      spriteID: 889af7a387de29770800000000000000
+      internalID: 8616210137746483592
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_65
+      name: VFX_Skills_65
       rect:
         serializedVersion: 2
         x: 126
@@ -1827,14 +1827,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 91f3b716d40561bc0800000000000000
-      internalID: -3812771741244375271
+      spriteID: f2cdbcee21a883230800000000000000
+      internalID: 3618794114512575535
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_66
+      name: VFX_Skills_66
       rect:
         serializedVersion: 2
         x: 135
@@ -1849,14 +1849,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 4117e9e855739e800800000000000000
-      internalID: 642105262481502484
+      spriteID: 789cb4c6d24092f70800000000000000
+      internalID: 9162859509998930311
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_67
+      name: VFX_Skills_67
       rect:
         serializedVersion: 2
         x: 442
@@ -1871,14 +1871,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 65cb069d348813d90800000000000000
-      internalID: -7119759710904861610
+      spriteID: 1cec020c6311615b0800000000000000
+      internalID: -5398108176507679039
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_68
+      name: VFX_Skills_68
       rect:
         serializedVersion: 2
         x: 458
@@ -1893,14 +1893,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 136131870464bde90800000000000000
-      internalID: -6999923953110936015
+      spriteID: b3bbbf2644bfb8d30800000000000000
+      internalID: 4434914529213397819
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_69
+      name: VFX_Skills_69
       rect:
         serializedVersion: 2
         x: 473
@@ -1915,14 +1915,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ee01f6d3a8496de70800000000000000
-      internalID: 9139655815252087022
+      spriteID: c3baab405f0000940800000000000000
+      internalID: 5260205417115069244
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_70
+      name: VFX_Skills_70
       rect:
         serializedVersion: 2
         x: 532
@@ -1937,14 +1937,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 332b1e73724018490800000000000000
-      internalID: -7745905317612768717
+      spriteID: d5e4878c0cd1ea2f0800000000000000
+      internalID: -959796956749083043
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_71
+      name: VFX_Skills_71
       rect:
         serializedVersion: 2
         x: 572
@@ -1959,14 +1959,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 02ea29118c9097570800000000000000
-      internalID: 8464807729512492576
+      spriteID: 2bafd1d3a7127dbd0800000000000000
+      internalID: -2605577050515440974
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_72
+      name: VFX_Skills_72
       rect:
         serializedVersion: 2
         x: 610
@@ -1981,14 +1981,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6d53804878511e3b0800000000000000
-      internalID: -5485079199380654634
+      spriteID: 4fd993b3c66caf970800000000000000
+      internalID: 8789555790919343604
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_73
+      name: VFX_Skills_73
       rect:
         serializedVersion: 2
         x: 618
@@ -2003,14 +2003,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: bb443d26d32085900800000000000000
-      internalID: 673290606966162619
+      spriteID: 8d50403758cf9b470800000000000000
+      internalID: 8411031429181605336
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_74
+      name: VFX_Skills_74
       rect:
         serializedVersion: 2
         x: 773
@@ -2025,14 +2025,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: be192052265458e40800000000000000
-      internalID: 5658004794690933227
+      spriteID: 04782439f1de73080800000000000000
+      internalID: -9207630193265309888
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_75
+      name: VFX_Skills_75
       rect:
         serializedVersion: 2
         x: 22
@@ -2047,14 +2047,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e4797a6586a1732f0800000000000000
-      internalID: -993296157379160242
+      spriteID: f61e5c93755ef0e90800000000000000
+      internalID: -7057169928272092817
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_76
+      name: VFX_Skills_76
       rect:
         serializedVersion: 2
         x: 280
@@ -2069,14 +2069,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 38d9cd7841ffd5030800000000000000
-      internalID: 3485222150298443139
+      spriteID: 0861e565f16313a70800000000000000
+      internalID: 8804878254706923136
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_77
+      name: VFX_Skills_77
       rect:
         serializedVersion: 2
         x: 459
@@ -2091,14 +2091,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d57be4fec8d8f4b60800000000000000
-      internalID: 7732554721668282205
+      spriteID: 51612ee6ab683b730800000000000000
+      internalID: 4013699828199593493
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_78
+      name: VFX_Skills_78
       rect:
         serializedVersion: 2
         x: 541
@@ -2113,14 +2113,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b8a93d3dc11f118f0800000000000000
-      internalID: -571410571584103797
+      spriteID: 2508f8779b29ac720800000000000000
+      internalID: 2867265438047240274
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_79
+      name: VFX_Skills_79
       rect:
         serializedVersion: 2
         x: 620
@@ -2135,14 +2135,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: b4f60657afec79470800000000000000
-      internalID: 8401411204989349707
+      spriteID: f6b3e3f85d905f330800000000000000
+      internalID: 3743909478064339823
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_80
+      name: VFX_Skills_80
       rect:
         serializedVersion: 2
         x: 697
@@ -2157,14 +2157,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ab0176cfea04e1020800000000000000
-      internalID: 2314358378818113722
+      spriteID: 1560779c234c752a0800000000000000
+      internalID: -6748709794183969199
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: file_00000000dfb88207868256dd1a037295-Photoroom_81
+      name: VFX_Skills_81
       rect:
         serializedVersion: 2
         x: 0
@@ -2179,8 +2179,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 81e4686973a118e40800000000000000
-      internalID: 5656831433004961304
+      spriteID: 5f30d33952ae863a0800000000000000
+      internalID: -6671825400844450827
       vertices: []
       indices: 
       edges: []
@@ -2199,88 +2199,88 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      file_00000000dfb88207868256dd1a037295-Photoroom_0: -549374950969206922
-      file_00000000dfb88207868256dd1a037295-Photoroom_1: -3818716476202463981
-      file_00000000dfb88207868256dd1a037295-Photoroom_10: -9173806690703980118
-      file_00000000dfb88207868256dd1a037295-Photoroom_11: -7251942203842117418
-      file_00000000dfb88207868256dd1a037295-Photoroom_12: -8852232130975233519
-      file_00000000dfb88207868256dd1a037295-Photoroom_13: -8887699878959474426
-      file_00000000dfb88207868256dd1a037295-Photoroom_14: 6152019499632013881
-      file_00000000dfb88207868256dd1a037295-Photoroom_15: -8772185548637523158
-      file_00000000dfb88207868256dd1a037295-Photoroom_16: -942898595418356469
-      file_00000000dfb88207868256dd1a037295-Photoroom_17: -8119954344079299063
-      file_00000000dfb88207868256dd1a037295-Photoroom_18: 3038045896527211727
-      file_00000000dfb88207868256dd1a037295-Photoroom_19: -1937803949343279078
-      file_00000000dfb88207868256dd1a037295-Photoroom_2: 8066385585461385408
-      file_00000000dfb88207868256dd1a037295-Photoroom_20: 5548166027486491999
-      file_00000000dfb88207868256dd1a037295-Photoroom_21: -8608196567005178800
-      file_00000000dfb88207868256dd1a037295-Photoroom_22: 8902333050606676908
-      file_00000000dfb88207868256dd1a037295-Photoroom_23: -4149849312018671117
-      file_00000000dfb88207868256dd1a037295-Photoroom_24: 710361453498162932
-      file_00000000dfb88207868256dd1a037295-Photoroom_25: 5696971755928028013
-      file_00000000dfb88207868256dd1a037295-Photoroom_26: -6639554325177465103
-      file_00000000dfb88207868256dd1a037295-Photoroom_27: -6366147745804165252
-      file_00000000dfb88207868256dd1a037295-Photoroom_28: -1233052612409133783
-      file_00000000dfb88207868256dd1a037295-Photoroom_29: -5691040504397732680
-      file_00000000dfb88207868256dd1a037295-Photoroom_3: 8965010839386489355
-      file_00000000dfb88207868256dd1a037295-Photoroom_30: -1173141522645508474
-      file_00000000dfb88207868256dd1a037295-Photoroom_31: -1750934105027930001
-      file_00000000dfb88207868256dd1a037295-Photoroom_32: 6719401940324434005
-      file_00000000dfb88207868256dd1a037295-Photoroom_33: 6415205753887998578
-      file_00000000dfb88207868256dd1a037295-Photoroom_34: 3154196917938707952
-      file_00000000dfb88207868256dd1a037295-Photoroom_35: 3480282069516506011
-      file_00000000dfb88207868256dd1a037295-Photoroom_36: 5613425150420598759
-      file_00000000dfb88207868256dd1a037295-Photoroom_37: -975848580641970961
-      file_00000000dfb88207868256dd1a037295-Photoroom_38: 2517070955825192563
-      file_00000000dfb88207868256dd1a037295-Photoroom_39: -5792838343777999483
-      file_00000000dfb88207868256dd1a037295-Photoroom_4: -949280546210364345
-      file_00000000dfb88207868256dd1a037295-Photoroom_40: 1327053878987718099
-      file_00000000dfb88207868256dd1a037295-Photoroom_41: -2604969336096290147
-      file_00000000dfb88207868256dd1a037295-Photoroom_42: 6314062787081380960
-      file_00000000dfb88207868256dd1a037295-Photoroom_43: -5088208714503326207
-      file_00000000dfb88207868256dd1a037295-Photoroom_44: 5510827760850464697
-      file_00000000dfb88207868256dd1a037295-Photoroom_45: 8184249214674444492
-      file_00000000dfb88207868256dd1a037295-Photoroom_46: -7267915299949968782
-      file_00000000dfb88207868256dd1a037295-Photoroom_47: 6060293458616162345
-      file_00000000dfb88207868256dd1a037295-Photoroom_48: 7439670319687587289
-      file_00000000dfb88207868256dd1a037295-Photoroom_49: 5016408449279906099
-      file_00000000dfb88207868256dd1a037295-Photoroom_5: 3021923151493085981
-      file_00000000dfb88207868256dd1a037295-Photoroom_50: 4178692603177648337
-      file_00000000dfb88207868256dd1a037295-Photoroom_51: 8429910108010133163
-      file_00000000dfb88207868256dd1a037295-Photoroom_52: 8597569779290217964
-      file_00000000dfb88207868256dd1a037295-Photoroom_53: 7212200822571316201
-      file_00000000dfb88207868256dd1a037295-Photoroom_54: 5309527510851931739
-      file_00000000dfb88207868256dd1a037295-Photoroom_55: -6119241304272386391
-      file_00000000dfb88207868256dd1a037295-Photoroom_56: 1117983321087531989
-      file_00000000dfb88207868256dd1a037295-Photoroom_57: -3599539964571997784
-      file_00000000dfb88207868256dd1a037295-Photoroom_58: -184935064718678624
-      file_00000000dfb88207868256dd1a037295-Photoroom_59: -2725864387006970146
-      file_00000000dfb88207868256dd1a037295-Photoroom_6: 4401689809237545221
-      file_00000000dfb88207868256dd1a037295-Photoroom_60: 4555172606889436835
-      file_00000000dfb88207868256dd1a037295-Photoroom_61: -172195977751562071
-      file_00000000dfb88207868256dd1a037295-Photoroom_62: -4430195140497707794
-      file_00000000dfb88207868256dd1a037295-Photoroom_63: -2139396736362868726
-      file_00000000dfb88207868256dd1a037295-Photoroom_64: 6141114449368035174
-      file_00000000dfb88207868256dd1a037295-Photoroom_65: -3812771741244375271
-      file_00000000dfb88207868256dd1a037295-Photoroom_66: 642105262481502484
-      file_00000000dfb88207868256dd1a037295-Photoroom_67: -7119759710904861610
-      file_00000000dfb88207868256dd1a037295-Photoroom_68: -6999923953110936015
-      file_00000000dfb88207868256dd1a037295-Photoroom_69: 9139655815252087022
-      file_00000000dfb88207868256dd1a037295-Photoroom_7: -3383554662421993590
-      file_00000000dfb88207868256dd1a037295-Photoroom_70: -7745905317612768717
-      file_00000000dfb88207868256dd1a037295-Photoroom_71: 8464807729512492576
-      file_00000000dfb88207868256dd1a037295-Photoroom_72: -5485079199380654634
-      file_00000000dfb88207868256dd1a037295-Photoroom_73: 673290606966162619
-      file_00000000dfb88207868256dd1a037295-Photoroom_74: 5658004794690933227
-      file_00000000dfb88207868256dd1a037295-Photoroom_75: -993296157379160242
-      file_00000000dfb88207868256dd1a037295-Photoroom_76: 3485222150298443139
-      file_00000000dfb88207868256dd1a037295-Photoroom_77: 7732554721668282205
-      file_00000000dfb88207868256dd1a037295-Photoroom_78: -571410571584103797
-      file_00000000dfb88207868256dd1a037295-Photoroom_79: 8401411204989349707
-      file_00000000dfb88207868256dd1a037295-Photoroom_8: 8150461286944031391
-      file_00000000dfb88207868256dd1a037295-Photoroom_80: 2314358378818113722
-      file_00000000dfb88207868256dd1a037295-Photoroom_81: 5656831433004961304
-      file_00000000dfb88207868256dd1a037295-Photoroom_9: -244135646846178203
+      VFX_Skills_0: -9195436002208125222
+      VFX_Skills_1: 4134710237793518646
+      VFX_Skills_10: 4830184609335295895
+      VFX_Skills_11: -4579274489931388152
+      VFX_Skills_12: -74500032245941460
+      VFX_Skills_13: -319774164379276397
+      VFX_Skills_14: 8353395849111290159
+      VFX_Skills_15: -355932502892658759
+      VFX_Skills_16: -7703971301271376292
+      VFX_Skills_17: -5952194890900258789
+      VFX_Skills_18: -6301425129996370300
+      VFX_Skills_19: 6820998168541139240
+      VFX_Skills_2: -7773917164979425736
+      VFX_Skills_20: 9092354135924616965
+      VFX_Skills_21: 6055433873987632712
+      VFX_Skills_22: -7626550470839636033
+      VFX_Skills_23: -4376972531777484275
+      VFX_Skills_24: -5917451054404959987
+      VFX_Skills_25: -157724188097342325
+      VFX_Skills_26: 2255263504794739882
+      VFX_Skills_27: 8277068729885958451
+      VFX_Skills_28: 7490554516214463432
+      VFX_Skills_29: -7816846677865518732
+      VFX_Skills_3: -907760025381380373
+      VFX_Skills_30: 4493761180605988167
+      VFX_Skills_31: -7856954444072737003
+      VFX_Skills_32: -8894634985099412291
+      VFX_Skills_33: 3509611037733193150
+      VFX_Skills_34: -1513364643494810503
+      VFX_Skills_35: 1696556407990743203
+      VFX_Skills_36: -482788596211911387
+      VFX_Skills_37: 6528916092592577742
+      VFX_Skills_38: 6655356752740233051
+      VFX_Skills_39: 8830555295588831163
+      VFX_Skills_4: -146897874051811060
+      VFX_Skills_40: 5174522016195489572
+      VFX_Skills_41: -6591011820599312223
+      VFX_Skills_42: 9143457619988981933
+      VFX_Skills_43: -642325265431664963
+      VFX_Skills_44: 4494793464998895132
+      VFX_Skills_45: 6496165892549608777
+      VFX_Skills_46: 2018494619068132251
+      VFX_Skills_47: -8644719519452966662
+      VFX_Skills_48: 5428821058173511243
+      VFX_Skills_49: 585897994621887521
+      VFX_Skills_5: 5300211650437769211
+      VFX_Skills_50: -696691810839845080
+      VFX_Skills_51: 3011943127613974814
+      VFX_Skills_52: -758021661115208382
+      VFX_Skills_53: -7585407859178524105
+      VFX_Skills_54: -2704197586698338676
+      VFX_Skills_55: -7201477671429709387
+      VFX_Skills_56: -6851109885151315439
+      VFX_Skills_57: -8409710093352892810
+      VFX_Skills_58: -3832167277858897143
+      VFX_Skills_59: -8018953493127157969
+      VFX_Skills_6: -8705736836083673961
+      VFX_Skills_60: -7054023999362580016
+      VFX_Skills_61: -1699859341866170653
+      VFX_Skills_62: 2525088629036538993
+      VFX_Skills_63: -6579337721573780526
+      VFX_Skills_64: 8616210137746483592
+      VFX_Skills_65: 3618794114512575535
+      VFX_Skills_66: 9162859509998930311
+      VFX_Skills_67: -5398108176507679039
+      VFX_Skills_68: 4434914529213397819
+      VFX_Skills_69: 5260205417115069244
+      VFX_Skills_7: 4645728105538393047
+      VFX_Skills_70: -959796956749083043
+      VFX_Skills_71: -2605577050515440974
+      VFX_Skills_72: 8789555790919343604
+      VFX_Skills_73: 8411031429181605336
+      VFX_Skills_74: -9207630193265309888
+      VFX_Skills_75: -7057169928272092817
+      VFX_Skills_76: 8804878254706923136
+      VFX_Skills_77: 4013699828199593493
+      VFX_Skills_78: 2867265438047240274
+      VFX_Skills_79: 3743909478064339823
+      VFX_Skills_8: 7427769636091304078
+      VFX_Skills_80: -6748709794183969199
+      VFX_Skills_81: -6671825400844450827
+      VFX_Skills_9: -7842787965015755438
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1778,6 +1778,147 @@ public class SceneSetupTool
 }
 
 // Renders an isolated preview scene. It never saves over the user's open scenes.
+public static class MechCollisionValidation
+{
+    public static void ValidateAndRender()
+    {
+        Validate();
+        MechThrusterPreview.Render();
+    }
+
+    [InitializeOnLoadMethod]
+    private static void ScheduleRequestedValidation()
+    {
+        EditorApplication.delayCall += () =>
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode
+                && System.IO.File.Exists("Library/MechValidation.request"))
+                Validate();
+        };
+    }
+
+    [MenuItem("Battlefield/Mech/Validate Solid Cover")]
+    public static void Validate()
+    {
+        const string reportPath = "Library/MechCollisionValidation.txt";
+        var report = new System.Text.StringBuilder();
+        var previousScene = SceneManager.GetActiveScene();
+        var source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/SampleScene.unity");
+        Scene testScene = default;
+        try
+        {
+            testScene = EditorSceneManager.NewPreviewScene();
+            var physics = testScene.GetPhysicsScene2D();
+            if (!physics.IsValid() || physics == Physics2D.defaultPhysicsScene)
+                throw new System.Exception("Preview does not provide isolated 2D physics; aborting without simulating the open scene.");
+
+            GameObject authored = null;
+            foreach (var root in source.GetRootGameObjects())
+                if (root.name == "Map2_Layout") authored = root;
+            if (authored == null) throw new System.Exception("Saved SampleScene has no Map2_Layout.");
+            var layout = Object.Instantiate(authored);
+            layout.name = "Map2_Layout";
+            SceneManager.MoveGameObjectToScene(layout, testScene);
+            var managerObject = new GameObject("ValidationManager");
+            SceneManager.MoveGameObjectToScene(managerObject, testScene);
+            var manager = managerObject.AddComponent<GameplayManager>();
+            manager.enabled = false;
+            manager.autoGenerateMap = false;
+            var apply = typeof(GameplayManager).GetMethod("ApplySelectedMapLayout",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            apply.Invoke(manager, new object[] { 2 });
+            int count = 0;
+            var representatives = new System.Collections.Generic.List<GameObject>();
+            foreach (string groupName in new[] { "RockObstacles", "TurretObstacles", "RedCoreObstacles" })
+            {
+                var group = layout.transform.Find(groupName);
+                if (group == null || group.childCount == 0)
+                    throw new System.Exception("Missing authored cover group: " + groupName);
+                foreach (Transform obstacle in group)
+                {
+                    var visual = obstacle.GetComponent<SpriteRenderer>();
+                    if (visual == null || visual.sprite == null) continue;
+                    var solid = obstacle.GetComponent<PolygonCollider2D>();
+                    if (solid == null || !solid.enabled || solid.isTrigger || solid.pathCount == 0)
+                        throw new System.Exception("Cover is not solid with autoGenerateMap=false: " + obstacle.name);
+                    count++;
+                }
+                representatives.Add(group.GetChild(0).gameObject);
+            }
+            GameplayManager.PrepareMechCover(layout.transform);
+            int secondCount = layout.GetComponentsInChildren<PolygonCollider2D>().Length;
+            if (secondCount != count) throw new System.Exception("Cover setup is not idempotent.");
+            report.AppendLine("PASS: autoGenerateMap=false still prepares " + count + " authored solid colliders, idempotently.");
+            layout.SetActive(false);
+
+            foreach (GameObject original in representatives)
+            {
+                var cover = Object.Instantiate(original);
+                SceneManager.MoveGameObjectToScene(cover, testScene);
+                cover.SetActive(true);
+                cover.transform.position = Vector3.zero;
+                // Physics validation is deliberately independent of damage/network callbacks.
+                foreach (var script in cover.GetComponentsInChildren<MonoBehaviour>(true)) Object.DestroyImmediate(script);
+                var solid = cover.GetComponent<PolygonCollider2D>();
+                for (int shipIndex = 1; shipIndex <= 3; shipIndex++)
+                {
+                    var prefab = Resources.Load<GameObject>("ShipPrefabs/Ship" + shipIndex);
+                    if (prefab == null) throw new System.Exception("Missing ship prefab " + shipIndex);
+                    var ship = Object.Instantiate(prefab);
+                    SceneManager.MoveGameObjectToScene(ship, testScene);
+                    var controller = ship.GetComponent<PlayerController>();
+                    controller.ConfigureShipPhysics(true);
+                    var body = ship.GetComponent<Rigidbody2D>();
+                    if (body.bodyType != RigidbodyType2D.Dynamic || body.gravityScale != 0 || !body.simulated)
+                        throw new System.Exception("Local Ship" + shipIndex + " physics is not dynamic zero-gravity.");
+                    foreach (var script in ship.GetComponentsInChildren<MonoBehaviour>(true)) script.enabled = false;
+                    var hull = ship.GetComponent<Collider2D>();
+                    ship.transform.rotation = Quaternion.Euler(0, 0, -90);
+                    Physics2D.SyncTransforms();
+                    var center = new Vector2(solid.bounds.min.x - hull.bounds.extents.x - 1.25f, solid.bounds.center.y);
+                    ship.transform.position += (Vector3)(center - (Vector2)hull.bounds.center);
+                    Physics2D.SyncTransforms();
+                    float initialX = body.position.x;
+                    float freeDistance = solid.bounds.size.x + hull.bounds.size.x + 5f;
+                    int steps = Mathf.CeilToInt(freeDistance / 0.12f);
+                    for (int step = 0; step < steps; step++)
+                    {
+                        body.MovePosition(body.position + Vector2.right * 0.12f);
+                        physics.Simulate(0.02f);
+                    }
+                    float travel = body.position.x - initialX;
+                    var separation = hull.Distance(solid);
+                    if (travel < 0.5f || travel > freeDistance - 1f
+                        || hull.bounds.center.x > solid.bounds.max.x || separation.distance < -0.10f)
+                        throw new System.Exception("Ship" + shipIndex + " failed cover blocking: " + original.name
+                            + ", travel=" + travel + ", separation=" + separation.distance);
+                    report.AppendLine("PASS: Ship" + shipIndex + " blocked by " + original.name
+                        + " under sustained MovePosition (travel " + travel.ToString("F2") + ").");
+                    controller.ConfigureShipPhysics(false);
+                    if (body.bodyType != RigidbodyType2D.Kinematic)
+                        throw new System.Exception("Remote ship should remain network-controlled kinematic.");
+                    Object.DestroyImmediate(ship);
+                }
+                Object.DestroyImmediate(cover);
+            }
+            report.AppendLine("PASS: 9 sustained ship/cover physics simulations. No network session or scene save performed.");
+            Debug.Log(report.ToString());
+        }
+        catch (System.Exception error)
+        {
+            report.AppendLine("FAIL: " + error);
+            Debug.LogException(error);
+        }
+        finally
+        {
+            System.IO.File.WriteAllText(reportPath, report.ToString());
+            if (previousScene.IsValid() && previousScene.isLoaded) SceneManager.SetActiveScene(previousScene);
+            if (testScene.IsValid()) EditorSceneManager.ClosePreviewScene(testScene);
+            EditorSceneManager.ClosePreviewScene(source);
+        }
+    }
+}
+
 public static class LobbyPreviewValidation
 {
     [InitializeOnLoadMethod]

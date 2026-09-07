@@ -1,6 +1,38 @@
 using UnityEngine;
 using Photon.Pun;
 
+// Local-only visual: no collider, damage, or network object is created.
+public class ShipSheetBurst : MonoBehaviour
+{
+    private SpriteRenderer visual;
+    private float lifetime, age, baseScale;
+    private Vector3 origin;
+
+    public void Initialize(SpriteRenderer renderer, float size, float duration)
+    {
+        visual = renderer;
+        lifetime = duration;
+        origin = transform.position;
+        baseScale = size / Mathf.Max(0.01f, Mathf.Max(visual.sprite.bounds.size.x, visual.sprite.bounds.size.y));
+        ApplyFrame(0);
+    }
+
+    private void Update()
+    {
+        age += Time.deltaTime;
+        if (visual == null || age >= lifetime) { Destroy(gameObject); return; }
+        ApplyFrame(age / lifetime);
+    }
+
+    private void ApplyFrame(float t)
+    {
+        float scale = baseScale * Mathf.Lerp(0.45f, 1f, Mathf.Sqrt(t));
+        transform.localScale = Vector3.one * scale;
+        transform.position = origin - visual.sprite.bounds.center * scale;
+        visual.color = new Color(1, 1, 1, 1 - t * t);
+    }
+}
+
 public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 {
     [Header("Ship Stats")]
@@ -44,6 +76,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     public bool isEnergyOverloaded = false;
     private bool matchEnded;
     public bool isDead = false;
+    // Read-only HUD state; presentation must not apply or clear gameplay effects.
+    public bool IsStunned => isStunned;
+    public bool IsShielded => isShielded;
+    public bool IsSpawnProtected => isSpawnProtected;
+    public bool IsSlowed => isSlowed || swampSources.Count > 0;
+    public bool HasMatchEnded => matchEnded;
     
     // Skill Visuals
     public GameObject shieldVisual;
@@ -51,6 +89,123 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [Header("Visual Effects")]
     public ParticleSystem thrusterEffect;
     private SpriteRenderer spriteRenderer;
+    private SpriteRenderer[] sheetThrusters;
+    private SpriteRenderer[] sheetThrusterGlows;
+    private Vector2[] exhaustAnchors;
+    private float displayedThrust;
+    private Color exhaustGlowColor;
+    private static readonly Sprite[] exhaustSprites = new Sprite[3];
+    private Vector3 previousVfxPosition;
+    private float lastSheetImpact = -10f;
+    private static Sprite[] shipEffectSprites;
+
+    private static Sprite ShipEffectSprite(int id)
+    {
+        if (shipEffectSprites == null) shipEffectSprites = Resources.LoadAll<Sprite>("Images/VFX_ShipEffects");
+        foreach (var sprite in shipEffectSprites)
+            if (sprite.name.EndsWith("_" + id)) return sprite;
+        return null;
+    }
+
+    private void LateUpdate()
+    {
+        UpdateAimGuide();
+        if (spriteRenderer == null || spriteRenderer.sprite == null) return;
+        float traveled = Vector3.Distance(transform.position, previousVfxPosition);
+        previousVfxPosition = transform.position;
+        if (sheetThrusters == null)
+        {
+            int style = spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
+                : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship3") ? 2 : 0;
+            Sprite source = ShipEffectSprite(4);
+            if (source == null) return;
+            // Flame-only regions in the original 1536 x 1024 sheet; omit the metal nozzle.
+            if (exhaustSprites[style] == null)
+            {
+                Rect region = style == 0 ? new Rect(486, 880, 43, 85)
+                    : style == 1 ? new Rect(557, 781, 34, 62) : new Rect(264, 870, 28, 78);
+                // Keep the UV crop correct if the texture importer downsizes the sheet.
+                Vector2 textureScale = new Vector2(source.texture.width / 1536f, source.texture.height / 1024f);
+                region = new Rect(region.x * textureScale.x, region.y * textureScale.y,
+                    region.width * textureScale.x, region.height * textureScale.y);
+                exhaustSprites[style] = Sprite.Create(source.texture, region, new Vector2(0.5f, 1f), source.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+                exhaustSprites[style].name = "FlameOnly_" + style;
+            }
+            // Normalized nozzle locations in each ship's original image, not its padded bounds.
+            exhaustAnchors = style == 0 ? new[] { new Vector2(.412f, .398f), new Vector2(.527f, .398f), new Vector2(.587f, .398f) }
+                : style == 1 ? new[] { new Vector2(.471f, .431f), new Vector2(.532f, .431f) }
+                : new[] { new Vector2(.42f, .37f), new Vector2(.58f, .37f) };
+            sheetThrusters = new SpriteRenderer[exhaustAnchors.Length];
+            sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
+            exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
+                ? new Color(0.2f, 0.85f, 1f) : new Color(1f, 0.5f, 0.08f);
+            for (int i = 0; i < sheetThrusters.Length; i++)
+            {
+                var obj = new GameObject("ShipSheetThruster" + i);
+                obj.transform.SetParent(transform, false);
+                var nozzle = obj.AddComponent<SpriteRenderer>();
+                nozzle.sprite = exhaustSprites[style];
+                nozzle.sortingLayerID = spriteRenderer.sortingLayerID;
+                // Above the baked-in exhaust art, anchored at the nozzle, not behind the opaque ship sprite.
+                nozzle.sortingOrder = spriteRenderer.sortingOrder + 2;
+                sheetThrusters[i] = nozzle;
+                var glowObject = new GameObject("ExhaustGlow" + i);
+                glowObject.transform.SetParent(transform, false);
+                var glow = glowObject.AddComponent<SpriteRenderer>();
+                glow.sprite = nozzle.sprite;
+                glow.sortingLayerID = nozzle.sortingLayerID;
+                glow.sortingOrder = spriteRenderer.sortingOrder + 1;
+                sheetThrusterGlows[i] = glow;
+            }
+            if (thrusterEffect != null) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+        Bounds hull = spriteRenderer.sprite.bounds;
+        float actualThrust = Mathf.Clamp01(traveled / Mathf.Max(0.001f, Time.deltaTime * speed));
+        // Smooth fixed-step motion, while keeping the engine visibly burning when pushing against cover.
+        float requestedThrust = photonView.IsMine && !isStunned ? movementInput.magnitude : actualThrust;
+        displayedThrust = Mathf.MoveTowards(displayedThrust, Mathf.Clamp01(requestedThrust), Time.deltaTime * 5f);
+        float pulse = 1f + 0.025f * Mathf.Sin(Time.time * 19f);
+        float length = hull.size.y * Mathf.Lerp(0.12f, 0.21f, displayedThrust) * pulse;
+        for (int i = 0; i < sheetThrusters.Length; i++)
+        {
+            var nozzle = sheetThrusters[i];
+            nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled;
+            float scale = length / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
+            float width = hull.size.x * Mathf.Lerp(0.032f, 0.045f, displayedThrust);
+            nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
+            Vector2 anchor = exhaustAnchors[i];
+            if (spriteRenderer.flipX) anchor.x = 1f - anchor.x;
+            if (spriteRenderer.flipY) anchor.y = 1f - anchor.y;
+            nozzle.transform.localRotation = Quaternion.Euler(0, 0, spriteRenderer.flipY ? 180 : 0);
+            nozzle.transform.localPosition = new Vector3(hull.min.x + hull.size.x * anchor.x, hull.min.y + hull.size.y * anchor.y, 0);
+            nozzle.color = new Color(1, 1, 1, Mathf.Lerp(0.85f, 1f, displayedThrust));
+            var glow = sheetThrusterGlows[i];
+            glow.enabled = nozzle.enabled;
+            glow.transform.localPosition = nozzle.transform.localPosition;
+            glow.transform.localRotation = nozzle.transform.localRotation;
+            glow.transform.localScale = Vector3.Scale(nozzle.transform.localScale, new Vector3(1.8f, 1.03f, 1));
+            glow.color = new Color(exhaustGlowColor.r, exhaustGlowColor.g, exhaustGlowColor.b,
+                Mathf.Lerp(0.18f, 0.32f, displayedThrust));
+        }
+        if (thrusterEffect != null && thrusterEffect.isPlaying) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+    }
+
+    private bool PlaySheetBurst(bool death)
+    {
+        Sprite sprite = ShipEffectSprite(death ? 117 : 129);
+        if (sprite == null || spriteRenderer == null) return false;
+        if (!death && Time.time - lastSheetImpact < 0.07f) return true;
+        lastSheetImpact = Time.time;
+        var obj = new GameObject(death ? "ShipSheetExplosion" : "ShipSheetImpact");
+        obj.transform.position = transform.position;
+        var renderer = obj.AddComponent<SpriteRenderer>();
+        renderer.sprite = sprite;
+        renderer.sortingLayerID = spriteRenderer.sortingLayerID;
+        renderer.sortingOrder = spriteRenderer.sortingOrder + 3;
+        float size = Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * (death ? 1.8f : 0.45f);
+        obj.AddComponent<ShipSheetBurst>().Initialize(renderer, size, death ? 0.65f : 0.2f);
+        return true;
+    }
 
     void Start()
     {
@@ -60,6 +215,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         arenaMax = GameplayManager.GetArenaMax(mapIndex);
 
         playerRigidbody = GetComponent<Rigidbody2D>();
+        ConfigureShipPhysics(photonView.IsMine);
         spriteRenderer = GetComponent<SpriteRenderer>();
 
         if (photonView.IsMine)
@@ -80,8 +236,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         else
         {
             // ปิดฟิสิกส์สำหรับผู้เล่นอื่น เพราะเราจะอัปเดตตำแหน่งผ่านเน็ตเวิร์ก
-            if (playerRigidbody != null)
-                playerRigidbody.isKinematic = true;
+            // Remote bodies stay kinematic; ConfigureShipPhysics sets the ownership policy above.
         }
 
         // Initialize Stats based on Ship and Skill
@@ -94,6 +249,17 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             }
             StartCoroutine(SpawnProtectionRoutine());
         }
+    }
+
+    public void ConfigureShipPhysics(bool locallyOwned)
+    {
+        playerRigidbody = GetComponent<Rigidbody2D>();
+        if (playerRigidbody == null) return;
+        playerRigidbody.bodyType = locallyOwned ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
+        playerRigidbody.gravityScale = 0f;
+        playerRigidbody.constraints |= RigidbodyConstraints2D.FreezeRotation;
+        playerRigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        playerRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
     }
 
     private System.Collections.IEnumerator SpawnProtectionRoutine()
@@ -116,42 +282,27 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void InitializeStats()
     {
-        // 1. ดึงข้อมูล Ship Type จาก Network (ยิงมาจาก LobbyManager)
-        if (photonView.Owner.CustomProperties.TryGetValue("ShipType", out object shipProp))
+        int shipIndex = 0;
+        int chosenSkill = 0;
+        var owner = photonView.Owner;
+        if (owner != null)
         {
-            int shipIndex = (int)shipProp;
-            // ตั้งค่าพื้นฐานตามยาน (Rebalanced PHASE 1)
-            if (shipIndex == 0) // Nebula Ghost - เล็ก พริ้ว ยิงเร็ว
-            { 
-                maxHp = 80f; attack = 1.0f; speed = 6.0f; fireCooldown = 0.12f; // PHASE 6: ปรับสมดุลความเร็ว
-                acceleration = 25f; rotationSpeed = 14f;
-            }
-            else if (shipIndex == 1) // Comet Crusher - ใหญ่ ถึก ยิงช้าแต่แรง
-            { 
-                maxHp = 180f; attack = 2.5f; speed = 3.5f; fireCooldown = 0.45f;
-                acceleration = 12f; rotationSpeed = 6f;
-            }
-            else if (shipIndex == 2) // Stellar Striker - สมดุล
-            { 
-                maxHp = 120f; attack = 1.5f; speed = 4.5f; fireCooldown = 0.2f; // PHASE 6: ปรับสมดุลความเร็ว
-                acceleration = 18f; rotationSpeed = 10f;
-            }
+            if (owner.CustomProperties.TryGetValue("ShipType", out object shipValue) && shipValue is int shipId)
+                shipIndex = BattleLoadoutCatalog.ValidShip(shipId);
+            if (owner.CustomProperties.TryGetValue("SkillType", out object skillValue) && skillValue is int skillId)
+                chosenSkill = BattleLoadoutCatalog.ValidSkill(skillId);
         }
-        else
-        {
-            maxHp = 120f; attack = 1.5f; speed = 4.5f; fireCooldown = 0.2f; // ค่าเผื่อฉุกเฉิน (Striker defaults)
-            acceleration = 18f; rotationSpeed = 10f;
-        }
-
-        // 2. ดึงข้อมูล Skill Type
-        if (photonView.Owner.CustomProperties.TryGetValue("SkillType", out object skillProp))
-        {
-            skillType = (int)skillProp;
-            if (skillType == 0) { skillName = "STUN"; maxCooldown = 12f; }
-            else if (skillType == 1) { skillName = "SHIELD"; maxCooldown = 20f; }
-            else if (skillType == 2) { skillName = "NOVA"; maxCooldown = 15f; }
-            else if (skillType == 3) { skillName = "SEEKER"; maxCooldown = 10f; }
-        }
+        ShipData ship = BattleLoadoutCatalog.Ships[shipIndex];
+        maxHp = ship.hp;
+        attack = ship.atk;
+        speed = ship.spd;
+        fireCooldown = ship.shotInterval;
+        acceleration = ship.acceleration;
+        rotationSpeed = ship.turnSpeed;
+        skillType = chosenSkill;
+        SkillData skill = BattleLoadoutCatalog.Skills[chosenSkill];
+        skillName = skill.name;
+        maxCooldown = skill.cooldown;
 
         baseSpeed = speed;
         baseFireCooldown = fireCooldown;
@@ -160,7 +311,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         // อัปเดตข้อมูลไปให้เครื่องอื่นรู้ค่า MaxHP (เผื่อต้องใช้)
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("MaxHP", maxHp);
-        photonView.Owner.SetCustomProperties(props);
+        if (owner != null) owner.SetCustomProperties(props);
     }
 
     void Update()
@@ -203,6 +354,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             if (!isStunned)
             {
                 HandleMovement();
+                HandleAiming();
                 HandleShooting();
                 HandleSkill();
             }
@@ -218,8 +370,11 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void FixedUpdate()
     {
-        if (!photonView.IsMine || matchEnded || isStunned || playerRigidbody == null || isDead)
+        if (!photonView.IsMine || playerRigidbody == null) return;
+        if (matchEnded || isStunned || isDead)
         {
+            movementInput = Vector2.zero;
+            playerRigidbody.linearVelocity = Vector2.zero;
             return;
         }
 
@@ -227,18 +382,94 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         playerRigidbody.MovePosition(ClampToArena(targetPosition));
     }
 
-    private float currentBankAngle = 0f;
+    private LineRenderer aimGuide;
+    private Material aimGuideMaterial;
+    private readonly RaycastHit2D[] aimGuideHits = new RaycastHit2D[64];
+
+    private void UpdateAimGuide()
+    {
+        bool visible = photonView.IsMine && !matchEnded && !isDead && !isStunned
+            && fireButton != null && fireButton.isPressed;
+        if (!visible)
+        {
+            if (aimGuide != null) aimGuide.enabled = false;
+            return;
+        }
+        if (aimGuide == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader == null) return;
+            aimGuideMaterial = new Material(shader);
+            var guideObject = new GameObject("LocalAimGuide");
+            guideObject.transform.SetParent(transform, false);
+            aimGuide = guideObject.AddComponent<LineRenderer>();
+            aimGuide.sharedMaterial = aimGuideMaterial;
+            aimGuide.useWorldSpace = true;
+            aimGuide.positionCount = 2;
+            aimGuide.startWidth = .055f;
+            aimGuide.endWidth = .025f;
+            aimGuide.numCapVertices = 2;
+            if (spriteRenderer != null)
+            {
+                aimGuide.sortingLayerID = spriteRenderer.sortingLayerID;
+                aimGuide.sortingOrder = spriteRenderer.sortingOrder + 4;
+            }
+        }
+        Vector2 start = firePoint != null ? firePoint.position : transform.position + transform.up * .5f;
+        Vector2 direction = transform.up;
+        const float range = 8f;
+        float length = range;
+        var filter = new ContactFilter2D();
+        filter.SetLayerMask(Physics2D.DefaultRaycastLayers);
+        filter.useTriggers = false;
+        int count = Physics2D.Raycast(start, direction, filter, aimGuideHits, range);
+        bool blocked = false;
+        for (int i = 0; i < count; i++)
+        {
+            var hit = aimGuideHits[i];
+            if (hit.collider == null || hit.collider.transform.IsChildOf(transform)) continue;
+            if (hit.distance < length) { length = hit.distance; blocked = true; }
+        }
+        aimGuide.enabled = true;
+        aimGuide.startColor = new Color(.3f, .95f, 1f, .65f);
+        aimGuide.endColor = blocked ? new Color(1f, .65f, .2f, .8f) : new Color(.3f, .95f, 1f, .12f);
+        aimGuide.SetPosition(0, new Vector3(start.x, start.y, transform.position.z));
+        Vector2 end = start + direction * length;
+        aimGuide.SetPosition(1, new Vector3(end.x, end.y, transform.position.z));
+    }
+
+    private void OnDestroy()
+    {
+        if (aimGuideMaterial != null) Destroy(aimGuideMaterial);
+    }
+
+    public override void OnDisable()
+    {
+        if (aimGuide != null) aimGuide.enabled = false;
+        base.OnDisable();
+    }
+
+    private void HandleAiming()
+    {
+        if (fireButton == null || !fireButton.isPressed || !fireButton.HasAim) return;
+        Vector2 direction = fireButton.AimDirection;
+        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
+        // Only the right stick rotates the ship; translation remains controlled by the left stick.
+        float facing = Mathf.LerpAngle(transform.eulerAngles.z, angle, 1f - Mathf.Exp(-rotationSpeed * Time.deltaTime));
+        transform.rotation = Quaternion.Euler(0, 0, facing);
+    }
 
     private void HandleMovement()
     {
         if (isStunned) return; // ไม่สามารถขยับได้ตอนติด Stun
         if (joystick != null)
         {
-            Vector2 input = new Vector2(joystick.GetHorizontal(), joystick.GetVertical());
+            Vector2 input = Vector2.ClampMagnitude(new Vector2(joystick.GetHorizontal(), joystick.GetVertical()), 1f);
             if (input.magnitude > 0.1f)
             {
                 // Smooth Acceleration แทนการเปลี่ยน velocity ทันที
-                movementInput = Vector2.Lerp(movementInput, input, Time.deltaTime * acceleration);
+                float response = Vector2.Dot(movementInput, input) < 0 ? .55f : .35f;
+                movementInput = Vector2.MoveTowards(movementInput, input, Time.deltaTime * acceleration * response);
                 
                 if (playerRigidbody == null)
                 {
@@ -247,14 +478,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
                 }
                 
                 // คำนวณองศาการเลี้ยวเพื่อเอียงยาน (Tilt)
-                float angleDifference = Vector2.SignedAngle(transform.up, input);
-                float targetBank = Mathf.Clamp(angleDifference, -30f, 30f) * -0.6f; // เอียงสูงสุด ~18 องศา
-                currentBankAngle = Mathf.Lerp(currentBankAngle, targetBank, Time.deltaTime * 5f);
 
                 // หมุนยานไปในทิศทางที่เดิน (ใช้ rotationSpeed ต่างกันตามยาน)
-                float angle = Mathf.Atan2(input.y, input.x) * Mathf.Rad2Deg;
-                Quaternion targetRotation = Quaternion.Euler(new Vector3(0, currentBankAngle, angle - 90f));
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
                 
                 // เร่งไฟไอพ่น
                 if (thrusterEffect != null)
@@ -269,12 +494,10 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             else
             {
                 // Smooth Deceleration
-                movementInput = Vector2.Lerp(movementInput, Vector2.zero, Time.deltaTime * acceleration * 0.5f);
+                movementInput = Vector2.MoveTowards(movementInput, Vector2.zero, Time.deltaTime * acceleration * .75f);
                 if (movementInput.magnitude < 0.01f) movementInput = Vector2.zero;
                 
                 // ค่อยๆ คืนยานกลับมาตรงๆ
-                currentBankAngle = Mathf.Lerp(currentBankAngle, 0f, Time.deltaTime * 5f);
-                transform.rotation = Quaternion.Euler(0, currentBankAngle, transform.eulerAngles.z);
 
                 // เบาไฟไอพ่นลงเมื่อจอดนิ่ง
                 if (thrusterEffect != null)
@@ -299,7 +522,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private void HandleShooting()
     {
         if (isStunned) return; // ไม่สามารถยิงได้ตอนติด Stun
-        if (UIButton.IsPressed("Fire") && Time.time >= nextFireTime)
+        if (fireButton != null && fireButton.isPressed && Time.time >= nextFireTime)
         {
             nextFireTime = Time.time + fireCooldown;
             Shoot();
@@ -450,7 +673,18 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private void UpdateEffectiveSpeed()
     {
         if (baseSpeed <= 0f) return;
-        speed = isShielded ? baseSpeed * 1.5f : (isSlowed ? baseSpeed * 0.4f : baseSpeed);
+        speed = baseSpeed * (isShielded ? 1.5f : 1f) * ((isSlowed || swampSources.Count > 0) ? 0.7f : 1f);
+    }
+
+    private readonly System.Collections.Generic.HashSet<int> swampSources = new System.Collections.Generic.HashSet<int>();
+    private readonly System.Collections.Generic.HashSet<int> coreSources = new System.Collections.Generic.HashSet<int>();
+
+    public void SetBattlefieldZone(int source, bool core, bool inside)
+    {
+        var sources = core ? coreSources : swampSources;
+        if (inside) sources.Add(source); else sources.Remove(source);
+        if (core) SetEnergyOverloadRPC(coreSources.Count > 0);
+        else UpdateEffectiveSpeed();
     }
 
     [PunRPC]
@@ -544,7 +778,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
         // 3. Impact Explosion (เนื้อหนัง เลือดสาด/ประกายไฟสีแดง)
         GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
-        if (impactPrefab != null)
+        if (!PlaySheetBurst(false) && impactPrefab != null)
         {
             GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
             var sr = fx.GetComponent<SpriteRenderer>();
@@ -626,7 +860,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
         // Death Explosion
         GameObject deathPrefab = GameplayManager.GetPrefab("DeathExplosion");
-        if (deathPrefab != null)
+        if (!PlaySheetBurst(true) && deathPrefab != null)
         {
             Instantiate(deathPrefab, transform.position, Quaternion.identity);
             Instantiate(deathPrefab, transform.position + new Vector3(1, 1, 0), Quaternion.identity);
@@ -687,7 +921,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         // สุ่มตำแหน่งเกิดใหม่ที่ไม่ชนกำแพง (ลองสูงสุด 10 ครั้ง ถ้าไม่เจอที่ว่างให้เกิดตรงกลางไปเลย)
         Vector2 spawnPos = Vector2.zero;
         bool foundSafe = false;
-        for (int attempt = 0; attempt < 15; attempt++)
+        if (GameplayManager.GetCurrentMapIndex() == 2)
+        {
+            while (!GameplayManager.TryFindMechSpawn(gameObject, PhotonNetwork.IsMasterClient, out spawnPos))
+            {
+                if (matchEnded || !PhotonNetwork.InRoom) yield break;
+                yield return new WaitForSeconds(.5f);
+            }
+            foundSafe = true;
+        }
+        for (int attempt = 0; !foundSafe && attempt < 15; attempt++)
         {
             float spawnX = Random.Range(arenaMin.x + 4f, arenaMax.x - 4f);
             float spawnY = Random.Range(arenaMin.y + 4f, arenaMax.y - 4f);
