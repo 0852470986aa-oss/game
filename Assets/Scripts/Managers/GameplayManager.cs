@@ -6,6 +6,53 @@ using UnityEngine.UI;
 
 public class GameplayManager : MonoBehaviourPunCallbacks
 {
+    public static string RecoveryRoom;
+    private string battleRoomName;
+    private bool returningToRoom;
+    private bool intentionalLeave;
+
+    private void StopInterruptedBattle()
+    {
+        isMatchEnding = true;
+        foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
+            ship.SetMatchEndedRPC();
+    }
+
+    public override void OnPlayerLeftRoom(Photon.Realtime.Player otherPlayer)
+    {
+        if (intentionalLeave || resultShown) return;
+        StopInterruptedBattle();
+        ReturnToWaitingRoom();
+    }
+
+    public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient)
+    {
+        if (intentionalLeave || resultShown || !PhotonNetwork.InRoom) return;
+        int active = 0;
+        foreach (var pilot in PhotonNetwork.PlayerList) if (!pilot.IsInactive) active++;
+        if (active < 2) { StopInterruptedBattle(); ReturnToWaitingRoom(); }
+    }
+
+    private void ReturnToWaitingRoom()
+    {
+        if (returningToRoom || !PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
+        returningToRoom = true;
+        PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable
+        { ["Starting"] = false, ["StartTime"] = -1d, ["BattleToken"] = "", ["BattleAborted"] = true });
+        PhotonNetwork.CurrentRoom.IsOpen = true;
+        PhotonNetwork.CurrentRoom.IsVisible = true;
+        // Remove cached battle objects so a reconnect cannot revive the cancelled match.
+        PhotonNetwork.DestroyAll();
+        PhotonNetwork.LoadLevel("LobbyScene");
+    }
+
+    public override void OnDisconnected(Photon.Realtime.DisconnectCause cause)
+    {
+        StopInterruptedBattle();
+        RecoveryRoom = !intentionalLeave && cause != Photon.Realtime.DisconnectCause.DisconnectByClientLogic
+            ? battleRoomName : null;
+        SceneManager.LoadScene("LobbyScene");
+    }
     public const float ArenaHalfHeight = 36.5f;
     private static readonly float[] ArenaHalfWidths = { 36.3f, 64f, 39f };
 
@@ -168,6 +215,135 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     public float matchDuration = 180f; // 3 minutes
     private float matchTimer;
     private bool matchStarted = false;
+    private TMP_Text battleCountdownText;
+    private RectTransform damageDirectionRoot;
+    private Image damageDirectionMarker;
+    private float damageDirectionUntil;
+    private Vector3 damageSourcePosition;
+
+    public void ShowIncomingDamage(int shooterId)
+    {
+        if (localPlayer == null || battleHud == null || isMatchEnding || shooterId <= 0) return;
+        PlayerController source = null;
+        foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
+            if (ship.photonView.OwnerActorNr == shooterId && ship != localPlayer) { source = ship; break; }
+        if (source == null) return; // Do not invent a direction for environmental damage.
+        damageSourcePosition = source.transform.position;
+        damageDirectionUntil = Time.unscaledTime + 1.1f;
+        if (damageDirectionRoot == null)
+        {
+            damageDirectionRoot = BattleRect("IncomingDamage", battleHud, 0, 0, 1, 1);
+            damageDirectionMarker = BattlePanel("Direction", damageDirectionRoot, 0, 118, 34, 7, new Color(1, .2f, .1f));
+            BattlePanel("Tip", damageDirectionRoot, 0, 127, 10, 10, new Color(1, .45f, .15f));
+        }
+    }
+
+    private void UpdateDamageDirection()
+    {
+        if (damageDirectionRoot == null) return;
+        bool visible = localPlayer != null && !localPlayer.isDead && !isMatchEnding
+            && Time.unscaledTime < damageDirectionUntil;
+        damageDirectionRoot.gameObject.SetActive(visible);
+        if (!visible) return;
+        var camera = Camera.main;
+        if (camera == null) { damageDirectionRoot.gameObject.SetActive(false); return; }
+        Vector3 shipScreen = camera.WorldToScreenPoint(localPlayer.transform.position);
+        Vector3 sourceScreen = camera.WorldToScreenPoint(damageSourcePosition);
+        var canvas = battleHud.GetComponentInParent<Canvas>();
+        Camera uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(battleHud, shipScreen, uiCamera, out Vector2 shipUI);
+        damageDirectionRoot.anchoredPosition = shipUI;
+        Vector2 direction = sourceScreen - shipScreen;
+        damageDirectionRoot.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f);
+        Color color = damageDirectionMarker.color;
+        color.a = Mathf.Clamp01((damageDirectionUntil - Time.unscaledTime) * 2f);
+        damageDirectionMarker.color = color;
+    }
+    private TMP_Text hitConfirmationText;
+    private float hitConfirmationUntil;
+
+    public void ShowConfirmedHit(bool shield)
+    {
+        if (battleHud == null || isMatchEnding) return;
+        if (hitConfirmationText == null)
+            hitConfirmationText = BattleLabel("HitConfirmation", battleHud, "", 0, -100, 260, 38, 22);
+        hitConfirmationText.text = shield ? "SHIELD HIT" : "HIT";
+        hitConfirmationText.color = shield ? new Color(.3f, .85f, 1f) : new Color(1f, .8f, .3f);
+        hitConfirmationUntil = Time.unscaledTime + .3f;
+        hitConfirmationText.gameObject.SetActive(true);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX(shield ? "SFX_ShieldHit" : "SFX_Hit");
+    }
+    private Image respawnPanel;
+    private TMP_Text respawnReasonText;
+    private TMP_Text respawnTimerText;
+
+    private void UpdateRespawnHUD()
+    {
+        bool visible = localPlayer != null && localPlayer.isDead && !isMatchEnding && !localPlayer.HasMatchEnded;
+        if (visible && respawnPanel == null && battleHud != null)
+        {
+            respawnPanel = BattlePanel("RespawnPanel", battleHud, 0, 5, 650, 160, new Color(.035f, .055f, .12f, .94f));
+            BattleLabel("Title", respawnPanel.transform, "SHIP DESTROYED", 0, 48, 610, 38, 30);
+            respawnReasonText = BattleLabel("Reason", respawnPanel.transform, "", 0, 6, 610, 32, 20);
+            respawnReasonText.richText = false;
+            respawnTimerText = BattleLabel("Countdown", respawnPanel.transform, "", 0, -43, 610, 36, 25);
+            respawnTimerText.color = new Color(.25f, .95f, 1f);
+        }
+        if (respawnPanel == null) return;
+        respawnPanel.gameObject.SetActive(visible);
+        if (!visible) return;
+        respawnReasonText.text = localPlayer.DeathReason;
+        int seconds = Mathf.CeilToInt(localPlayer.RespawnReadyAt - Time.unscaledTime);
+        respawnTimerText.text = seconds > 0 ? "RESPAWNING IN " + seconds : "FINDING A SAFE SPAWN...";
+    }
+    private float nextReadyUpdate;
+    public bool MatchInputAllowed => !isMatchEnding && (!PhotonNetwork.InRoom || matchStarted);
+
+    private void UpdateBattleStart()
+    {
+        if (!PhotonNetwork.InRoom || isMatchEnding) return;
+        var room = PhotonNetwork.CurrentRoom;
+        room.CustomProperties.TryGetValue("BattleToken", out object tokenValue);
+        string token = tokenValue as string;
+        double start = room.CustomProperties.TryGetValue("StartTime", out object value) && value is double timestamp
+            ? timestamp : -1d;
+        bool bothReady = !string.IsNullOrEmpty(token) && PhotonNetwork.PlayerList.Length == 2;
+        foreach (var pilot in PhotonNetwork.PlayerList)
+            bothReady &= !pilot.IsInactive && pilot.CustomProperties.TryGetValue("LoadedBattleToken", out object loaded)
+                && Equals(loaded, token);
+
+        if (!matchStarted && Time.unscaledTime >= nextReadyUpdate)
+        {
+            nextReadyUpdate = Time.unscaledTime + 1f;
+            if (localPlayer != null && !string.IsNullOrEmpty(token))
+            {
+                if (!PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("LoadedBattleToken", out object loaded)
+                    || !Equals(loaded, token))
+                    PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["LoadedBattleToken"] = token });
+            }
+            if (PhotonNetwork.IsMasterClient)
+            {
+                if (string.IsNullOrEmpty(token))
+                    room.SetCustomProperties(new ExitGames.Client.Photon.Hashtable
+                    { ["BattleToken"] = System.Guid.NewGuid().ToString("N"), ["StartTime"] = -1d });
+                else if (bothReady && start < 0)
+                    room.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["StartTime"] = PhotonNetwork.Time + 3d },
+                        new ExitGames.Client.Photon.Hashtable { ["StartTime"] = -1d });
+                else if (!bothReady && start > PhotonNetwork.Time)
+                    room.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["StartTime"] = -1d },
+                        new ExitGames.Client.Photon.Hashtable { ["StartTime"] = start });
+            }
+        }
+        if (bothReady && start >= 0 && PhotonNetwork.Time >= start) matchStarted = true;
+        if (battleCountdownText == null && battleHud != null)
+            battleCountdownText = BattleLabel("BattleCountdown", battleHud, "", 0, 40, 800, 100, 48);
+        if (battleCountdownText != null)
+        {
+            battleCountdownText.gameObject.SetActive(!matchStarted || PhotonNetwork.Time - start < 1d);
+            battleCountdownText.text = matchStarted ? "GO!" : !bothReady || start < 0
+                ? "WAITING FOR PILOTS" : Mathf.Max(1, Mathf.CeilToInt((float)(start - PhotonNetwork.Time))).ToString();
+        }
+    }
     private bool isMatchEnding = false;
 
     private TMP_Text matchTimerText;
@@ -216,6 +392,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     void Start()
     {
+        if (PhotonNetwork.InRoom) battleRoomName = PhotonNetwork.CurrentRoom.Name;
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.PlayBGM("BGM_Battle");
@@ -321,13 +498,6 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             props.Add("Kills", 0);
             PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-            // Set StartTime
-            if (PhotonNetwork.IsMasterClient)
-            {
-                ExitGames.Client.Photon.Hashtable roomProps = new ExitGames.Client.Photon.Hashtable();
-                roomProps.Add("StartTime", PhotonNetwork.Time);
-                PhotonNetwork.CurrentRoom.SetCustomProperties(roomProps);
-            }
 
             // Spawn Player (Vertical Layout - ห่างกันมากขึ้นเพื่อไม่ให้โดนยิงทันที)
             Vector3 spawnPos = PhotonNetwork.IsMasterClient ? new Vector3(0f, -16f, 0f) : new Vector3(0f, 16f, 0f);
@@ -344,6 +514,18 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     void Update()
     {
+        if (PhotonNetwork.InRoom)
+        {
+            battleRoomName = PhotonNetwork.CurrentRoom.Name;
+            int activePilots = 0;
+            foreach (var pilot in PhotonNetwork.PlayerList) if (!pilot.IsInactive) activePilots++;
+            if (activePilots < 2 && !intentionalLeave && !resultShown)
+            {
+                StopInterruptedBattle();
+                ReturnToWaitingRoom();
+                return;
+            }
+        }
         FitBattleHUD();
         if (pingText != null && PhotonNetwork.IsConnected)
         {
@@ -365,6 +547,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             }
         }
 
+        UpdateBattleStart();
+        UpdateRespawnHUD();
+        UpdateDamageDirection();
+        if (hitConfirmationText != null && Time.unscaledTime >= hitConfirmationUntil)
+            hitConfirmationText.gameObject.SetActive(false);
         UpdateMatchTimerAndScore();
         UpdateHealthBars();
         UpdateSkillUI();
@@ -866,6 +1053,9 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     };
 
     public static bool TryFindMechSpawn(GameObject ship, bool lowerSide, out Vector2 position)
+        => TryFindSafeSpawn(ship, 2, lowerSide, out position);
+
+    public static bool TryFindSafeSpawn(GameObject ship, int mapIndex, bool lowerSide, out Vector2 position)
     {
         // Clearance includes the entire solid hull around its pivot, even while the dead hull is disabled.
         float radius = 2.5f;
@@ -875,6 +1065,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                     foreach (Vector2 point in polygon.GetPath(path))
                         radius = Mathf.Max(radius, ((Vector2)polygon.transform.TransformPoint(point + polygon.offset) - (Vector2)ship.transform.position).magnitude);
         radius += .65f;
+        Vector2 min = GetArenaMin(mapIndex);
+        Vector2 max = GetArenaMax(mapIndex);
         var players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
         float best = float.NegativeInfinity;
         position = default;
@@ -883,7 +1075,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         {
             int grid = i - MechSpawnPads.Length;
             Vector2 candidate = i < MechSpawnPads.Length ? MechSpawnPads[i] : new Vector2(-30 + (grid % 11) * 6, -30 + (grid / 11) * 6);
-            if (Mathf.Abs(candidate.x) + radius > 39 || Mathf.Abs(candidate.y) + radius > ArenaHalfHeight) continue;
+            if (mapIndex != 2 && grid >= 0)
+                candidate = new Vector2(Mathf.Lerp(min.x + radius, max.x - radius, (grid % 11) / 10f),
+                    Mathf.Lerp(min.y + radius, max.y - radius, (grid / 11) / 10f));
+            if (candidate.x - radius < min.x || candidate.x + radius > max.x
+                || candidate.y - radius < min.y || candidate.y + radius > max.y) continue;
             bool blocked = false;
             foreach (var hit in Physics2D.OverlapCircleAll(candidate, radius))
             {
@@ -940,6 +1136,70 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     }
 
     private RectTransform battleHud;
+    private RectTransform shipHudLayer;
+    private sealed class ShipNameplate
+    {
+        public PlayerController ship;
+        public RectTransform root;
+        public TMP_Text name;
+        public Image fill;
+    }
+    private readonly System.Collections.Generic.Dictionary<int, ShipNameplate> shipNameplates = new System.Collections.Generic.Dictionary<int, ShipNameplate>();
+    private readonly System.Collections.Generic.List<int> staleNameplates = new System.Collections.Generic.List<int>();
+    private float nextShipHudScan;
+
+    private void LateUpdate()
+    {
+        if (shipHudLayer == null || !battleHud.gameObject.activeInHierarchy) return;
+        if (Time.unscaledTime >= nextShipHudScan)
+        {
+            nextShipHudScan = Time.unscaledTime + .5f;
+            foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
+            {
+                int key = ship.GetInstanceID();
+                if (shipNameplates.ContainsKey(key)) continue;
+                var root = BattleRect("ShipNameplate_" + key, shipHudLayer, 0, 0, 156, 38);
+                var name = BattleLabel("Pilot", root, "", 0, 11, 156, 22, 15);
+                name.richText = false;
+                name.outlineWidth = .18f;
+                name.outlineColor = new Color(0, 0, 0, .85f);
+                var track = BattlePanel("HullTrack", root, 0, -7, 112, 8, new Color(.015f, .025f, .04f, .8f));
+                var fill = BattlePanel("HullFill", track.transform, -54, 0, 108, 4, Color.cyan);
+                fill.rectTransform.pivot = new Vector2(0, .5f);
+                shipNameplates[key] = new ShipNameplate { ship = ship, root = root, name = name, fill = fill };
+            }
+        }
+        var view = Camera.main;
+        if (view == null) { shipHudLayer.gameObject.SetActive(false); return; }
+        shipHudLayer.gameObject.SetActive(true);
+        var canvas = battleHud.GetComponentInParent<Canvas>();
+        var uiCamera = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : canvas.worldCamera;
+        staleNameplates.Clear();
+        foreach (var entry in shipNameplates)
+        {
+            var plate = entry.Value;
+            if (plate.ship == null) { Destroy(plate.root.gameObject); staleNameplates.Add(entry.Key); continue; }
+            Vector3 center = view.WorldToViewportPoint(plate.ship.transform.position);
+            bool visible = !plate.ship.isDead && !plate.ship.HasMatchEnded && center.z > 0
+                && center.x >= 0 && center.x <= 1 && center.y >= 0 && center.y <= 1;
+            plate.root.gameObject.SetActive(visible);
+            if (!visible) continue;
+            // Follow the ship pivot, not its rotating bounds: a fixed screen-space offset avoids bobbing.
+            Vector3 screen = view.WorldToScreenPoint(plate.ship.transform.position);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(shipHudLayer, screen, uiCamera, out Vector2 point);
+            plate.root.anchoredPosition = point + Vector2.up * 36;
+            // Keep names upright and a constant UI size regardless of ship rotation or camera zoom.
+            bool mine = plate.ship.photonView.IsMine;
+            string nickname = plate.ship.photonView.Owner != null ? plate.ship.photonView.Owner.NickName : "PILOT";
+            plate.name.text = (mine ? "YOU / " : "") + nickname;
+            plate.name.color = mine ? new Color(.4f, 1f, .9f) : new Color(1f, .7f, .65f);
+            float hp = Mathf.Clamp01(plate.ship.currentHp / Mathf.Max(1, plate.ship.maxHp));
+            plate.fill.rectTransform.localScale = new Vector3(hp, 1, 1);
+            plate.fill.color = hp < .3f ? new Color(1f, .25f, .2f) : hp < .6f ? new Color(1f, .8f, .2f)
+                : mine ? new Color(.2f, 1f, .7f) : new Color(1f, .45f, .35f);
+        }
+        foreach (int key in staleNameplates) shipNameplates.Remove(key);
+    }
     private RectTransform resultSurface;
     private TMP_Text resultHeadline, resultScore;
     private bool resultShown;
@@ -1021,8 +1281,13 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         battleHud = BattleRect("BattleHUD", canvas.transform, 0, 0, 1280, 720);
         // Keep the results dialog above the in-match controls.
         if (resultPanel != null) resultPanel.transform.SetAsLastSibling();
-        BuildBattleHealth("LocalHull", -438, true);
-        BuildBattleHealth("RivalHull", 438, false);
+        shipHudLayer = BattleRect("ShipNameplates", battleHud, 0, 0, 1280, 720);
+        // Preserve the legacy canvas reference used by the minimap without showing a fixed player card.
+        if (playerInfoText != null) playerInfoText.gameObject.SetActive(false);
+        playerInfoText = BattleLabel("PlayerCanvasReference", battleHud, "", 0, 0, 1, 1, 12);
+        playerInfoText.gameObject.SetActive(false);
+        p1HpText = p2HpText = null;
+        p1HpFill = p2HpFill = null;
         combatStatusPanel = BattlePanel("CombatStatuses", battleHud, 0, -264, 640, 86, new Color(.035f, .065f, .12f, .85f));
         combatStatusLabels = new TMP_Text[6];
         for (int i = 0; i < combatStatusLabels.Length; i++)
@@ -1031,7 +1296,7 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             combatStatusLabels[i].gameObject.SetActive(false);
         }
         combatStatusPanel.gameObject.SetActive(false);
-        BattlePanel("MatchPlate", battleHud, 0, 291, 460, 102, new Color(0.035f, 0.065f, 0.12f, 0.9f));
+        BattlePanel("MatchPlate", battleHud, 0, 291, 320, 102, new Color(0.035f, 0.065f, 0.12f, 0.25f));
         PlaceBattleControl(matchTimerText.transform, 0, 314);
         matchTimerText.fontSize = 32;
         matchTimerText.text = "--:--";
@@ -1051,23 +1316,136 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         }
         var exit = canvas.transform.Find("TopCenter/Btn_Exit");
         if (exit != null) PlaceBattleControl(exit, 553, 219);
-        if (joystick != null) PlaceBattleControl(joystick.transform, -485, -203, 0.8f);
+        BuildBattleControls();
+        FitBattleHUD();
+    }
+
+    private ControlRingGraphic moveControlRing, fireControlRing, skillControlRing, moveThumb, fireThumb;
+    private TMP_Text battleSkillName;
+    private CanvasGroup moveControlOpacity, fireControlOpacity, skillControlOpacity;
+    private static readonly Color MoveAccent = new Color(.3f, .88f, 1f);
+    private static readonly Color FireAccent = new Color(1f, .65f, .27f);
+    private static readonly Color SkillAccent = new Color(.77f, .64f, 1f);
+
+    private ControlRingGraphic ControlCircle(string name, Transform parent, float diameter, float innerRatio, Color tint)
+    {
+        var graphic = BattleRect(name, parent, 0, 0, diameter, diameter).gameObject.AddComponent<ControlRingGraphic>();
+        graphic.raycastTarget = false;
+        graphic.color = tint;
+        graphic.SetRing(innerRatio);
+        return graphic;
+    }
+
+    private CanvasGroup PrepareControl(Transform control, float x, float y, float size)
+    {
+        PlaceBattleControl(control, x, y, 1f);
+        var rect = (RectTransform)control;
+        rect.sizeDelta = Vector2.one * size;
+        // Preserve the input root and cached joystick handle; disable only the old artwork.
+        foreach (var graphic in control.GetComponentsInChildren<Graphic>(true))
+        {
+            graphic.enabled = false;
+            graphic.raycastTarget = false;
+        }
+        var hitArea = control.GetComponent<Image>();
+        if (hitArea == null) hitArea = control.gameObject.AddComponent<Image>();
+        hitArea.enabled = true;
+        hitArea.sprite = null;
+        hitArea.type = Image.Type.Simple;
+        hitArea.color = Color.clear;
+        hitArea.raycastTarget = true;
+        var group = control.GetComponent<CanvasGroup>();
+        return group != null ? group : control.gameObject.AddComponent<CanvasGroup>();
+    }
+
+    private void ControlTicks(Transform parent, float distance, Color tint)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            float angle = i * Mathf.PI * .5f;
+            var tick = BattlePanel("Tick" + i, parent, Mathf.Sin(angle) * distance, Mathf.Cos(angle) * distance,
+                3, 9, tint);
+            tick.rectTransform.localRotation = Quaternion.Euler(0, 0, -i * 90);
+        }
+    }
+
+    private void BuildBattleControls()
+    {
+        if (joystick != null)
+        {
+            moveControlOpacity = PrepareControl(joystick.transform, -486, -220, 196);
+            ControlCircle("TouchPad", joystick.transform, 188, 0, new Color(.025f, .06f, .1f, .32f));
+            moveControlRing = ControlCircle("OuterRing", joystick.transform, 190, .982f, MoveAccent * new Color(1, 1, 1, .55f));
+            ControlCircle("InnerGuide", joystick.transform, 130, .98f, new Color(.3f, .75f, .9f, .14f));
+            ControlTicks(joystick.transform, 85, new Color(.3f, .88f, 1f, .6f));
+            var handle = joystick.transform.Find("JoystickHandle") as RectTransform;
+            if (handle != null)
+            {
+                handle.anchorMin = handle.anchorMax = handle.pivot = new Vector2(.5f, .5f);
+                handle.anchoredPosition = Vector2.zero;
+                handle.sizeDelta = Vector2.one * 46;
+                handle.SetAsLastSibling();
+                moveThumb = ControlCircle("ThumbFill", handle, 44, 0, new Color(.15f, .65f, .8f, .42f));
+                ControlCircle("ThumbRim", handle, 44, .94f, MoveAccent);
+                ControlCircle("CenterDot", handle, 6, 0, Color.white);
+            }
+            var label = BattleLabel("MoveCaption", joystick.transform, "MOVE", 0, -111, 150, 22, 15);
+            label.color = MoveAccent;
+        }
         if (fireButton != null)
         {
-            PlaceBattleControl(fireButton.transform, 494, -233, 0.9f);
+            fireControlOpacity = PrepareControl(fireButton.transform, 478, -226, 164);
             fireButton.enableDragAim = true;
-            var aimHandle = BattlePanel("AimHandle", fireButton.transform, 0, 0, 18, 18, new Color(.4f, 1f, 1f, .85f));
-            fireButton.aimHandle = aimHandle.rectTransform;
-            foreach (var label in fireButton.GetComponentsInChildren<TMP_Text>()) label.gameObject.SetActive(false);
-            BattleLabel("AimHint", fireButton.transform, "DRAG TO AIM / FIRE", 0, -100, 230, 28, 16);
+            ControlCircle("TouchPad", fireButton.transform, 160, 0, new Color(.12f, .06f, .025f, .38f));
+            fireControlRing = ControlCircle("OuterRing", fireButton.transform, 164, .97f, new Color(1f, .65f, .27f, .65f));
+            ControlCircle("InnerGuide", fireButton.transform, 112, .98f, new Color(1f, .65f, .27f, .2f));
+            ControlTicks(fireButton.transform, 73, new Color(1f, .65f, .27f, .75f));
+            var aim = BattleRect("AimThumb", fireButton.transform, 0, 0, 46, 46);
+            fireButton.aimHandle = aim;
+            ControlCircle("ThumbFill", aim, 46, 0, new Color(.23f, .1f, .035f, .6f));
+            fireThumb = ControlCircle("Reticle", aim, 28, .91f, FireAccent);
+            ControlTicks(aim, 18, FireAccent);
+            ControlCircle("CenterDot", aim, 4, 0, Color.white);
+            var label = BattleLabel("FireCaption", fireButton.transform, "AIM / FIRE", 0, -95, 175, 24, 15);
+            label.color = FireAccent;
         }
         if (skillButton != null)
         {
-            PlaceBattleControl(skillButton.transform, 552, -67);
-            battleSkillStatus = BattleLabel("SkillStatus", skillButton.transform, "WAITING", 0, -70, 145, 28, 21);
-            if (skillCooldownImage != null) skillCooldownImage.raycastTarget = false;
+            skillControlOpacity = PrepareControl(skillButton.transform, 553, -53, 112);
+            // The old icon has a baked square and labels; use clean code-drawn visuals instead.
+            skillIconImage = null;
+            skillCooldownImage = null;
+            ControlCircle("TouchPad", skillButton.transform, 106, 0, new Color(.065f, .04f, .13f, .58f));
+            ControlCircle("CooldownTrack", skillButton.transform, 112, .95f, new Color(.7f, .6f, 1f, .18f));
+            skillControlRing = ControlCircle("CooldownProgress", skillButton.transform, 112, .95f, SkillAccent);
+            battleSkillName = BattleLabel("AbilityName", skillButton.transform, "SKILL", 0, 13, 94, 24, 17);
+            battleSkillName.color = SkillAccent;
+            battleSkillStatus = BattleLabel("AbilityState", skillButton.transform, "WAITING", 0, -14, 96, 24, 17);
+            var label = BattleLabel("SkillCaption", skillButton.transform, "ABILITY", 0, -69, 145, 22, 14);
+            label.color = SkillAccent;
         }
-        FitBattleHUD();
+    }
+
+    private void UpdateControlFeedback()
+    {
+        bool active = MatchInputAllowed && localPlayer != null && !localPlayer.isDead
+            && !localPlayer.IsStunned && !localPlayer.HasMatchEnded;
+        if (moveControlOpacity != null) moveControlOpacity.alpha = active ? 1 : .42f;
+        if (fireControlOpacity != null) fireControlOpacity.alpha = active ? 1 : .42f;
+        bool moving = joystick != null && joystick.IsDragging && active;
+        bool firing = fireButton != null && fireButton.isPressed && active;
+        if (moveControlRing != null) moveControlRing.color = new Color(MoveAccent.r, MoveAccent.g, MoveAccent.b, moving ? 1 : .55f);
+        if (moveThumb != null) moveThumb.color = new Color(.15f, .65f, .8f, moving ? .75f : .42f);
+        if (fireControlRing != null) fireControlRing.color = new Color(FireAccent.r, FireAccent.g, FireAccent.b, firing ? 1 : .65f);
+        if (fireThumb != null) fireThumb.color = firing ? Color.white : FireAccent;
+        if (battleSkillName != null) battleSkillName.text = localPlayer != null ? localPlayer.skillName : "SKILL";
+        if (skillControlOpacity != null) skillControlOpacity.alpha = active ? 1 : .42f;
+        if (skillControlRing != null)
+        {
+            float cooldown = localPlayer != null ? Mathf.Clamp01(localPlayer.currentCooldown / Mathf.Max(.01f, localPlayer.maxCooldown)) : 0;
+            skillControlRing.SetRing(.95f, cooldown > 0 ? cooldown : 1);
+            skillControlRing.color = cooldown > 0 ? new Color(.55f, .55f, .7f, .7f) : SkillAccent;
+        }
     }
 
     private void FitBattleHUD()
@@ -1226,6 +1604,12 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     private void UpdateMatchTimerAndScore()
     {
         if (isMatchEnding || PhotonNetwork.CurrentRoom == null) return;
+        if (!matchStarted)
+        {
+            if (matchTimerText != null) matchTimerText.text = string.Format("{0:00}:{1:00}",
+                Mathf.FloorToInt(matchDuration / 60f), Mathf.FloorToInt(matchDuration % 60f));
+            return;
+        }
 
         // Update Score Text first so we have the latest kills
         int myKills = 0;
@@ -1400,15 +1784,16 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     private void UpdateSkillUI()
     {
+        UpdateControlFeedback();
         UpdateCombatStatuses();
         if (battleSkillStatus != null)
         {
-            bool ready = localPlayer != null && !localPlayer.isDead && !localPlayer.IsStunned
+            bool ready = MatchInputAllowed && localPlayer != null && !localPlayer.isDead && !localPlayer.IsStunned
                 && !localPlayer.HasMatchEnded && localPlayer.currentCooldown <= 0;
             battleSkillStatus.text = localPlayer == null ? "WAITING" : localPlayer.isDead ? "OFFLINE"
-                : localPlayer.HasMatchEnded ? "OFFLINE" : localPlayer.IsStunned ? "STUNNED"
+                : localPlayer.HasMatchEnded ? "OFFLINE" : !MatchInputAllowed ? "GET READY" : localPlayer.IsStunned ? "STUNNED"
                 : ready ? "READY" : Mathf.CeilToInt(localPlayer.currentCooldown) + "s";
-            battleSkillStatus.color = ready ? new Color(0.23f, 0.82f, 0.92f) : Color.white;
+            battleSkillStatus.color = ready ? new Color(.65f, 1f, .84f) : Color.white;
         }
         if (battleRivalName != null)
             battleRivalName.text = remotePlayer != null && remotePlayer.photonView.Owner != null
@@ -1504,7 +1889,11 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     public void LeaveRoom()
     {
-        PhotonNetwork.LeaveRoom();
+        if (intentionalLeave) return;
+        intentionalLeave = true;
+        StopInterruptedBattle();
+        if (!PhotonNetwork.InRoom) SceneManager.LoadScene("LobbyScene");
+        else if (!PhotonNetwork.LeaveRoom(false)) intentionalLeave = false;
     }
 
     public override void OnLeftRoom()

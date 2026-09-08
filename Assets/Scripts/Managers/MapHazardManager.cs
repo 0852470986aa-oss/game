@@ -49,6 +49,8 @@ public class MapHazardManager : MonoBehaviourPunCallbacks
 
     private IEnumerator SpawnHazardRoutine()
     {
+        while (PhotonNetwork.InRoom && GameplayManager.Instance != null && !GameplayManager.Instance.MatchInputAllowed)
+            yield return null;
         // Wait a few seconds before hazards start
         yield return new WaitForSeconds(5f);
 

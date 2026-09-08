@@ -9,6 +9,7 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
     private RectTransform handle;
     private Vector2 inputVector;
     private int activePointerId = int.MinValue;
+    public bool IsDragging => activePointerId != int.MinValue;
 
     private void Awake()
     {

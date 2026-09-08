@@ -1,149 +1,120 @@
 using UnityEngine;
 using UnityEngine.UI;
-using Photon.Pun;
+using TMPro;
 using System.Collections.Generic;
 
 public class RadarMinimap : MonoBehaviour
 {
-    public float radarRange = 25f; // รัศมีที่เรดาร์จะมองเห็น (แม็พใหญ่ขึ้นต้องเพิ่ม)
-    public float radarUIRadius = 50f; // รัศมีของ UI เรดาร์บนหน้าจอ (เล็กลง)
+    public float radarRange = 25f;
+    public float radarUIRadius = 50f;
     public GameObject blipPrefab;
+    private RectTransform panel, map, pilot;
+    private Vector2 arenaMin, arenaMax;
+    private float scale, refresh;
+    private readonly Dictionary<int, RectTransform> enemies = new Dictionary<int, RectTransform>();
+    private PlayerController[] players;
+    private TMP_Text state;
 
-    private RectTransform radarBG;
-    private Dictionary<int, RectTransform> enemyBlips = new Dictionary<int, RectTransform>();
-
-    void Start()
+    private RectTransform Box(string name, Transform parent, Vector2 size, Color color)
     {
-        CreateRadarUI();
+        var rect = new GameObject(name, typeof(RectTransform), typeof(Image)).GetComponent<RectTransform>();
+        rect.SetParent(parent, false);
+        rect.sizeDelta = size;
+        var image = rect.GetComponent<Image>();
+        image.color = color;
+        image.raycastTarget = false;
+        return rect;
     }
 
-    void CreateRadarUI()
+    private void Create(Transform hud)
     {
-        // 1. หา Canvas
-        Canvas canvas = null;
-        if (GameplayManager.Instance != null && GameplayManager.Instance.playerInfoText != null)
+        arenaMin = GameplayManager.GetArenaMin(GameplayManager.GetCurrentMapIndex());
+        arenaMax = GameplayManager.GetArenaMax(GameplayManager.GetCurrentMapIndex());
+        panel = Box("ArenaMinimap", hud, new Vector2(184, 178), new Color(.025f, .05f, .1f, .9f));
+        panel.anchoredPosition = new Vector2(-526, 253);
+        Vector2 span = arenaMax - arenaMin;
+        scale = Mathf.Min(162f / span.x, 136f / span.y);
+        map = Box("ArenaBounds", panel, span * scale, new Color(.12f, .26f, .34f, .9f));
+        map.anchoredPosition = new Vector2(0, -8);
+        var interior = Box("Interior", map, map.sizeDelta - Vector2.one * 2, new Color(.025f, .06f, .12f, 1));
+        // Authored cover only: no bullets, ships, dynamic hazards or invisible boundary walls.
+        foreach (var collider in FindObjectsByType<Collider2D>(FindObjectsSortMode.None))
         {
-            canvas = GameplayManager.Instance.playerInfoText.canvas;
+            if (collider.isTrigger || !collider.enabled || !collider.gameObject.activeInHierarchy
+                || collider.GetComponentInParent<PlayerController>() != null
+                || collider.GetComponentInParent<BulletController>() != null
+                || collider.GetComponentInParent<SkillController>() != null) continue;
+            var sprite = collider.GetComponent<SpriteRenderer>();
+            if (sprite == null || !sprite.enabled || sprite.sprite == null) continue;
+            Bounds bounds = collider.bounds;
+            if (bounds.center.x < arenaMin.x || bounds.center.x > arenaMax.x
+                || bounds.center.y < arenaMin.y || bounds.center.y > arenaMax.y) continue;
+            Vector2 size = (Vector2)bounds.size * scale;
+            size = Vector2.Min(size, map.sizeDelta - Vector2.one * 2);
+            var cover = Box("Cover", map, Vector2.Max(size, Vector2.one * 2), new Color(.3f, .43f, .49f, .8f));
+            cover.anchoredPosition = MapPosition(bounds.center);
         }
-        if (canvas == null) canvas = FindObjectOfType<Canvas>();
-
-        if (canvas == null)
-        {
-            GameObject canvasObj = new GameObject("RadarCanvas");
-            canvas = canvasObj.AddComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvasObj.AddComponent<CanvasScaler>();
-            canvasObj.AddComponent<GraphicRaycaster>();
-        }
-
-        // 2. สร้าง Radar Background
-        GameObject bgObj = new GameObject("RadarBackground");
-        bgObj.transform.SetParent(canvas.transform, false);
-        radarBG = bgObj.AddComponent<RectTransform>();
-        radarBG.anchorMin = new Vector2(0, 1); // เปลี่ยนจากขวาเป็นซ้าย (0)
-        radarBG.anchorMax = new Vector2(0, 1);
-        radarBG.pivot = new Vector2(0, 1);
-        radarBG.anchoredPosition = new Vector2(10, -10); // ขยับออกจากขอบซ้าย 10
-        radarBG.sizeDelta = new Vector2(radarUIRadius * 2, radarUIRadius * 2);
-        var battleHud = canvas.transform.Find("BattleHUD");
-        if (battleHud != null)
-        {
-            radarBG.SetParent(battleHud, false);
-            radarBG.anchoredPosition = new Vector2(22, -130);
-        }
-
-        Image bgImg = bgObj.AddComponent<Image>();
-        bgImg.raycastTarget = false;
-        bgImg.color = new Color(0, 0, 0, 0.4f); // พื้นหลังโปร่งใส (40% opacity)
-        
-        // ทำให้เป็นวงกลมถ้ามี Sprite วงกลม (ถ้าไม่มีมันจะเป็นสี่เหลี่ยมมืดๆ ไปก่อน)
-        Sprite circleSprite = Resources.Load<Sprite>("UI_Circle");
-        if (circleSprite != null) bgImg.sprite = circleSprite;
-
-        // 3. สร้าง Center Player Blip (จุดของเราเองตรงกลาง)
-        GameObject centerBlip = new GameObject("CenterBlip");
-        centerBlip.transform.SetParent(radarBG, false);
-        RectTransform centerRect = centerBlip.AddComponent<RectTransform>();
-        centerRect.anchoredPosition = Vector2.zero;
-        centerRect.sizeDelta = new Vector2(10, 10);
-        Image centerImg = centerBlip.AddComponent<Image>();
-        centerImg.raycastTarget = false;
-        centerImg.color = Color.green;
-        if (circleSprite != null) centerImg.sprite = circleSprite;
+        pilot = Box("YourShip", map, new Vector2(6, 9), new Color(.25f, 1f, .85f));
+        var nose = Box("Heading", pilot, new Vector2(2, 5), Color.white);
+        nose.anchoredPosition = new Vector2(0, 6);
+        state = new GameObject("RadarLabel", typeof(RectTransform), typeof(TextMeshProUGUI)).GetComponent<TMP_Text>();
+        state.transform.SetParent(panel, false);
+        state.rectTransform.sizeDelta = new Vector2(176, 23);
+        state.rectTransform.anchoredPosition = new Vector2(0, 73);
+        state.fontSize = 12;
+        state.alignment = TextAlignmentOptions.Center;
+        state.raycastTarget = false;
+        if (GameplayManager.Instance.playerInfoText != null) state.font = GameplayManager.Instance.playerInfoText.font;
+        state.text = "ARENA / RADAR 25";
     }
 
-    private PlayerController[] cachedPlayers;
-    private float playerCacheTimer = 0f;
-
-    void Update()
+    private Vector2 MapPosition(Vector2 world)
     {
-        if (GameplayManager.Instance == null || GameplayManager.Instance.localPlayer == null) return;
-
-        PlayerController localPlayer = GameplayManager.Instance.localPlayer;
-
-        // อัปเดตรายชื่อผู้เล่นทุก 2 วินาที แทนทุกเฟรม (ประหยัดเปอร์ฟอร์แมนซ์)
-        playerCacheTimer -= Time.deltaTime;
-        if (playerCacheTimer <= 0f || cachedPlayers == null)
-        {
-            playerCacheTimer = 2f;
-            cachedPlayers = FindObjectsOfType<PlayerController>();
-        }
-
-        foreach (var p in cachedPlayers)
-        {
-            if (p == null || p == localPlayer) continue; // ข้ามตัวเอง
-
-            int id = p.photonView.ViewID;
-
-            // ถ้าตาย ให้ซ่อนจุด
-            if (p.isDead)
-            {
-                if (enemyBlips.ContainsKey(id))
-                {
-                    enemyBlips[id].gameObject.SetActive(false);
-                }
-                continue;
-            }
-
-            // คำนวณระยะห่าง
-            Vector2 offset = p.transform.position - localPlayer.transform.position;
-            float distance = offset.magnitude;
-
-            if (distance <= radarRange)
-            {
-                // ถ้าอยู่ในระยะ ให้แสดง/สร้างจุด
-                if (!enemyBlips.ContainsKey(id))
-                {
-                    enemyBlips[id] = CreateBlip(Color.red);
-                }
-
-                enemyBlips[id].gameObject.SetActive(true);
-
-                // คำนวณตำแหน่งบน UI เรดาร์
-                Vector2 normalizedPos = offset / radarRange; // -1 to 1
-                enemyBlips[id].anchoredPosition = normalizedPos * radarUIRadius;
-            }
-            else
-            {
-                // ถ้าอยู่นอกระยะ ให้ซ่อน
-                if (enemyBlips.ContainsKey(id))
-                {
-                    enemyBlips[id].gameObject.SetActive(false);
-                }
-            }
-        }
+        Vector2 position = (world - (arenaMin + arenaMax) * .5f) * scale;
+        Vector2 edge = map.sizeDelta * .5f - Vector2.one * 5;
+        return new Vector2(Mathf.Clamp(position.x, -edge.x, edge.x), Mathf.Clamp(position.y, -edge.y, edge.y));
     }
 
-    private RectTransform CreateBlip(Color color)
+    private void Update()
     {
-        GameObject blipObj = new GameObject("EnemyBlip");
-        blipObj.transform.SetParent(radarBG, false);
-        RectTransform blipRect = blipObj.AddComponent<RectTransform>();
-        blipRect.sizeDelta = new Vector2(10, 10);
-        Image blipImg = blipObj.AddComponent<Image>();
-        blipImg.color = color;
-        Sprite circleSprite = Resources.Load<Sprite>("UI_Circle");
-        if (circleSprite != null) blipImg.sprite = circleSprite;
-        return blipRect;
+        var manager = GameplayManager.Instance;
+        if (manager == null || manager.playerInfoText == null) return;
+        if (panel == null)
+        {
+            var hud = manager.playerInfoText.canvas.transform.Find("BattleHUD");
+            if (hud == null) return;
+            Create(hud);
+        }
+        var local = manager.localPlayer;
+        pilot.gameObject.SetActive(local != null && !local.isDead);
+        foreach (var marker in enemies.Values) marker.gameObject.SetActive(false);
+        if (local == null || local.isDead || local.HasMatchEnded) return;
+        pilot.anchoredPosition = MapPosition(local.transform.position);
+        pilot.localRotation = Quaternion.Euler(0, 0, local.transform.eulerAngles.z);
+        refresh -= Time.unscaledDeltaTime;
+        if (refresh <= 0 || players == null)
+        {
+            refresh = 1f;
+            players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        }
+        foreach (var other in players)
+        {
+            if (other == null || other == local || other.isDead
+                || Vector2.Distance(other.transform.position, local.transform.position) > radarRange) continue;
+            int id = other.photonView.ViewID;
+            if (!enemies.TryGetValue(id, out var marker))
+            {
+                marker = Box("Rival", map, new Vector2(5, 5), new Color(1f, .3f, .25f));
+                enemies[id] = marker;
+            }
+            marker.gameObject.SetActive(true);
+            marker.anchoredPosition = MapPosition(other.transform.position);
+        }
+        pilot.SetAsLastSibling();
+    }
+
+    private void OnDestroy()
+    {
+        if (panel != null) Destroy(panel.gameObject);
     }
 }

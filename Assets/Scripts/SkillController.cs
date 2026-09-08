@@ -115,11 +115,9 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         if (behavior == SkillBehavior.SeekerMissile || behavior == SkillBehavior.StunWave)
         {
             Vector2 travel = (Vector2)transform.position - movementStart;
-            foreach (var hit in Physics2D.RaycastAll(movementStart, travel.normalized, travel.magnitude))
+            if (ProjectileSweep.FirstHit(transform, photonView.CreatorActorNr, movementStart, transform.position, out var hit))
             {
-                if (hit.collider.isTrigger || hit.collider.GetComponentInParent<PlayerController>() != null) continue;
-                if (hit.collider.transform.IsChildOf(transform)) continue;
-                transform.position = hit.point;
+                transform.position = hit.centroid;
                 OnTriggerEnter2D(hit.collider);
                 if (isDestroyed) return;
             }
@@ -155,7 +153,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         Collider2D[] colliders = Physics2D.OverlapCircleAll(transform.position, 3f);
         foreach (Collider2D hitCollider in colliders)
         {
-            PlayerController hitPlayer = hitCollider.GetComponent<PlayerController>();
+            PlayerController hitPlayer = hitCollider.GetComponentInParent<PlayerController>();
             if (hitPlayer != null && !hitPlayer.photonView.IsMine)
             {
                 DealDamage(hitPlayer);
@@ -165,7 +163,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
 
     private void DealDamage(PlayerController hitPlayer)
     {
-        if (damagedPlayerViewIds.Add(hitPlayer.photonView.ViewID))
+        if (!hitPlayer.isDead && damagedPlayerViewIds.Add(hitPlayer.photonView.ViewID))
         {
             hitPlayer.photonView.RPC("TakeDamage", RpcTarget.All, damage, photonView.CreatorActorNr);
         }
@@ -178,7 +176,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
 
         foreach (PlayerController p in players)
         {
-            if (!p.photonView.IsMine) // หาศัตรู
+            if (!p.isDead && p.photonView.OwnerActorNr != photonView.CreatorActorNr) // หาศัตรู
             {
                 float dist = Vector2.Distance(transform.position, p.transform.position);
                 if (dist < minDistance)
@@ -190,11 +188,14 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         }
     }
 
+    void OnCollisionEnter2D(Collision2D collision) => OnTriggerEnter2D(collision.collider);
+
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
         if (!photonView.IsMine || isDestroyed) return;
 
-        PlayerController hitPlayer = hitInfo.GetComponent<PlayerController>();
+        PlayerController hitPlayer = hitInfo.GetComponentInParent<PlayerController>();
+        if (hitPlayer != null && (hitPlayer.isDead || hitPlayer.photonView.OwnerActorNr == photonView.CreatorActorNr)) return;
         if (behavior == SkillBehavior.NovaBlast)
         {
             if (novaArmed && hitPlayer != null && !hitPlayer.photonView.IsMine)
@@ -208,9 +209,10 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         {
             if (behavior == SkillBehavior.StunWave)
             {
+                DestroySkill();
                 hitPlayer.photonView.RPC("ApplyStunRPC", RpcTarget.All);
                 // เพิ่มดาเมจเล็กน้อย (10) เพื่อให้ Stun ไม่รู้สึกเสียเปรียบเกินไป
-                hitPlayer.photonView.RPC("TakeDamage", RpcTarget.All, damage, photonView.CreatorActorNr);
+                DealDamage(hitPlayer);
                 
                 // Stun Effect / Sound
                 GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
@@ -226,7 +228,8 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             }
             else if (behavior == SkillBehavior.SeekerMissile)
             {
-                hitPlayer.photonView.RPC("TakeDamage", RpcTarget.All, damage, photonView.CreatorActorNr);
+                DestroySkill();
+                DealDamage(hitPlayer);
                 
                 // Seeker Impact
                 GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");

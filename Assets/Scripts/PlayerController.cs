@@ -265,11 +265,13 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private System.Collections.IEnumerator SpawnProtectionRoutine()
     {
         isSpawnProtected = true;
+        while (!BattleInputAllowed && !matchEnded) yield return null;
         float duration = 2f;
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            if (isDead || matchEnded) yield break;
+            elapsed += Time.unscaledDeltaTime;
             // กระพริบยานเพื่อแสดงว่ากำลังอยู่ในช่วงกันตัว
             if (spriteRenderer != null)
                 spriteRenderer.color = new Color(1f, 1f, 1f, Mathf.PingPong(elapsed * 5f, 1f) * 0.5f + 0.5f);
@@ -314,6 +316,8 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (owner != null) owner.SetCustomProperties(props);
     }
 
+    private bool BattleInputAllowed => GameplayManager.Instance == null || GameplayManager.Instance.MatchInputAllowed;
+
     void Update()
     {
         if (matchEnded || isDead) return;
@@ -334,10 +338,11 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
         if (photonView.IsMine)
         {
+            if (!BattleInputAllowed) return;
             if (isEnergyOverloaded)
             {
                 // ลดเลือดอย่างต่อเนื่อง 5 หน่วยต่อวินาที เมื่ออยู่ใน Energy Core
-                if (!isShielded) 
+                if (!isShielded && !isSpawnProtected)
                 {
                     currentHp -= 5f * Time.deltaTime;
                     if (currentHp <= 0)
@@ -371,7 +376,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private void FixedUpdate()
     {
         if (!photonView.IsMine || playerRigidbody == null) return;
-        if (matchEnded || isStunned || isDead)
+        if (matchEnded || isStunned || isDead || !BattleInputAllowed)
         {
             movementInput = Vector2.zero;
             playerRigidbody.linearVelocity = Vector2.zero;
@@ -383,12 +388,64 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     }
 
     private LineRenderer aimGuide;
+    private LineRenderer spawnRing;
+    private Material spawnRingMaterial;
+    public float RespawnReadyAt { get; private set; }
+    public string DeathReason { get; private set; } = "SHIP DESTROYED";
+
+    private void ResetLifeState()
+    {
+        CancelInvoke("RemoveStun");
+        CancelInvoke("RemoveSlow");
+        CancelInvoke("DeactivateShield");
+        isStunned = isSlowed = isShielded = isSpawnProtected = false;
+        swampSources.Clear();
+        coreSources.Clear();
+        SetEnergyOverloadRPC(false);
+        UpdateEffectiveSpeed();
+        movementInput = Vector2.zero;
+        if (playerRigidbody != null) playerRigidbody.linearVelocity = Vector2.zero;
+        if (stunVisual != null) stunVisual.SetActive(false);
+        if (shieldVisual != null) shieldVisual.SetActive(false);
+        if (spriteRenderer != null) spriteRenderer.color = Color.white;
+    }
+
+    private void UpdateSpawnRing()
+    {
+        bool visible = isSpawnProtected && !isDead && !matchEnded;
+        if (visible && spawnRing == null)
+        {
+            Shader shader = Shader.Find("Sprites/Default");
+            if (shader == null) return;
+            spawnRingMaterial = new Material(shader);
+            var ring = new GameObject("SpawnProtectionRing");
+            ring.transform.SetParent(transform, false);
+            spawnRing = ring.AddComponent<LineRenderer>();
+            spawnRing.sharedMaterial = spawnRingMaterial;
+            spawnRing.useWorldSpace = true;
+            spawnRing.loop = true;
+            spawnRing.positionCount = 64;
+            spawnRing.sortingOrder = 15;
+        }
+        if (spawnRing == null) return;
+        spawnRing.enabled = visible;
+        if (!visible) return;
+        float radius = spriteRenderer != null ? Mathf.Max(spriteRenderer.bounds.extents.x, spriteRenderer.bounds.extents.y) + .35f : 2f;
+        spawnRing.startWidth = spawnRing.endWidth = .09f + .025f * Mathf.Sin(Time.unscaledTime * 8f);
+        spawnRing.startColor = spawnRing.endColor = new Color(.25f, .95f, 1f, .85f);
+        for (int i = 0; i < 64; i++)
+        {
+            float angle = i * Mathf.PI * 2f / 64f;
+            spawnRing.SetPosition(i, transform.position + new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0) * radius);
+        }
+    }
     private Material aimGuideMaterial;
     private readonly RaycastHit2D[] aimGuideHits = new RaycastHit2D[64];
 
     private void UpdateAimGuide()
     {
-        bool visible = photonView.IsMine && !matchEnded && !isDead && !isStunned
+        UpdateSpawnRing();
+        bool visible = photonView.IsMine && BattleInputAllowed && !matchEnded && !isDead && !isStunned
             && fireButton != null && fireButton.isPressed;
         if (!visible)
         {
@@ -440,11 +497,13 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void OnDestroy()
     {
+        if (spawnRingMaterial != null) Destroy(spawnRingMaterial);
         if (aimGuideMaterial != null) Destroy(aimGuideMaterial);
     }
 
     public override void OnDisable()
     {
+        if (spawnRing != null) spawnRing.enabled = false;
         if (aimGuide != null) aimGuide.enabled = false;
         base.OnDisable();
     }
@@ -608,6 +667,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void ApplyStunRPC()
     {
+        if (!BattleInputAllowed || isDead || isSpawnProtected) return;
         if (isShielded) return; // ติดโล่ป้องกันสถานะได้
         isStunned = true;
         CancelInvoke("RemoveStun");
@@ -645,6 +705,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void ApplySlowRPC()
     {
+        if (isDead || !BattleInputAllowed) return;
         if (isShielded) return;
         
         // ถ้าเพิ่งโดน slow ไป ให้รีเฟรชเวลา
@@ -681,6 +742,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     public void SetBattlefieldZone(int source, bool core, bool inside)
     {
+        if (isDead && inside) return;
         var sources = core ? coreSources : swampSources;
         if (inside) sources.Add(source); else sources.Remove(source);
         if (core) SetEnergyOverloadRPC(coreSources.Count > 0);
@@ -729,17 +791,21 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void TakeDamage(float damage, int killerId)
     {
+        if (!BattleInputAllowed) return;
         if (!photonView.IsMine) return;
         if (matchEnded || isDead) return;
         if (isSpawnProtected) return; // กันตัวตอน Spawn
+        if (GameplayManager.Instance != null) GameplayManager.Instance.ShowIncomingDamage(killerId);
 
         if (isShielded)
         {
             // Shield Hit Feedback (โล่รับดาเมจแทน แสดงเอฟเฟกต์โดนโล่)
+            ConfirmHitToShooter(killerId, true);
             photonView.RPC("PlayShieldHitRPC", RpcTarget.All);
             return;
         }
 
+        ConfirmHitToShooter(killerId, false);
         currentHp -= damage;
         
         photonView.RPC("PlayHitEffectsRPC", RpcTarget.All, damage);
@@ -756,6 +822,20 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             currentHp = 0;
             Die(killerId);
         }
+    }
+
+    private void ConfirmHitToShooter(int shooterId, bool shield)
+    {
+        var shooter = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.GetPlayer(shooterId) : null;
+        if (shooter != null && shooterId != photonView.OwnerActorNr)
+            photonView.RPC("ConfirmProjectileHitRPC", shooter, shield);
+    }
+
+    [PunRPC]
+    public void ConfirmProjectileHitRPC(bool shield, PhotonMessageInfo info)
+    {
+        if (info.Sender != photonView.Owner) return;
+        if (GameplayManager.Instance != null) GameplayManager.Instance.ShowConfirmedHit(shield);
     }
 
     [PunRPC]
@@ -853,7 +933,13 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void OnPlayerDiedRPC(int killerId)
     {
+        if (isDead || matchEnded) return;
         isDead = true;
+        ResetLifeState();
+        RespawnReadyAt = Time.unscaledTime + 3f;
+        var killer = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.GetPlayer(killerId) : null;
+        DeathReason = killerId == photonView.OwnerActorNr ? "SELF DESTRUCTION"
+            : killer != null ? "DESTROYED BY " + killer.NickName : "DESTROYED BY BATTLEFIELD HAZARD";
         Debug.Log("Player Died!");
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Explosion");
@@ -871,7 +957,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (CameraShake.Instance != null && photonView.IsMine) CameraShake.Instance.TriggerShake(1.0f, 1.0f);
         
         // PHASE 4: หน่วงเวลา Slow motion เล็กน้อยเพื่ออารมณ์ที่สะใจขึ้น (รันทุกคน)
-        StartCoroutine(SlowMotionRoutine());
+        // Keep online simulation and the round clock at normal speed after a kill.
 
         // ซ่อนยาน
         if (spriteRenderer != null) spriteRenderer.enabled = false;
@@ -912,59 +998,29 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private System.Collections.IEnumerator RespawnRoutine()
     {
-        yield return new WaitForSeconds(3.0f);
-        
-        if (matchEnded) yield break;
-        
-        currentHp = maxHp;
-        
-        // สุ่มตำแหน่งเกิดใหม่ที่ไม่ชนกำแพง (ลองสูงสุด 10 ครั้ง ถ้าไม่เจอที่ว่างให้เกิดตรงกลางไปเลย)
-        Vector2 spawnPos = Vector2.zero;
-        bool foundSafe = false;
-        if (GameplayManager.GetCurrentMapIndex() == 2)
+        RespawnReadyAt = Time.unscaledTime + 3f;
+        while (Time.unscaledTime < RespawnReadyAt)
         {
-            while (!GameplayManager.TryFindMechSpawn(gameObject, PhotonNetwork.IsMasterClient, out spawnPos))
-            {
-                if (matchEnded || !PhotonNetwork.InRoom) yield break;
-                yield return new WaitForSeconds(.5f);
-            }
-            foundSafe = true;
+            if (matchEnded || !PhotonNetwork.InRoom) yield break;
+            yield return null;
         }
-        for (int attempt = 0; !foundSafe && attempt < 15; attempt++)
+        Vector2 spawnPos;
+        while (!GameplayManager.TryFindSafeSpawn(gameObject, GameplayManager.GetCurrentMapIndex(),
+            PhotonNetwork.IsMasterClient, out spawnPos))
         {
-            float spawnX = Random.Range(arenaMin.x + 4f, arenaMax.x - 4f);
-            float spawnY = Random.Range(arenaMin.y + 4f, arenaMax.y - 4f);
-            Vector2 testPos = new Vector2(spawnX, spawnY);
-            
-            // เช็คว่าตำแหน่งนี้ปลอดภัยไหม (เช็คเป็นวงกลมรัศมี 2.5) — สนใจเฉพาะ Collider ที่แข็ง (ไม่ใช่ Trigger)
-            Collider2D[] hits = Physics2D.OverlapCircleAll(testPos, 2.5f);
-            bool isSafe = true;
-            foreach (var h in hits)
-            {
-                if (!h.isTrigger) 
-                {
-                    isSafe = false;
-                    break;
-                }
-            }
-            if (isSafe)
-            {
-                spawnPos = testPos;
-                foundSafe = true;
-                break;
-            }
+            if (matchEnded || !PhotonNetwork.InRoom) yield break;
+            yield return new WaitForSecondsRealtime(.5f);
         }
-        if (!foundSafe) spawnPos = new Vector2(0f, 0f); // fallback ตรงกลาง
-        
-        transform.position = spawnPos;
-        
-        // แจ้งทุกคนให้แสดงยานนี้กลับมา
+        if (matchEnded || !PhotonNetwork.InRoom) yield break;
         photonView.RPC("OnPlayerRespawnedRPC", RpcTarget.All, spawnPos);
     }
 
     [PunRPC]
     public void OnPlayerRespawnedRPC(Vector2 spawnPos)
     {
+        if (matchEnded || !isDead) return;
+        ResetLifeState();
+        currentHp = maxHp;
         isDead = false;
         transform.position = spawnPos;
         if (playerRigidbody != null) playerRigidbody.position = spawnPos;
@@ -974,10 +1030,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (GetComponent<Collider2D>()) GetComponent<Collider2D>().enabled = true;
         if (thrusterEffect != null) thrusterEffect.Play();
         
-        if (photonView.IsMine)
-        {
-            StartCoroutine(SpawnProtectionRoutine());
-        }
+        StartCoroutine(SpawnProtectionRoutine());
     }
 
     private System.Collections.IEnumerator ShowResultWithDelay(bool isWinner)

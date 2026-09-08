@@ -147,12 +147,12 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             }
             if (musicSlider != null) 
             {
-                musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", 1f);
+                musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", .65f);
                 musicSlider.onValueChanged.AddListener(vol => AudioManager.Instance.SetMusicVolume(vol));
             }
             if (sfxSlider != null) 
             {
-                sfxSlider.value = PlayerPrefs.GetFloat("SFXVolume", 1f);
+                sfxSlider.value = PlayerPrefs.GetFloat("SFXVolume", .8f);
                 sfxSlider.onValueChanged.AddListener(vol => AudioManager.Instance.SetSFXVolume(vol));
             }
         }
@@ -163,6 +163,18 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             : "Player_" + Random.Range(1000, 9999);
 
         // เชื่อมต่อ Photon
+        if (!string.IsNullOrEmpty(GameplayManager.RecoveryRoom))
+        {
+            previousRoom = GameplayManager.RecoveryRoom;
+            GameplayManager.RecoveryRoom = null;
+            reconnecting = true;
+            reconnectDeadline = Time.unscaledTime + 50f;
+            UpdateStatus("Battle interrupted. Reconnecting to your waiting room...");
+            if (PhotonNetwork.ReconnectAndRejoin() || PhotonNetwork.Reconnect()) return;
+            if (!PhotonNetwork.IsConnected && PhotonNetwork.ConnectUsingSettings()) return;
+            RecoveryFailed("Could not reconnect. Please reconnect and join a room again.");
+            return;
+        }
         if (!PhotonNetwork.IsConnected)
         {
             if (PhotonNetwork.AuthValues == null || string.IsNullOrEmpty(PhotonNetwork.AuthValues.UserId))
@@ -562,6 +574,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         
         // เปิดหน้า Waiting Room แทนการโหลดเกมทันที
         ShowWaitingRoom();
+        if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("BattleAborted", out object aborted) && aborted is bool wasAborted && wasAborted)
+            UpdateStatus("Match cancelled: a pilot left or disconnected. Wait for both pilots, then Ready again.");
     }
 
     public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
@@ -1065,6 +1079,12 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         isStartingGame = true;
         PhotonNetwork.CurrentRoom.IsOpen = false;
         PhotonNetwork.CurrentRoom.IsVisible = false;
+        PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable
+        {
+            ["BattleToken"] = System.Guid.NewGuid().ToString("N"),
+            ["BattleAborted"] = false,
+            ["StartTime"] = -1d
+        });
         PhotonNetwork.LoadLevel("SampleScene");
     }
 
@@ -1367,6 +1387,7 @@ public partial class LobbyManager
         colors.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.6f);
         button.colors = colors;
         button.onClick.AddListener(action);
+        button.onClick.AddListener(() => { if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Click"); });
         UILabel("Label", image.transform, value, 0, 0, w - 16, h - 8, 20, Color.white);
         return button;
     }
