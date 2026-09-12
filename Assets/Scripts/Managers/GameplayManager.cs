@@ -1412,17 +1412,55 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (skillButton != null)
         {
             skillControlOpacity = PrepareControl(skillButton.transform, 553, -53, 112);
-            // The old icon has a baked square and labels; use clean code-drawn visuals instead.
-            skillIconImage = null;
+            // Use a dedicated image so loading the equipped skill never replaces the input root.
+            skillIconImage = BattlePanel("EquippedSkillIcon", skillButton.transform, 0, 0, 96, 96, Color.white);
+            skillIconImage.preserveAspect = true;
+            skillIconImage.enabled = false;
             skillCooldownImage = null;
-            ControlCircle("TouchPad", skillButton.transform, 106, 0, new Color(.065f, .04f, .13f, .58f));
             ControlCircle("CooldownTrack", skillButton.transform, 112, .95f, new Color(.7f, .6f, 1f, .18f));
             skillControlRing = ControlCircle("CooldownProgress", skillButton.transform, 112, .95f, SkillAccent);
-            battleSkillName = BattleLabel("AbilityName", skillButton.transform, "SKILL", 0, 13, 94, 24, 17);
+            battleSkillName = BattleLabel("AbilityName", skillButton.transform, "SKILL", 0, -65, 130, 22, 15);
             battleSkillName.color = SkillAccent;
-            battleSkillStatus = BattleLabel("AbilityState", skillButton.transform, "WAITING", 0, -14, 96, 24, 17);
-            var label = BattleLabel("SkillCaption", skillButton.transform, "ABILITY", 0, -69, 145, 22, 14);
-            label.color = SkillAccent;
+            battleSkillStatus = BattleLabel("AbilityState", skillButton.transform, "WAITING", 0, -85, 130, 22, 15);
+        }
+        ApplyAuthoredControlArt();
+    }
+
+    private bool ApplyControlSprites(Transform control, RectTransform handle, string prefix, float handleSize)
+    {
+        Sprite baseSprite = Resources.Load<Sprite>("Images/" + prefix + "_Base");
+        Sprite handleSprite = Resources.Load<Sprite>("Images/" + prefix + "_Handle");
+        if (baseSprite == null || handleSprite == null || handle == null) return false;
+        // Keep the transparent input root and captions, replacing only procedural artwork.
+        foreach (var graphic in control.GetComponentsInChildren<Graphic>(true))
+            if (graphic.transform != control && !(graphic is TMP_Text)) graphic.enabled = false;
+        var baseImage = BattlePanel("AuthoredBase", control, 0, 0,
+            ((RectTransform)control).sizeDelta.x * .8f, ((RectTransform)control).sizeDelta.y * .8f, Color.white);
+        baseImage.sprite = baseSprite;
+        baseImage.preserveAspect = true;
+        baseImage.transform.SetAsFirstSibling();
+        handle.sizeDelta = Vector2.one * handleSize;
+        handle.anchoredPosition = Vector2.zero;
+        var handleImage = BattlePanel("AuthoredHandle", handle, 0, 0, handleSize, handleSize, Color.white);
+        handleImage.sprite = handleSprite;
+        handleImage.preserveAspect = true;
+        handle.SetAsLastSibling();
+        return true;
+    }
+
+    private void ApplyAuthoredControlArt()
+    {
+        if (joystick != null && ApplyControlSprites(joystick.transform,
+            joystick.transform.Find("JoystickHandle") as RectTransform, "UI_Move", 108))
+        {
+            joystick.handleTravelFraction = .1f;
+            moveControlRing = moveThumb = null;
+        }
+        if (fireButton != null && ApplyControlSprites(fireButton.transform,
+            fireButton.aimHandle, "UI_Fire", 92))
+        {
+            fireButton.handleTravelFraction = .09f;
+            fireControlRing = fireThumb = null;
         }
     }
 
@@ -1826,7 +1864,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
             else if (player.skillType == 3) iconName = "icon_seeker";
 
             Sprite sp = Resources.Load<Sprite>("Images/" + iconName);
-            if (sp != null) skillIconImage.sprite = sp;
+            skillIconImage.sprite = sp;
+            skillIconImage.enabled = sp != null;
         }
     }
 

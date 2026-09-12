@@ -14,6 +14,7 @@ public class UIButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     public Vector2 AimDirection { get; private set; }
     public bool HasAim { get; private set; }
     public RectTransform aimHandle;
+    public float handleTravelFraction = .4f;
     private int activePointerId = int.MinValue;
 
     public void OnInitializePotentialDrag(PointerEventData eventData) { eventData.useDragThreshold = false; }
@@ -30,7 +31,8 @@ public class UIButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
             AimDirection = point.normalized;
             HasAim = true;
         }
-        if (aimHandle != null) aimHandle.anchoredPosition = Vector2.ClampMagnitude(point, radius);
+        if (aimHandle != null) aimHandle.anchoredPosition = Vector2.ClampMagnitude(point,
+            Mathf.Min(rect.rect.width, rect.rect.height) * handleTravelFraction);
     }
 
     private void Awake()

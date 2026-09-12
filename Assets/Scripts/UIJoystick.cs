@@ -10,6 +10,7 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
     private Vector2 inputVector;
     private int activePointerId = int.MinValue;
     public bool IsDragging => activePointerId != int.MinValue;
+    public float handleTravelFraction = .4f;
 
     private void Awake()
     {
@@ -35,8 +36,8 @@ public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPoint
 
             // Move the handle
             if (handle != null) handle.anchoredPosition = new Vector2(
-                inputVector.x * (background.sizeDelta.x / 2.5f),
-                inputVector.y * (background.sizeDelta.y / 2.5f));
+                inputVector.x * background.sizeDelta.x * handleTravelFraction,
+                inputVector.y * background.sizeDelta.y * handleTravelFraction);
         }
     }
 
