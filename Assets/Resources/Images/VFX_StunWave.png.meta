@@ -1,0 +1,436 @@
+fileFormatVersion: 2
+guid: ceea64c03496ca149b23e3e1707ac2f9
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -5263810155495206845
+    second: VFX_StunWave_0
+  - first:
+      213: -979873097841403916
+    second: VFX_StunWave_1
+  - first:
+      213: -1793972923024408194
+    second: VFX_StunWave_2
+  - first:
+      213: 8760186879752726823
+    second: VFX_StunWave_3
+  - first:
+      213: 1123862636203415636
+    second: VFX_StunWave_4
+  - first:
+      213: 8019190161209488786
+    second: VFX_StunWave_5
+  - first:
+      213: 2711416590381054174
+    second: VFX_StunWave_6
+  - first:
+      213: -3256203400911810789
+    second: VFX_StunWave_7
+  - first:
+      213: -8776041637434145201
+    second: VFX_StunWave_8
+  - first:
+      213: 6107576751939568468
+    second: VFX_StunWave_9
+  - first:
+      213: 2848693849235223589
+    second: VFX_StunWave_10
+  - first:
+      213: 7287425840737905587
+    second: VFX_StunWave_11
+  - first:
+      213: -876303938119882514
+    second: VFX_StunWave_12
+  - first:
+      213: -6361237015002044156
+    second: VFX_StunWave_13
+  - first:
+      213: 8032655481186592343
+    second: VFX_StunWave_14
+  - first:
+      213: -4921389530212543966
+    second: VFX_StunWave_15
+  - first:
+      213: -6355532136189500110
+    second: VFX_StunWave_16
+  - first:
+      213: 5886190890461989343
+    second: VFX_StunWave_17
+  - first:
+      213: -4867611223089747084
+    second: VFX_StunWave_18
+  - first:
+      213: 2821946256490113526
+    second: VFX_StunWave_19
+  - first:
+      213: 4542698219714734891
+    second: VFX_StunWave_20
+  - first:
+      213: -980539248629630253
+    second: VFX_StunWave_21
+  - first:
+      213: -1978123621290290592
+    second: VFX_StunWave_22
+  - first:
+      213: 5071538650046456366
+    second: VFX_StunWave_23
+  - first:
+      213: 8978768460580897576
+    second: VFX_StunWave_24
+  - first:
+      213: -5008397122769048138
+    second: VFX_StunWave_25
+  - first:
+      213: 71278260981662850
+    second: VFX_StunWave_26
+  - first:
+      213: 5723816613806746149
+    second: VFX_StunWave_27
+  - first:
+      213: -8225849317197614844
+    second: VFX_StunWave_28
+  - first:
+      213: 2091059991741043484
+    second: VFX_StunWave_29
+  - first:
+      213: 8816704819011982064
+    second: VFX_StunWave_30
+  - first:
+      213: -6315647002197415831
+    second: VFX_StunWave_31
+  - first:
+      213: -1052914418019538975
+    second: VFX_StunWave_32
+  - first:
+      213: 5490705066578622113
+    second: VFX_StunWave_33
+  - first:
+      213: 5434165305825215460
+    second: VFX_StunWave_34
+  - first:
+      213: 1172147965759097748
+    second: VFX_StunWave_35
+  - first:
+      213: -461691765541859268
+    second: VFX_StunWave_36
+  - first:
+      213: -8548237060012054980
+    second: VFX_StunWave_37
+  - first:
+      213: 1036179710366482218
+    second: VFX_StunWave_38
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: VFX_StunWave_0
+      rect:
+        serializedVersion: 2
+        x: 2
+        y: 0
+        width: 495
+        height: 340
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3405d9c6d8033f6b0800000000000000
+      internalID: -5263810155495206845
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_1
+      rect:
+        serializedVersion: 2
+        x: 504
+        y: 7
+        width: 523
+        height: 330
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: e442fdd8dece1ee4495fc7220b6a50aa
+      internalID: -979873097841403916
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_2
+      rect:
+        serializedVersion: 2
+        x: 1025
+        y: 0
+        width: 276
+        height: 334
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ba5527fbe5901b4499359598f3895ce3
+      internalID: -1793972923024408194
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_3
+      rect:
+        serializedVersion: 2
+        x: 1305
+        y: 0
+        width: 340
+        height: 336
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6048d36f555c19e4ebdf65ede1c14dd3
+      internalID: 8760186879752726823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_4
+      rect:
+        serializedVersion: 2
+        x: 1644
+        y: 0
+        width: 234
+        height: 334
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f53d027dc6443b14c9dffe7c0e9bb56d
+      internalID: 1123862636203415636
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_5
+      rect:
+        serializedVersion: 2
+        x: 1880
+        y: 0
+        width: 240
+        height: 339
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: baaa3244b3632bc4f8b22ff921723e2b
+      internalID: 8019190161209488786
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: VFX_StunWave_6
+      rect:
+        serializedVersion: 2
+        x: 2121
+        y: 0
+        width: 279
+        height: 337
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6d7341fe43656514b9ad143b1d1fd1d1
+      internalID: 2711416590381054174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 3169b91b8cc877649b12c6f5eca5e920
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":2400.0,"y":340.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":0.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":2,"keepEmptyRects":false,"isAlternate":false}'
+    nameFileIdTable:
+      VFX_StunWave_0: -5263810155495206845
+      VFX_StunWave_1: -979873097841403916
+      VFX_StunWave_2: -1793972923024408194
+      VFX_StunWave_3: 8760186879752726823
+      VFX_StunWave_4: 1123862636203415636
+      VFX_StunWave_5: 8019190161209488786
+      VFX_StunWave_6: 2711416590381054174
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

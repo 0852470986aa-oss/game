@@ -89,9 +89,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [Header("Visual Effects")]
     public ParticleSystem thrusterEffect;
     private SpriteRenderer spriteRenderer;
+    private SkillSheetVisual authoredShield;
     private SpriteRenderer[] sheetThrusters;
     private SpriteRenderer[] sheetThrusterGlows;
     private Vector2[] exhaustAnchors;
+    private float[] exhaustAngles;
+    private int exhaustStyle;
     private float displayedThrust;
     private Color exhaustGlowColor;
     private static readonly Sprite[] exhaustSprites = new Sprite[3];
@@ -117,6 +120,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         {
             int style = spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
                 : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship3") ? 2 : 0;
+            exhaustStyle = style;
             Sprite source = ShipEffectSprite(4);
             if (source == null) return;
             // Flame-only regions in the original 1536 x 1024 sheet; omit the metal nozzle.
@@ -131,10 +135,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
                 exhaustSprites[style] = Sprite.Create(source.texture, region, new Vector2(0.5f, 1f), source.pixelsPerUnit, 0, SpriteMeshType.FullRect);
                 exhaustSprites[style].name = "FlameOnly_" + style;
             }
-            // Normalized nozzle locations in each ship's original image, not its padded bounds.
-            exhaustAnchors = style == 0 ? new[] { new Vector2(.412f, .398f), new Vector2(.527f, .398f), new Vector2(.587f, .398f) }
-                : style == 1 ? new[] { new Vector2(.471f, .431f), new Vector2(.532f, .431f) }
-                : new[] { new Vector2(.42f, .37f), new Vector2(.58f, .37f) };
+            // Anchors match the replacement PNGs supplied by the user (including their transparent padding).
+            // Red: four rear nozzles. White: two rear and two forward-facing nozzles. Green: two heavy rear engines.
+            exhaustAnchors = style == 0 ? new[] {
+                new Vector2(.235f, .055f), new Vector2(.423f, .055f),
+                new Vector2(.577f, .055f), new Vector2(.754f, .055f) }
+                : style == 1 ? new[] {
+                    new Vector2(.404f, .025f), new Vector2(.594f, .025f),
+                    new Vector2(.404f, .64f), new Vector2(.594f, .64f) }
+                : new[] { new Vector2(.333f, .215f), new Vector2(.662f, .215f) };
+            exhaustAngles = style == 1 ? new[] { 0f, 0f, 180f, 180f } : new float[exhaustAnchors.Length];
             sheetThrusters = new SpriteRenderer[exhaustAnchors.Length];
             sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
             exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
@@ -170,13 +180,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         {
             var nozzle = sheetThrusters[i];
             nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled;
-            float scale = length / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
-            float width = hull.size.x * Mathf.Lerp(0.032f, 0.045f, displayedThrust);
+            float engineSize = exhaustStyle == 2 ? 1.3f : exhaustStyle == 1 && i >= 2 ? .75f : 1f;
+            float scale = length * engineSize / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
+            float width = hull.size.x * (exhaustStyle == 2 ? Mathf.Lerp(.10f, .14f, displayedThrust)
+                : Mathf.Lerp(.052f, .072f, displayedThrust));
+            if (exhaustStyle == 1 && i >= 2) width *= .85f;
             nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
             Vector2 anchor = exhaustAnchors[i];
             if (spriteRenderer.flipX) anchor.x = 1f - anchor.x;
             if (spriteRenderer.flipY) anchor.y = 1f - anchor.y;
-            nozzle.transform.localRotation = Quaternion.Euler(0, 0, spriteRenderer.flipY ? 180 : 0);
+            nozzle.transform.localRotation = Quaternion.Euler(0, 0, exhaustAngles[i] + (spriteRenderer.flipY ? 180 : 0));
             nozzle.transform.localPosition = new Vector3(hull.min.x + hull.size.x * anchor.x, hull.min.y + hull.size.y * anchor.y, 0);
             nozzle.color = new Color(1, 1, 1, Mathf.Lerp(0.85f, 1f, displayedThrust));
             var glow = sheetThrusterGlows[i];
@@ -395,6 +408,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void ResetLifeState()
     {
+        if (authoredShield != null) { Destroy(authoredShield.gameObject); authoredShield = null; }
         CancelInvoke("RemoveStun");
         CancelInvoke("RemoveSlow");
         CancelInvoke("DeactivateShield");
@@ -497,6 +511,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 
     private void OnDestroy()
     {
+        if (authoredShield != null) Destroy(authoredShield.gameObject);
         if (spawnRingMaterial != null) Destroy(spawnRingMaterial);
         if (aimGuideMaterial != null) Destroy(aimGuideMaterial);
     }
@@ -637,9 +652,16 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     [PunRPC]
     public void ActivateShieldRPC()
     {
+        if (isDead || matchEnded) return;
         isShielded = true;
-        if (shieldVisual != null) shieldVisual.SetActive(true);
+        if (authoredShield != null) Destroy(authoredShield.gameObject);
+        var frames = SkillSheetVisual.Load("VFX_Shield");
+        float diameter = spriteRenderer != null ? Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * 1.2f : 4f;
+        authoredShield = SkillSheetVisual.Create(frames, transform, transform.position, diameter, 2.3f);
+        if (authoredShield != null) authoredShield.breakTime = 2f;
+        if (shieldVisual != null) shieldVisual.SetActive(authoredShield == null);
         UpdateEffectiveSpeed();
+        CancelInvoke("DeactivateShield");
         Invoke("DeactivateShield", 2f);
     }
 
@@ -650,6 +672,12 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (shieldVisual != null) shieldVisual.SetActive(false);
 
         // Shield Break Effect (เอฟเฟกต์โล่แตก สีฟ้า ขนาดใหญ่)
+        if (authoredShield != null)
+        {
+            authoredShield.Break();
+            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldBreak");
+            return;
+        }
         GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
         if (impactPrefab != null)
         {

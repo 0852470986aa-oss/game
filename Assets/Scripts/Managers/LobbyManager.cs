@@ -172,7 +172,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             UpdateStatus("Battle interrupted. Reconnecting to your waiting room...");
             if (PhotonNetwork.ReconnectAndRejoin() || PhotonNetwork.Reconnect()) return;
             if (!PhotonNetwork.IsConnected && PhotonNetwork.ConnectUsingSettings()) return;
-            RecoveryFailed("Could not reconnect. Please reconnect and join a room again.");
+            RecoveryFailed("Room recovery unavailable. Retrying the lobby connection automatically...");
             return;
         }
         if (!PhotonNetwork.IsConnected)
@@ -206,6 +206,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     void Update()
     {
         FitLobbyUI();
+        UpdateAutomaticRecovery();
         if (Time.unscaledTime >= nextStatusRefresh)
         {
             nextStatusRefresh = Time.unscaledTime + 1f;
@@ -216,7 +217,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             if (connectionText != null) connectionText.text = connection;
             if (PhotonNetwork.InRoom) UpdateWaitingRoomUI();
             if (!profileLoaded && Time.unscaledTime > profileDeadline)
-                UpdateStatus("Loadout is taking longer than expected. Check connection, then Retry.");
+                UpdateStatus("Loadout delayed. Retrying automatically...");
         }
         if (reconnecting && Time.unscaledTime > reconnectDeadline)
         {
@@ -224,8 +225,54 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             previousRoom = null;
             PhotonNetwork.Disconnect();
             ShowMainPanel();
-            UpdateStatus("Room recovery timed out. Reconnect to find a new room.");
+            UpdateStatus("Room recovery expired. Reconnecting to the lobby automatically...");
         }
+    }
+
+    private float nextAutoReconnect, nextAutoProfileRetry;
+    private int autoReconnectAttempts;
+    private bool automaticRecoveryBlocked;
+
+    private void UpdateAutomaticRecovery()
+    {
+        if (loggingOut || isStartingGame || isLeavingRoom || automaticRecoveryBlocked) return;
+        if (!profileLoaded && Time.unscaledTime > profileDeadline && Time.unscaledTime >= nextAutoProfileRetry
+            && Application.internetReachability != NetworkReachability.NotReachable)
+        {
+            nextAutoProfileRetry = Time.unscaledTime + 30f;
+            LoadLobbyProfile();
+        }
+        if (PhotonNetwork.InRoom || PhotonNetwork.InLobby)
+        {
+            autoReconnectAttempts = 0;
+            return;
+        }
+        if (roomRequestPending || Time.unscaledTime < nextAutoReconnect) return;
+        var state = PhotonNetwork.NetworkClientState;
+        // Wait for any existing handshake to finish; never issue overlapping connection requests.
+        if (state != ClientState.Disconnected && state != ClientState.PeerCreated && state != ClientState.ConnectedToMasterServer) return;
+        if (Application.internetReachability == NetworkReachability.NotReachable)
+        {
+            nextAutoReconnect = Time.unscaledTime + 2f;
+            UpdateStatus("Waiting for internet. Reconnection is automatic.");
+            return;
+        }
+        float delay = Mathf.Min(15f, 2f * Mathf.Pow(2, Mathf.Min(autoReconnectAttempts++, 3)));
+        nextAutoReconnect = Time.unscaledTime + delay;
+        UpdateStatus(reconnecting ? "Reconnecting to your room automatically..." : "Connecting to the lobby automatically...");
+        if (state == ClientState.ConnectedToMasterServer)
+        {
+            if (reconnecting && !string.IsNullOrEmpty(previousRoom))
+            {
+                if (!PhotonNetwork.RejoinRoom(previousRoom)) RecoveryFailed("Room unavailable. Returning to lobby...");
+            }
+            else PhotonNetwork.JoinLobby();
+        }
+        else if (reconnecting && !string.IsNullOrEmpty(previousRoom))
+        {
+            if (!PhotonNetwork.ReconnectAndRejoin() && !PhotonNetwork.Reconnect()) PhotonNetwork.ConnectUsingSettings();
+        }
+        else PhotonNetwork.ConnectUsingSettings();
     }
 
     // ============================
@@ -692,6 +739,18 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         cachedRooms.Clear();
         RenderRoomList();
         if (loggingOut) return;
+        automaticRecoveryBlocked = cause == DisconnectCause.InvalidAuthentication
+            || cause == DisconnectCause.CustomAuthenticationFailed || cause == DisconnectCause.MaxCcuReached
+            || cause == DisconnectCause.InvalidRegion || cause == DisconnectCause.ApplicationQuit;
+        if (automaticRecoveryBlocked)
+        {
+            reconnecting = false;
+            previousRoom = null;
+            ShowMainPanel();
+            UpdateStatus("Connection cannot recover automatically: " + cause + ". Check account/server settings.");
+            return;
+        }
+        nextAutoReconnect = Time.unscaledTime + 2f;
         if (!isLeavingRoom && !isStartingGame && !string.IsNullOrEmpty(previousRoom)
             && cause != DisconnectCause.DisconnectByClientLogic)
         {
@@ -699,15 +758,14 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             reconnecting = true;
             UpdateStatus("Connection lost. Returning to your room...");
             UpdateWaitingRoomUI();
-            if (PhotonNetwork.ReconnectAndRejoin()) return;
-            if (PhotonNetwork.Reconnect()) return;
+            return; // The update loop retries with backoff until the room-recovery deadline.
         }
         reconnecting = false;
         previousRoom = null;
         isLeavingRoom = false;
         isStartingGame = false;
         ShowMainPanel();
-        UpdateStatus("Disconnected (" + cause + "). Press Reconnect.");
+        UpdateStatus("Connection lost. Reconnecting automatically...");
     }
 
     private void RecoveryFailed(string message)
@@ -1471,7 +1529,7 @@ public partial class LobbyManager
             UILabel("MapHeading", root, "CHOOSE YOUR BATTLEFIELD", 0, -53, 1100, 30, 18, accentColor);
             BuildMapCards(root, -175, true);
             browserMessage = UILabel("BrowserMessage", root, "", 0, -307, 1140, 32, 18, Color.white);
-            UIButton("RetryBrowser", root, "RECONNECT / RETRY", 0, -345, 250, 44, RetryLobbyConnection);
+            // Connection recovery is automatic; no retry button is needed.
         }
         if (mainPanel != null)
         {
@@ -1589,7 +1647,7 @@ public partial class LobbyManager
         UIButton("HowToPlay", root, "HOW TO PLAY", 395, -205, 370, 52, OnTutorialClicked);
         statusText = UILabel("HomeStatus", root, "Loading pilot data...", -170, -292, 840, 38, 18, Color.white);
         statusText.richText = false;
-        UIButton("RetryConnection", root, "RECONNECT / RETRY", 445, -294, 290, 48, RetryLobbyConnection);
+        // Connection status above reports automatic recovery instead of a manual retry button.
         UILabel("Footer", root, "PILOT HUB  /  1 VS 1 MULTIPLAYER", 0, -339, 1150, 24, 14, Color.gray);
         UpdateShipDisplay(equippedShipIndex);
         UpdateSkillDisplay(equippedSkillIndex);
