@@ -477,51 +477,18 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             {
                 hangarBusy = true;
                 inventoryActionButton.interactable = false; // ป้องกันการกดเบิ้ล
-                FirebaseManager.Instance.GetCoinBalance(coins =>
+                FirebaseManager.Instance.PurchaseShip(index, ship.price, (success, balance) =>
                 {
-                    if (coins >= ship.price)
+                    if (this == null) return;
+                    hangarBusy = false;
+                    if (success)
                     {
-                        // หักเงิน
-                        FirebaseManager.Instance.UpdateCoinBalance(coins - ship.price, success =>
-                        {
-                            if (success)
-                            {
-                                // ปลดล็อกยาน
-                                FirebaseManager.Instance.UnlockShip(index, unlockSuccess =>
-                                {
-                                    hangarBusy = false;
-                                    if (unlockSuccess)
-                                    {
-                                        unlockedShips.Add(index);
-                                        UpdateInventoryActionButton(index);
-                                        
-                                        // อัปเดตเงินใน UI ด่วน
-                                        UpdateCoinDisplay(coins - ship.price);
-                                            
-                                        UpdateStatus("Purchased " + ship.name + "!");
-                                    }
-                                    else
-                                    {
-                                        FirebaseManager.Instance.UpdateCoinBalance(coins);
-                                        inventoryActionButton.interactable = true;
-                                        UpdateStatus("Purchase failed; coins were restored.");
-                                    }
-                                });
-                            }
-                            else
-                            {
-                                hangarBusy = false;
-                                inventoryActionButton.interactable = true;
-                                UpdateStatus("Could not update coin balance.");
-                            }
-                        });
+                        if (!unlockedShips.Contains(index)) unlockedShips.Add(index);
+                        UpdateCoinDisplay(balance);
+                        UpdateStatus("Purchased " + ship.name + "!");
                     }
-                    else
-                    {
-                        hangarBusy = false;
-                        UpdateStatus("Not enough coins!");
-                        inventoryActionButton.interactable = true;
-                    }
+                    else UpdateStatus("Purchase not confirmed. Check coins/connection and try again.");
+                    UpdateInventoryActionButton(index);
                 });
             }
         }
@@ -1254,9 +1221,9 @@ public class SkillData
 public static class BattleLoadoutCatalog
 {
     public static readonly ShipData[] Ships = {
-        new ShipData("Nebula Ghost", 80, 1f, 6f, "STUN", 0, "Images/ship1", .12f, 25f, 14f),
-        new ShipData("Comet Crusher", 180, 2.5f, 3.5f, "SHIELD", 2800, "Images/ship2", .45f, 12f, 6f),
-        new ShipData("Stellar Striker", 120, 1.5f, 4.5f, "NOVA", 3089, "Images/ship3", .2f, 18f, 10f)
+        new ShipData("Nebula Ghost", 80, 1f, 8.4f, "STUN", 0, "Images/ship1", .12f, 25f, 14f),
+        new ShipData("Comet Crusher", 180, 2.5f, 4.9f, "SHIELD", 2800, "Images/ship2", .45f, 12f, 6f),
+        new ShipData("Stellar Striker", 120, 1.5f, 6.3f, "NOVA", 3089, "Images/ship3", .2f, 18f, 10f)
     };
     public static readonly SkillData[] Skills = {
         new SkillData("STUN", "Paralyze wave", "Images/icon_stun", 12f),
@@ -1293,7 +1260,7 @@ public partial class LobbyManager
     private TMP_Text hangarMessage;
     private TMP_Text hangarCoinText;
 
-    private void UpdateCoinDisplay(int coins)
+    private void UpdateCoinDisplay(long coins)
     {
         if (coinText != null) coinText.text = "Astronium Coins : " + coins;
         if (hangarCoinText != null) hangarCoinText.text = "ASTRONIUM  /  " + coins.ToString("N0");
@@ -1328,6 +1295,11 @@ public partial class LobbyManager
         FirebaseManager.Instance.GetCoinBalance(coins => {
             if (this == null || generation != profileGeneration) return;
             UpdateCoinDisplay(coins);
+        }, error => {
+            if (this == null || generation != profileGeneration) return;
+            if (coinText != null) coinText.text = "Astronium Coins : unavailable";
+            if (hangarCoinText != null) hangarCoinText.text = "ASTRONIUM / unavailable";
+            UpdateStatus(error);
         });
         FirebaseManager.Instance.GetUnlockedShips(result => {
             if (this == null || generation != profileGeneration) return;

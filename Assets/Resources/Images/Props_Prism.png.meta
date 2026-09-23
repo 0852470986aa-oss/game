@@ -1,0 +1,2704 @@
+fileFormatVersion: 2
+guid: eaa89060bee2a0540b12467f5944ec6d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1900592776799454580
+    second: Props_Prism_0
+  - first:
+      213: 3634511944583902114
+    second: Props_Prism_1
+  - first:
+      213: -2539853334366046803
+    second: Props_Prism_2
+  - first:
+      213: 8284967036605671475
+    second: Props_Prism_3
+  - first:
+      213: -4280878731632585706
+    second: Props_Prism_4
+  - first:
+      213: 1161739736146274392
+    second: Props_Prism_5
+  - first:
+      213: 9204312762361609876
+    second: Props_Prism_6
+  - first:
+      213: -8842467866234302040
+    second: Props_Prism_7
+  - first:
+      213: -7699066972405888336
+    second: Props_Prism_8
+  - first:
+      213: 962716459204189158
+    second: Props_Prism_9
+  - first:
+      213: 4616501895963763603
+    second: Props_Prism_10
+  - first:
+      213: -2658674274532895813
+    second: Props_Prism_11
+  - first:
+      213: 8711250078684288074
+    second: Props_Prism_12
+  - first:
+      213: 8520976759362355332
+    second: Props_Prism_13
+  - first:
+      213: -1185446967760611708
+    second: Props_Prism_14
+  - first:
+      213: 6788639093108829077
+    second: Props_Prism_15
+  - first:
+      213: -6194870087817915532
+    second: Props_Prism_16
+  - first:
+      213: -3655572852273420405
+    second: Props_Prism_17
+  - first:
+      213: -621790514229855783
+    second: Props_Prism_18
+  - first:
+      213: 8426877922318486078
+    second: Props_Prism_19
+  - first:
+      213: 2573380363222677249
+    second: Props_Prism_20
+  - first:
+      213: 2244512708043018179
+    second: Props_Prism_21
+  - first:
+      213: 4205171024617614837
+    second: Props_Prism_22
+  - first:
+      213: -5151782999090124424
+    second: Props_Prism_23
+  - first:
+      213: 670774434081863808
+    second: Props_Prism_24
+  - first:
+      213: -3420286014314761950
+    second: Props_Prism_25
+  - first:
+      213: 6279472044062047378
+    second: Props_Prism_26
+  - first:
+      213: 6571878967445831410
+    second: Props_Prism_27
+  - first:
+      213: -3034430796476132873
+    second: Props_Prism_28
+  - first:
+      213: 2403693985325297784
+    second: Props_Prism_29
+  - first:
+      213: 7356986501587353274
+    second: Props_Prism_30
+  - first:
+      213: 7388114251500551416
+    second: Props_Prism_31
+  - first:
+      213: -4807127149160826080
+    second: Props_Prism_32
+  - first:
+      213: 1129346296156382869
+    second: Props_Prism_33
+  - first:
+      213: 1199342134346094123
+    second: Props_Prism_34
+  - first:
+      213: 7681656224807911457
+    second: Props_Prism_35
+  - first:
+      213: -8285130737474229590
+    second: Props_Prism_36
+  - first:
+      213: -5329366793267301711
+    second: Props_Prism_37
+  - first:
+      213: 6571408480133025588
+    second: Props_Prism_38
+  - first:
+      213: -861602526082687577
+    second: Props_Prism_39
+  - first:
+      213: -7229601965153594600
+    second: Props_Prism_40
+  - first:
+      213: -1664714498688858181
+    second: Props_Prism_41
+  - first:
+      213: -7567623776854202978
+    second: Props_Prism_42
+  - first:
+      213: -2387459653075017385
+    second: Props_Prism_43
+  - first:
+      213: -4078403444811310180
+    second: Props_Prism_44
+  - first:
+      213: -8003163153607612327
+    second: Props_Prism_45
+  - first:
+      213: -4992257653662068061
+    second: Props_Prism_46
+  - first:
+      213: 1371868996620889639
+    second: Props_Prism_47
+  - first:
+      213: -8113839270139467781
+    second: Props_Prism_48
+  - first:
+      213: -8534734899920625164
+    second: Props_Prism_49
+  - first:
+      213: 5048593486966169298
+    second: Props_Prism_50
+  - first:
+      213: -2635293657856092964
+    second: Props_Prism_51
+  - first:
+      213: 629416738604174442
+    second: Props_Prism_52
+  - first:
+      213: -1209425323549510195
+    second: Props_Prism_53
+  - first:
+      213: -4357864586902578424
+    second: Props_Prism_54
+  - first:
+      213: -777353707540334089
+    second: Props_Prism_55
+  - first:
+      213: -922482945030645713
+    second: Props_Prism_56
+  - first:
+      213: -415247373615613351
+    second: Props_Prism_57
+  - first:
+      213: -8375322766920156453
+    second: Props_Prism_58
+  - first:
+      213: 6882172808410248828
+    second: Props_Prism_59
+  - first:
+      213: -5025594662574795771
+    second: Props_Prism_60
+  - first:
+      213: -2631065721552202492
+    second: Props_Prism_61
+  - first:
+      213: 1181773893555886205
+    second: Props_Prism_62
+  - first:
+      213: -2134135248544999071
+    second: Props_Prism_63
+  - first:
+      213: 1277414384464861345
+    second: Props_Prism_64
+  - first:
+      213: -6626551202013199589
+    second: Props_Prism_65
+  - first:
+      213: -1244300433963453149
+    second: Props_Prism_66
+  - first:
+      213: -6245456337601113249
+    second: Props_Prism_67
+  - first:
+      213: 7144136281398325344
+    second: Props_Prism_68
+  - first:
+      213: -7385365744245901791
+    second: Props_Prism_69
+  - first:
+      213: -4633170958674371737
+    second: Props_Prism_70
+  - first:
+      213: -201694325717588007
+    second: Props_Prism_71
+  - first:
+      213: -3461736385337831898
+    second: Props_Prism_72
+  - first:
+      213: 8085327785744476341
+    second: Props_Prism_73
+  - first:
+      213: -3909745509861275921
+    second: Props_Prism_74
+  - first:
+      213: 7163782518773848864
+    second: Props_Prism_75
+  - first:
+      213: -187506042115143210
+    second: Props_Prism_76
+  - first:
+      213: 5782596288169270035
+    second: Props_Prism_77
+  - first:
+      213: 6929024376858785288
+    second: Props_Prism_78
+  - first:
+      213: 7349616925084448268
+    second: Props_Prism_79
+  - first:
+      213: 1620576609398690629
+    second: Props_Prism_80
+  - first:
+      213: 3929128275773006530
+    second: Props_Prism_81
+  - first:
+      213: -1698753099456082442
+    second: Props_Prism_82
+  - first:
+      213: -1244602955197789970
+    second: Props_Prism_83
+  - first:
+      213: -6107201675024219075
+    second: Props_Prism_84
+  - first:
+      213: 7727919424894872764
+    second: Props_Prism_85
+  - first:
+      213: 1329336503593145110
+    second: Props_Prism_86
+  - first:
+      213: -861567114882561073
+    second: Props_Prism_87
+  - first:
+      213: 1002168425071703416
+    second: Props_Prism_88
+  - first:
+      213: -4464128555415267485
+    second: Props_Prism_89
+  - first:
+      213: -3390593587815966867
+    second: Props_Prism_90
+  - first:
+      213: 7818887902819531210
+    second: Props_Prism_91
+  - first:
+      213: -600709126909929994
+    second: Props_Prism_92
+  - first:
+      213: 3094651750282078650
+    second: Props_Prism_93
+  - first:
+      213: 2453608108272676898
+    second: Props_Prism_94
+  - first:
+      213: 2036019004607226551
+    second: Props_Prism_95
+  - first:
+      213: 1982965679818113165
+    second: Props_Prism_96
+  - first:
+      213: -2719732399191515884
+    second: Props_Prism_97
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Props_Prism_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 995
+        width: 118
+        height: 225
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4750ecb8f03406a10800000000000000
+      internalID: 1900592776799454580
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_1
+      rect:
+        serializedVersion: 2
+        x: 126
+        y: 997
+        width: 75
+        height: 211
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2a376dc6b51607230800000000000000
+      internalID: 3634511944583902114
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_2
+      rect:
+        serializedVersion: 2
+        x: 229
+        y: 997
+        width: 61
+        height: 181
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: da5358f59d0a0ccd0800000000000000
+      internalID: -2539853334366046803
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_3
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 997
+        width: 41
+        height: 159
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 338a3b8cf9d1af270800000000000000
+      internalID: 8284967036605671475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_4
+      rect:
+        serializedVersion: 2
+        x: 381
+        y: 1016
+        width: 36
+        height: 108
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 614d38289734794c0800000000000000
+      internalID: -4280878731632585706
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_5
+      rect:
+        serializedVersion: 2
+        x: 470
+        y: 1081
+        width: 107
+        height: 91
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 858647682245f1010800000000000000
+      internalID: 1161739736146274392
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_6
+      rect:
+        serializedVersion: 2
+        x: 599
+        y: 1016
+        width: 61
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 49e782ad0b94cbf70800000000000000
+      internalID: 9204312762361609876
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_7
+      rect:
+        serializedVersion: 2
+        x: 683
+        y: 1035
+        width: 57
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8a15c47335e394580800000000000000
+      internalID: -8842467866234302040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_8
+      rect:
+        serializedVersion: 2
+        x: 763
+        y: 1010
+        width: 91
+        height: 149
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ba0ec7416b672590800000000000000
+      internalID: -7699066972405888336
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_9
+      rect:
+        serializedVersion: 2
+        x: 883
+        y: 1025
+        width: 137
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6eb994ad4814c5d00800000000000000
+      internalID: 962716459204189158
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_10
+      rect:
+        serializedVersion: 2
+        x: 1049
+        y: 1029
+        width: 152
+        height: 120
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 39366ddd30c111040800000000000000
+      internalID: 4616501895963763603
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_11
+      rect:
+        serializedVersion: 2
+        x: 1231
+        y: 1022
+        width: 129
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb35ff465dd7a1bd0800000000000000
+      internalID: -2658674274532895813
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_12
+      rect:
+        serializedVersion: 2
+        x: 1403
+        y: 1036
+        width: 395
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a441299dac394e870800000000000000
+      internalID: 8711250078684288074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_13
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 833
+        width: 109
+        height: 137
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48007217737904670800000000000000
+      internalID: 8520976759362355332
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_14
+      rect:
+        serializedVersion: 2
+        x: 308
+        y: 831
+        width: 135
+        height: 148
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 486909a73427c8fe0800000000000000
+      internalID: -1185446967760611708
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_15
+      rect:
+        serializedVersion: 2
+        x: 472
+        y: 965
+        width: 105
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59be4159947163e50800000000000000
+      internalID: 6788639093108829077
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_16
+      rect:
+        serializedVersion: 2
+        x: 595
+        y: 861
+        width: 64
+        height: 119
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4739be91a76670aa0800000000000000
+      internalID: -6194870087817915532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_17
+      rect:
+        serializedVersion: 2
+        x: 664
+        y: 952
+        width: 93
+        height: 64
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b876ea1ebdbc44dc0800000000000000
+      internalID: -3655572852273420405
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_18
+      rect:
+        serializedVersion: 2
+        x: 774
+        y: 854
+        width: 66
+        height: 132
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d93f9a52d4fe57f0800000000000000
+      internalID: -621790514229855783
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_19
+      rect:
+        serializedVersion: 2
+        x: 870
+        y: 857
+        width: 138
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3a0065a2d842f470800000000000000
+      internalID: 8426877922318486078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_20
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 859
+        width: 148
+        height: 132
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1077ad55ecb76b320800000000000000
+      internalID: 2573380363222677249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_21
+      rect:
+        serializedVersion: 2
+        x: 1220
+        y: 856
+        width: 138
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3cf01c08a6c162f10800000000000000
+      internalID: 2244512708043018179
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_22
+      rect:
+        serializedVersion: 2
+        x: 1394
+        y: 847
+        width: 433
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5fd291654c4cb5a30800000000000000
+      internalID: 4205171024617614837
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_23
+      rect:
+        serializedVersion: 2
+        x: 120
+        y: 836
+        width: 84
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 879265b58a03188b0800000000000000
+      internalID: -5151782999090124424
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_24
+      rect:
+        serializedVersion: 2
+        x: 209
+        y: 836
+        width: 92
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 088fcdb3bc11f4900800000000000000
+      internalID: 670774434081863808
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_25
+      rect:
+        serializedVersion: 2
+        x: 481
+        y: 844
+        width: 93
+        height: 101
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 221388ecdf3b880d0800000000000000
+      internalID: -3420286014314761950
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_26
+      rect:
+        serializedVersion: 2
+        x: 688
+        y: 847
+        width: 48
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 29c7053dd8a252750800000000000000
+      internalID: 6279472044062047378
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_27
+      rect:
+        serializedVersion: 2
+        x: 13
+        y: 668
+        width: 116
+        height: 144
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2fe38710a11043b50800000000000000
+      internalID: 6571878967445831410
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_28
+      rect:
+        serializedVersion: 2
+        x: 138
+        y: 673
+        width: 117
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f1d888844983e5d0800000000000000
+      internalID: -3034430796476132873
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_29
+      rect:
+        serializedVersion: 2
+        x: 270
+        y: 668
+        width: 161
+        height: 146
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 870be00c1f2ab5120800000000000000
+      internalID: 2403693985325297784
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_30
+      rect:
+        serializedVersion: 2
+        x: 484
+        y: 722
+        width: 79
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: abe35748e34491660800000000000000
+      internalID: 7356986501587353274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_31
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 680
+        width: 130
+        height: 142
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8fcf0b094cad78660800000000000000
+      internalID: 7388114251500551416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_32
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 650
+        width: 67
+        height: 92
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02bf12cb357a94db0800000000000000
+      internalID: -4807127149160826080
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_33
+      rect:
+        serializedVersion: 2
+        x: 756
+        y: 697
+        width: 97
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 596edca097e3caf00800000000000000
+      internalID: 1129346296156382869
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_34
+      rect:
+        serializedVersion: 2
+        x: 882
+        y: 672
+        width: 135
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b269bd9115be4a010800000000000000
+      internalID: 1199342134346094123
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_35
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 672
+        width: 146
+        height: 130
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 120085623a9ba9a60800000000000000
+      internalID: 7681656224807911457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_36
+      rect:
+        serializedVersion: 2
+        x: 1213
+        y: 672
+        width: 141
+        height: 134
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aaaad23ad7d450d80800000000000000
+      internalID: -8285130737474229590
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_37
+      rect:
+        serializedVersion: 2
+        x: 1394
+        y: 680
+        width: 414
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b23a8143294a06b0800000000000000
+      internalID: -5329366793267301711
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_38
+      rect:
+        serializedVersion: 2
+        x: 1821
+        y: 705
+        width: 6
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 43f81542235523b50800000000000000
+      internalID: 6571408480133025588
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_39
+      rect:
+        serializedVersion: 2
+        x: 475
+        y: 645
+        width: 102
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7ad13474119fa04f0800000000000000
+      internalID: -861602526082687577
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_40
+      rect:
+        serializedVersion: 2
+        x: 10
+        y: 517
+        width: 105
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 813dd87115b4bab90800000000000000
+      internalID: -7229601965153594600
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_41
+      rect:
+        serializedVersion: 2
+        x: 124
+        y: 527
+        width: 74
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bb74535cbfeb5e8e0800000000000000
+      internalID: -1664714498688858181
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_42
+      rect:
+        serializedVersion: 2
+        x: 206
+        y: 534
+        width: 22
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e952eca15466af690800000000000000
+      internalID: -7567623776854202978
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_43
+      rect:
+        serializedVersion: 2
+        x: 232
+        y: 527
+        width: 108
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 751e2e6481a0eded0800000000000000
+      internalID: -2387459653075017385
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_44
+      rect:
+        serializedVersion: 2
+        x: 343
+        y: 517
+        width: 95
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c9bda4ddca99667c0800000000000000
+      internalID: -4078403444811310180
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_45
+      rect:
+        serializedVersion: 2
+        x: 464
+        y: 526
+        width: 115
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 95829bda38d0fe090800000000000000
+      internalID: -8003163153607612327
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_46
+      rect:
+        serializedVersion: 2
+        x: 609
+        y: 548
+        width: 64
+        height: 72
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3a25f363d10f7bab0800000000000000
+      internalID: -4992257653662068061
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_47
+      rect:
+        serializedVersion: 2
+        x: 701
+        y: 495
+        width: 93
+        height: 127
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 72ea5fd759bd90310800000000000000
+      internalID: 1371868996620889639
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_48
+      rect:
+        serializedVersion: 2
+        x: 809
+        y: 500
+        width: 40
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bf7e8ba3c2ad56f80800000000000000
+      internalID: -8113839270139467781
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_49
+      rect:
+        serializedVersion: 2
+        x: 887
+        y: 507
+        width: 164
+        height: 115
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4f12a16d3d78e8980800000000000000
+      internalID: -8534734899920625164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_50
+      rect:
+        serializedVersion: 2
+        x: 1069
+        y: 508
+        width: 148
+        height: 118
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2de18fd1705301640800000000000000
+      internalID: 5048593486966169298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_51
+      rect:
+        serializedVersion: 2
+        x: 1229
+        y: 509
+        width: 124
+        height: 100
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cd4d5ac616e8d6bd0800000000000000
+      internalID: -2635293657856092964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_52
+      rect:
+        serializedVersion: 2
+        x: 1394
+        y: 499
+        width: 196
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a6ccf2060332cb800800000000000000
+      internalID: 629416738604174442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_53
+      rect:
+        serializedVersion: 2
+        x: 1600
+        y: 499
+        width: 225
+        height: 128
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc538777312473fe0800000000000000
+      internalID: -1209425323549510195
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_54
+      rect:
+        serializedVersion: 2
+        x: 14
+        y: 409
+        width: 163
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 80bda664f31c583c0800000000000000
+      internalID: -4357864586902578424
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_55
+      rect:
+        serializedVersion: 2
+        x: 189
+        y: 416
+        width: 90
+        height: 102
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f9b93debe84635f0800000000000000
+      internalID: -777353707540334089
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_56
+      rect:
+        serializedVersion: 2
+        x: 290
+        y: 422
+        width: 148
+        height: 84
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f28971626aea233f0800000000000000
+      internalID: -922482945030645713
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_57
+      rect:
+        serializedVersion: 2
+        x: 470
+        y: 412
+        width: 104
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 95a3ab9b6bebc3af0800000000000000
+      internalID: -415247373615613351
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_58
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 425
+        width: 102
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bda7b7e5150e4cb80800000000000000
+      internalID: -8375322766920156453
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_59
+      rect:
+        serializedVersion: 2
+        x: 688
+        y: 413
+        width: 152
+        height: 54
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c763528b4b3628f50800000000000000
+      internalID: 6882172808410248828
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_60
+      rect:
+        serializedVersion: 2
+        x: 885
+        y: 352
+        width: 107
+        height: 132
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5045128f740814ab0800000000000000
+      internalID: -5025594662574795771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_61
+      rect:
+        serializedVersion: 2
+        x: 1013
+        y: 368
+        width: 66
+        height: 99
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4059c2e8aa39c7bd0800000000000000
+      internalID: -2631065721552202492
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_62
+      rect:
+        serializedVersion: 2
+        x: 1097
+        y: 368
+        width: 65
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d789a3a4811866010800000000000000
+      internalID: 1181773893555886205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_63
+      rect:
+        serializedVersion: 2
+        x: 1192
+        y: 364
+        width: 157
+        height: 101
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 169d5df6c470262e0800000000000000
+      internalID: -2134135248544999071
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_64
+      rect:
+        serializedVersion: 2
+        x: 1394
+        y: 374
+        width: 191
+        height: 109
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1a890095d994ab110800000000000000
+      internalID: 1277414384464861345
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_65
+      rect:
+        serializedVersion: 2
+        x: 1606
+        y: 379
+        width: 221
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b13c01e6ac2c904a0800000000000000
+      internalID: -6626551202013199589
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_66
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 220
+        width: 117
+        height: 175
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3257ebf095b5bbee0800000000000000
+      internalID: -1244300433963453149
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_67
+      rect:
+        serializedVersion: 2
+        x: 100
+        y: 220
+        width: 152
+        height: 175
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f53d2110d8ea359a0800000000000000
+      internalID: -6245456337601113249
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_68
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 304
+        width: 142
+        height: 88
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0603abfb812152360800000000000000
+      internalID: 7144136281398325344
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_69
+      rect:
+        serializedVersion: 2
+        x: 479
+        y: 283
+        width: 74
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 12672e52cf8e18990800000000000000
+      internalID: -7385365744245901791
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_70
+      rect:
+        serializedVersion: 2
+        x: 579
+        y: 265
+        width: 92
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 76bde888f8ba3bfb0800000000000000
+      internalID: -4633170958674371737
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_71
+      rect:
+        serializedVersion: 2
+        x: 676
+        y: 250
+        width: 68
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d724625410733df0800000000000000
+      internalID: -201694325717588007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_72
+      rect:
+        serializedVersion: 2
+        x: 756
+        y: 263
+        width: 84
+        height: 113
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 62ec4ed391175ffc0800000000000000
+      internalID: -3461736385337831898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_73
+      rect:
+        serializedVersion: 2
+        x: 890
+        y: 206
+        width: 66
+        height: 118
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5b825e188cad43070800000000000000
+      internalID: 8085327785744476341
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_74
+      rect:
+        serializedVersion: 2
+        x: 972
+        y: 202
+        width: 61
+        height: 127
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fe64a8a6c2bcdb9c0800000000000000
+      internalID: -3909745509861275921
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_75
+      rect:
+        serializedVersion: 2
+        x: 1042
+        y: 191
+        width: 94
+        height: 151
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 02b1ba7de3eda6360800000000000000
+      internalID: 7163782518773848864
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_76
+      rect:
+        serializedVersion: 2
+        x: 1143
+        y: 199
+        width: 45
+        height: 107
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d9cc768f38d56df0800000000000000
+      internalID: -187506042115143210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_77
+      rect:
+        serializedVersion: 2
+        x: 1395
+        y: 204
+        width: 123
+        height: 143
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31b52d3cfa8ef3050800000000000000
+      internalID: 5782596288169270035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_78
+      rect:
+        serializedVersion: 2
+        x: 1515
+        y: 209
+        width: 114
+        height: 122
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 806b0be85f6d82060800000000000000
+      internalID: 6929024376858785288
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_79
+      rect:
+        serializedVersion: 2
+        x: 1638
+        y: 206
+        width: 176
+        height: 136
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c067bd647a51ff560800000000000000
+      internalID: 7349616925084448268
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_80
+      rect:
+        serializedVersion: 2
+        x: 266
+        y: 213
+        width: 135
+        height: 85
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 543148e07d17d7610800000000000000
+      internalID: 1620576609398690629
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_81
+      rect:
+        serializedVersion: 2
+        x: 458
+        y: 199
+        width: 109
+        height: 59
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2c2a4627951178630800000000000000
+      internalID: 3929128275773006530
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_82
+      rect:
+        serializedVersion: 2
+        x: 571
+        y: 195
+        width: 110
+        height: 55
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6fd83d17e01dc68e0800000000000000
+      internalID: -1698753099456082442
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_83
+      rect:
+        serializedVersion: 2
+        x: 734
+        y: 192
+        width: 122
+        height: 53
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ee8c809d4384abee0800000000000000
+      internalID: -1244602955197789970
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_84
+      rect:
+        serializedVersion: 2
+        x: 1195
+        y: 206
+        width: 172
+        height: 94
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d34c2841f6cde3ba0800000000000000
+      internalID: -6107201675024219075
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_85
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 91
+        width: 129
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cbc23bdc5c51f3b60800000000000000
+      internalID: 7727919424894872764
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_86
+      rect:
+        serializedVersion: 2
+        x: 129
+        y: 52
+        width: 129
+        height: 97
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 61311a3c180c27210800000000000000
+      internalID: 1329336503593145110
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_87
+      rect:
+        serializedVersion: 2
+        x: 270
+        y: 74
+        width: 172
+        height: 111
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fcb444716491b04f0800000000000000
+      internalID: -861567114882561073
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_88
+      rect:
+        serializedVersion: 2
+        x: 452
+        y: 38
+        width: 113
+        height: 138
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 875f2857fda68ed00800000000000000
+      internalID: 1002168425071703416
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_89
+      rect:
+        serializedVersion: 2
+        x: 573
+        y: 36
+        width: 129
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3679bc61bba3c02c0800000000000000
+      internalID: -4464128555415267485
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_90
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 31
+        width: 146
+        height: 145
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d671384981132f0d0800000000000000
+      internalID: -3390593587815966867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_91
+      rect:
+        serializedVersion: 2
+        x: 899
+        y: 42
+        width: 79
+        height: 125
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ac938221f15428c60800000000000000
+      internalID: 7818887902819531210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_92
+      rect:
+        serializedVersion: 2
+        x: 995
+        y: 45
+        width: 55
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6f5d2355b3ad9a7f0800000000000000
+      internalID: -600709126909929994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_93
+      rect:
+        serializedVersion: 2
+        x: 1070
+        y: 38
+        width: 127
+        height: 95
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ab9aa17ee5962fa20800000000000000
+      internalID: 3094651750282078650
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_94
+      rect:
+        serializedVersion: 2
+        x: 1205
+        y: 31
+        width: 158
+        height: 93
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2207c9f1397fc0220800000000000000
+      internalID: 2453608108272676898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_95
+      rect:
+        serializedVersion: 2
+        x: 1389
+        y: 49
+        width: 121
+        height: 116
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7b2ee855f74614c10800000000000000
+      internalID: 2036019004607226551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_96
+      rect:
+        serializedVersion: 2
+        x: 1528
+        y: 37
+        width: 114
+        height: 130
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d80895397c8e48b10800000000000000
+      internalID: 1982965679818113165
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Props_Prism_97
+      rect:
+        serializedVersion: 2
+        x: 1683
+        y: 1
+        width: 144
+        height: 162
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 41d911eeac1914ad0800000000000000
+      internalID: -2719732399191515884
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Props_Prism_0: 1900592776799454580
+      Props_Prism_1: 3634511944583902114
+      Props_Prism_10: 4616501895963763603
+      Props_Prism_11: -2658674274532895813
+      Props_Prism_12: 8711250078684288074
+      Props_Prism_13: 8520976759362355332
+      Props_Prism_14: -1185446967760611708
+      Props_Prism_15: 6788639093108829077
+      Props_Prism_16: -6194870087817915532
+      Props_Prism_17: -3655572852273420405
+      Props_Prism_18: -621790514229855783
+      Props_Prism_19: 8426877922318486078
+      Props_Prism_2: -2539853334366046803
+      Props_Prism_20: 2573380363222677249
+      Props_Prism_21: 2244512708043018179
+      Props_Prism_22: 4205171024617614837
+      Props_Prism_23: -5151782999090124424
+      Props_Prism_24: 670774434081863808
+      Props_Prism_25: -3420286014314761950
+      Props_Prism_26: 6279472044062047378
+      Props_Prism_27: 6571878967445831410
+      Props_Prism_28: -3034430796476132873
+      Props_Prism_29: 2403693985325297784
+      Props_Prism_3: 8284967036605671475
+      Props_Prism_30: 7356986501587353274
+      Props_Prism_31: 7388114251500551416
+      Props_Prism_32: -4807127149160826080
+      Props_Prism_33: 1129346296156382869
+      Props_Prism_34: 1199342134346094123
+      Props_Prism_35: 7681656224807911457
+      Props_Prism_36: -8285130737474229590
+      Props_Prism_37: -5329366793267301711
+      Props_Prism_38: 6571408480133025588
+      Props_Prism_39: -861602526082687577
+      Props_Prism_4: -4280878731632585706
+      Props_Prism_40: -7229601965153594600
+      Props_Prism_41: -1664714498688858181
+      Props_Prism_42: -7567623776854202978
+      Props_Prism_43: -2387459653075017385
+      Props_Prism_44: -4078403444811310180
+      Props_Prism_45: -8003163153607612327
+      Props_Prism_46: -4992257653662068061
+      Props_Prism_47: 1371868996620889639
+      Props_Prism_48: -8113839270139467781
+      Props_Prism_49: -8534734899920625164
+      Props_Prism_5: 1161739736146274392
+      Props_Prism_50: 5048593486966169298
+      Props_Prism_51: -2635293657856092964
+      Props_Prism_52: 629416738604174442
+      Props_Prism_53: -1209425323549510195
+      Props_Prism_54: -4357864586902578424
+      Props_Prism_55: -777353707540334089
+      Props_Prism_56: -922482945030645713
+      Props_Prism_57: -415247373615613351
+      Props_Prism_58: -8375322766920156453
+      Props_Prism_59: 6882172808410248828
+      Props_Prism_6: 9204312762361609876
+      Props_Prism_60: -5025594662574795771
+      Props_Prism_61: -2631065721552202492
+      Props_Prism_62: 1181773893555886205
+      Props_Prism_63: -2134135248544999071
+      Props_Prism_64: 1277414384464861345
+      Props_Prism_65: -6626551202013199589
+      Props_Prism_66: -1244300433963453149
+      Props_Prism_67: -6245456337601113249
+      Props_Prism_68: 7144136281398325344
+      Props_Prism_69: -7385365744245901791
+      Props_Prism_7: -8842467866234302040
+      Props_Prism_70: -4633170958674371737
+      Props_Prism_71: -201694325717588007
+      Props_Prism_72: -3461736385337831898
+      Props_Prism_73: 8085327785744476341
+      Props_Prism_74: -3909745509861275921
+      Props_Prism_75: 7163782518773848864
+      Props_Prism_76: -187506042115143210
+      Props_Prism_77: 5782596288169270035
+      Props_Prism_78: 6929024376858785288
+      Props_Prism_79: 7349616925084448268
+      Props_Prism_8: -7699066972405888336
+      Props_Prism_80: 1620576609398690629
+      Props_Prism_81: 3929128275773006530
+      Props_Prism_82: -1698753099456082442
+      Props_Prism_83: -1244602955197789970
+      Props_Prism_84: -6107201675024219075
+      Props_Prism_85: 7727919424894872764
+      Props_Prism_86: 1329336503593145110
+      Props_Prism_87: -861567114882561073
+      Props_Prism_88: 1002168425071703416
+      Props_Prism_89: -4464128555415267485
+      Props_Prism_9: 962716459204189158
+      Props_Prism_90: -3390593587815966867
+      Props_Prism_91: 7818887902819531210
+      Props_Prism_92: -600709126909929994
+      Props_Prism_93: 3094651750282078650
+      Props_Prism_94: 2453608108272676898
+      Props_Prism_95: 2036019004607226551
+      Props_Prism_96: 1982965679818113165
+      Props_Prism_97: -2719732399191515884
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

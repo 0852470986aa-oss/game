@@ -97,6 +97,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
                 SpriteRenderer renderer = background != null ? background.GetComponent<SpriteRenderer>() : null;
                 FitBackgroundToArena(renderer);
                 root.SetActive(i == selectedMapIndex);
+                if (i == 0 && i == selectedMapIndex && root.GetComponent<JellyArenaVisuals>() == null)
+                    root.AddComponent<JellyArenaVisuals>();
                 if (i == 1 && i == selectedMapIndex) DecoratePrism(root.transform);
                 // Authored cover needs collision even when procedural generation is disabled.
                 if (i == 2 && i == selectedMapIndex) PrepareMechCover(root.transform);
@@ -110,52 +112,48 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
     public static GameplayManager Instance;
 
-    // Deterministic visual dressing: no colliders, network objects or per-frame effects.
-    // Keeping everything under Map1_Layout prevents decorations leaking into other maps.
+    // One deterministic solid layout on every client; background artwork stays untouched.
     public static void DecoratePrism(Transform layout)
     {
-        if (layout == null || layout.Find("PrismAtmosphere") != null) return;
-        Sprite[] crystals = Resources.LoadAll<Sprite>("Images/Obs_Crystals");
-        System.Array.Sort(crystals, (a, b) => string.CompareOrdinal(a.name, b.name));
-        if (crystals.Length == 0) return;
-        var group = new GameObject("PrismAtmosphere");
+        if (layout == null || layout.Find("PrismPlayableLayout") != null) return;
+        var central = Resources.LoadAll<Sprite>("Images/Obs_PrismPillar_04");
+        if (central.Length == 0) { Debug.LogWarning("Prism pillar 04 is missing."); return; }
+        foreach (Transform child in layout)
+            if (child.name != "Background") child.gameObject.SetActive(false);
+        var group = new GameObject("PrismPlayableLayout");
         group.transform.SetParent(layout, false);
-        Color cyan = new Color(0.25f, 0.95f, 1f, 0.24f);
-        // Halos identify the real cover clusters, with no extra walls across routes.
-        Vector2[] covers = { new Vector2(20, 12), new Vector2(-20, 12),
-            new Vector2(32, 7), new Vector2(-32, 7), new Vector2(40, 23), new Vector2(-40, 23) };
-        Material lineMaterial = null;
-        foreach (Vector2 point in covers)
+        AddPrismCover(group.transform, central[0], Vector2.zero, 18, "CentralPillar_04");
+        Vector2[] positions = {
+            new Vector2(-22, 14), new Vector2(22, -14),
+            new Vector2(22, 14), new Vector2(-22, -14),
+            new Vector2(-43, 23), new Vector2(43, -23),
+            new Vector2(43, 23), new Vector2(-43, -23),
+            new Vector2(-51, 0), new Vector2(51, 0),
+            new Vector2(-10, 29), new Vector2(10, -29)
+        };
+        int[] variants = { 1, 1, 2, 2, 3, 3, 5, 5, 6, 7, 8, 8 };
+        for (int i = 0; i < positions.Length; i++)
         {
-            for (int side = -1; side <= 1; side += 2)
-            {
-                Vector2 position = new Vector2(point.x, point.y * side);
-                var halo = PrismSprite(group.transform, "CrystalLight", crystals[2 % crystals.Length],
-                    position, 6.8f, new Color(0.2f, 0.95f, 1f, 0.13f), -4);
-                lineMaterial = halo.sharedMaterial;
-                PrismRing(group.transform, position, 4.1f, 1.65f, cyan, lineMaterial);
-            }
+            var sprites = Resources.LoadAll<Sprite>("Images/Obs_PrismPillar_" + variants[i].ToString("00"));
+            if (sprites.Length > 0) AddPrismCover(group.transform, sprites[0], positions[i],
+                i < 4 ? 10 : 8, "Pillar_" + i);
         }
-        PrismRing(group.transform, Vector2.zero, 8.4f, 5.7f, new Color(0.3f, 1f, 1f, 0.32f), lineMaterial);
-        PrismRing(group.transform, Vector2.zero, 9.2f, 6.2f, new Color(0.7f, 0.4f, 1f, 0.17f), lineMaterial);
-        // Tiny edge shards frame the panorama; opposite pairs retain visual balance.
-        Vector2[] edgePoints = { new Vector2(59, 30), new Vector2(57, 13), new Vector2(60, -5),
-            new Vector2(54, -32), new Vector2(43, 32), new Vector2(29, 33),
-            new Vector2(16, 33), new Vector2(46, 4), new Vector2(46, -12), new Vector2(9, 32) };
-        for (int i = 0; i < edgePoints.Length; i++)
-        {
-            for (int side = -1; side <= 1; side += 2)
-            {
-                Vector2 point = edgePoints[i] * side;
-                for (int fragment = 0; fragment < 2; fragment++)
-                {
-                    Vector2 offset = new Vector2(fragment * 1.7f * side, fragment * -1.1f * side);
-                    PrismSprite(group.transform, "EdgeShard", crystals[(i + fragment) % Mathf.Min(6, crystals.Length)],
-                        point + offset, fragment == 0 ? 2.3f : 1.1f,
-                        new Color(0.55f, 0.8f, 1f, fragment == 0 ? 0.64f : 0.38f), -3);
-                }
-            }
-        }
+        var crystals = Resources.LoadAll<Sprite>("Images/Obs_Crystals");
+        System.Array.Sort(crystals, (a,b) => string.CompareOrdinal(a.name,b.name));
+        Vector2[] clusters = { new Vector2(-34,5), new Vector2(34,-5), new Vector2(34,5), new Vector2(-34,-5),
+            new Vector2(-55,29), new Vector2(55,-29), new Vector2(55,29), new Vector2(-55,-29) };
+        for (int i = 0; i < clusters.Length && crystals.Length > 0; i++)
+            AddPrismCover(group.transform, crystals[i % crystals.Length], clusters[i], 4.5f, "Crystal_" + i);
+        Physics2D.SyncTransforms();
+    }
+
+    private static void AddPrismCover(Transform parent, Sprite sprite, Vector2 position, float height, string name)
+    {
+        var art = PrismSprite(parent, name, sprite, position, height, Color.white, 2);
+        var collider = art.gameObject.AddComponent<PolygonCollider2D>();
+        collider.isTrigger = false;
+        int layer = LayerMask.NameToLayer("Obstacle");
+        if (layer >= 0) art.gameObject.layer = layer;
     }
 
     private static SpriteRenderer PrismSprite(Transform parent, string name, Sprite sprite,
@@ -775,6 +773,8 @@ public class GameplayManager : MonoBehaviourPunCallbacks
 
         foreach (var obs in obstacles)
         {
+            if (mapIndex == 0 && obs.type != "wall") continue;
+            if (mapIndex == 1 && map1Layout != null && map1Layout.transform.Find("PrismPlayableLayout") != null && obs.type != "wall") continue;
             // Use the visible sprite's collider, never an additional invisible box with a different size.
             if (mapIndex == 2 && ((obs.type == "asteroid" && hasAuthoredMap2Rocks)
                 || (obs.type == "turret" && hasAuthoredMap2Turrets)
@@ -973,6 +973,30 @@ public class GameplayManager : MonoBehaviourPunCallbacks
     public static void PrepareMechCover(Transform layout)
     {
         if (layout == null) return;
+        var starfield = GameObject.Find("Starfield");
+        var stars = starfield != null ? starfield.GetComponent<ParticleSystem>() : null;
+        if (stars != null)
+        {
+            stars.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            stars.transform.position = Vector3.zero;
+            stars.transform.rotation = Quaternion.identity;
+            stars.transform.localScale = Vector3.one;
+            var main = stars.main;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.startSpeed = 0;
+            main.startLifetime = 20;
+            main.maxParticles = 500;
+            main.prewarm = true;
+            main.loop = true;
+            var shape = stars.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            Vector2 area = GetArenaMax(2) - GetArenaMin(2);
+            shape.scale = new Vector3(area.x, area.y, .1f);
+            var emission = stars.emission;
+            emission.rateOverTime = 20;
+            stars.Play();
+        }
         var rocks = layout.Find("RockObstacles");
         // Stagger the inner cover around an open central route and two outer flanking routes.
         Vector2[] innerRocks = {
@@ -1005,8 +1029,9 @@ public class GameplayManager : MonoBehaviourPunCallbacks
         if (turrets != null)
             foreach (Transform turret in turrets)
             {
-                turret.localPosition = new Vector3(Mathf.Sign(turret.localPosition.x) * 35, 30, 0);
+                turret.localPosition = new Vector3(Mathf.Sign(turret.localPosition.x) * 30, Mathf.Sign(turret.localPosition.x) * 18, 0);
                 FitMechObstacle(turret, new Vector2(4, 3.5f));
+                if (turret.GetComponent<AutoTurret>() == null) turret.gameObject.AddComponent<AutoTurret>();
             }
         // Preserve authored art and rotations; attach solid collision to those exact objects.
         foreach (string groupName in new[] { "RockObstacles", "TurretObstacles", "RedCoreObstacles" })

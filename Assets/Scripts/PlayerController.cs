@@ -397,6 +397,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         }
 
         Vector2 targetPosition = playerRigidbody.position + movementInput * speed * Time.fixedDeltaTime;
+        targetPosition += JellyArenaVisuals.PullAt(playerRigidbody.position) * Time.fixedDeltaTime;
         playerRigidbody.MovePosition(ClampToArena(targetPosition));
     }
 

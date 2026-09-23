@@ -38,6 +38,8 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
     public float lifeTime = 3f;
     private float damage = 10f; // จะถูกตั้งค่าตอน instantiate
     private bool isDestroyed = false;
+    private int Shooter => photonView.InstantiationData != null && photonView.InstantiationData.Length > 1
+        && photonView.InstantiationData[1] is bool environmental && environmental ? -1 : photonView.CreatorActorNr;
     private Rigidbody2D body;
 
     void FixedUpdate()
@@ -45,7 +47,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (!photonView.IsMine || isDestroyed) return;
         Vector2 start = body != null ? body.position : (Vector2)transform.position;
         Vector2 end = start + (Vector2)transform.up * speed * Time.fixedDeltaTime;
-        if (ProjectileSweep.FirstHit(transform, photonView.CreatorActorNr, start, end, out var hit))
+        if (ProjectileSweep.FirstHit(transform, Shooter, start, end, out var hit))
         {
             transform.position = hit.centroid;
             OnTriggerEnter2D(hit.collider);
@@ -111,10 +113,10 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (enemy != null)
         {
             // ถ้าชนโดนผู้เล่นอื่น (ไม่ใช่ตัวเอง)
-            if (!enemy.isDead && enemy.photonView.OwnerActorNr != photonView.CreatorActorNr)
+            if (!enemy.isDead && enemy.photonView.OwnerActorNr != Shooter)
             {
                 DestroyBullet();
-                enemy.photonView.RPC("TakeDamage", RpcTarget.All, damage, photonView.CreatorActorNr);
+                enemy.photonView.RPC("TakeDamage", RpcTarget.All, damage, Shooter);
             }
         }
         else if (!hitInfo.isTrigger)

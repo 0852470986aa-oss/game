@@ -1,0 +1,858 @@
+fileFormatVersion: 2
+guid: 0e3515386c703f44c8b50d6e52af5b28
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 2322377972657843833
+    second: Obs_PrismPillar_08_0
+  - first:
+      213: 6432780545477707774
+    second: Obs_PrismPillar_08_1
+  - first:
+      213: -203508605270467078
+    second: Obs_PrismPillar_08_2
+  - first:
+      213: 6353662084769720976
+    second: Obs_PrismPillar_08_3
+  - first:
+      213: 1314603784674849420
+    second: Obs_PrismPillar_08_4
+  - first:
+      213: -2467933729161668750
+    second: Obs_PrismPillar_08_5
+  - first:
+      213: -8718881623511918867
+    second: Obs_PrismPillar_08_6
+  - first:
+      213: 735656388978859584
+    second: Obs_PrismPillar_08_7
+  - first:
+      213: 6054204843867163363
+    second: Obs_PrismPillar_08_8
+  - first:
+      213: -5642787692672481711
+    second: Obs_PrismPillar_08_9
+  - first:
+      213: 3135652146443260521
+    second: Obs_PrismPillar_08_10
+  - first:
+      213: -1092335830178790656
+    second: Obs_PrismPillar_08_11
+  - first:
+      213: -4261110220707564958
+    second: Obs_PrismPillar_08_12
+  - first:
+      213: -4229278694153901240
+    second: Obs_PrismPillar_08_13
+  - first:
+      213: 5064272679679195343
+    second: Obs_PrismPillar_08_14
+  - first:
+      213: -4434472300843981865
+    second: Obs_PrismPillar_08_15
+  - first:
+      213: 5871034715190241888
+    second: Obs_PrismPillar_08_16
+  - first:
+      213: 2825117411179206605
+    second: Obs_PrismPillar_08_17
+  - first:
+      213: 2525179064659381452
+    second: Obs_PrismPillar_08_18
+  - first:
+      213: -1406557144918310791
+    second: Obs_PrismPillar_08_19
+  - first:
+      213: 7692002710657949161
+    second: Obs_PrismPillar_08_20
+  - first:
+      213: -702440052792140994
+    second: Obs_PrismPillar_08_21
+  - first:
+      213: -7788249741816500516
+    second: Obs_PrismPillar_08_22
+  - first:
+      213: -791932885921262959
+    second: Obs_PrismPillar_08_23
+  - first:
+      213: 7219952150158284840
+    second: Obs_PrismPillar_08_24
+  - first:
+      213: -1991091791107266992
+    second: Obs_PrismPillar_08_25
+  - first:
+      213: 6269230491576944819
+    second: Obs_PrismPillar_08_26
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_0
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 27
+        width: 784
+        height: 1930
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 97e667e267eba3020800000000000000
+      internalID: 2322377972657843833
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_1
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 1700
+        width: 9
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef70e33e2d3d54950800000000000000
+      internalID: 6432780545477707774
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_2
+      rect:
+        serializedVersion: 2
+        x: 661
+        y: 1666
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: afd5e12700efc2df0800000000000000
+      internalID: -203508605270467078
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_3
+      rect:
+        serializedVersion: 2
+        x: 663
+        y: 1662
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 09a2191c00ebc2850800000000000000
+      internalID: 6353662084769720976
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_4
+      rect:
+        serializedVersion: 2
+        x: 710
+        y: 1634
+        width: 11
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c82bde55d296e3210800000000000000
+      internalID: 1314603784674849420
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_5
+      rect:
+        serializedVersion: 2
+        x: 720
+        y: 1621
+        width: 30
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2771d18595320cdd0800000000000000
+      internalID: -2467933729161668750
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_6
+      rect:
+        serializedVersion: 2
+        x: 696
+        y: 1370
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: de614e7ab5f400780800000000000000
+      internalID: -8718881623511918867
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_7
+      rect:
+        serializedVersion: 2
+        x: 48
+        y: 1325
+        width: 8
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 04ed4dd8693953a00800000000000000
+      internalID: 735656388978859584
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_8
+      rect:
+        serializedVersion: 2
+        x: 696
+        y: 1333
+        width: 15
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3eac62c9a3bd40450800000000000000
+      internalID: 6054204843867163363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_9
+      rect:
+        serializedVersion: 2
+        x: 696
+        y: 1324
+        width: 7
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1568f438d7ac0b1b0800000000000000
+      internalID: -5642787692672481711
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_10
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 1207
+        width: 6
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96211f78303148b20800000000000000
+      internalID: 3135652146443260521
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_11
+      rect:
+        serializedVersion: 2
+        x: 706
+        y: 1134
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00303c2995e37d0f0800000000000000
+      internalID: -1092335830178790656
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_12
+      rect:
+        serializedVersion: 2
+        x: 744
+        y: 1130
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 26270f1a4de7dd4c0800000000000000
+      internalID: -4261110220707564958
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_13
+      rect:
+        serializedVersion: 2
+        x: 682
+        y: 1081
+        width: 9
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 84b24d27f659e45c0800000000000000
+      internalID: -4229278694153901240
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_14
+      rect:
+        serializedVersion: 2
+        x: 700
+        y: 1077
+        width: 8
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fc87ef5ab29e74640800000000000000
+      internalID: 5064272679679195343
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_15
+      rect:
+        serializedVersion: 2
+        x: 734
+        y: 1086
+        width: 7
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7d3a2edefe69572c0800000000000000
+      internalID: -4434472300843981865
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_16
+      rect:
+        serializedVersion: 2
+        x: 740
+        y: 1086
+        width: 20
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06aa6e6a7fa1a7150800000000000000
+      internalID: 5871034715190241888
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_17
+      rect:
+        serializedVersion: 2
+        x: 711
+        y: 1035
+        width: 12
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dc79b1e3155d43720800000000000000
+      internalID: 2825117411179206605
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_18
+      rect:
+        serializedVersion: 2
+        x: 688
+        y: 733
+        width: 7
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ccc8647fafc3b0320800000000000000
+      internalID: 2525179064659381452
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_19
+      rect:
+        serializedVersion: 2
+        x: 728
+        y: 734
+        width: 20
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9704bdc9ab7ea7ce0800000000000000
+      internalID: -1406557144918310791
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_20
+      rect:
+        serializedVersion: 2
+        x: 744
+        y: 727
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9eddb1c16bb7fba60800000000000000
+      internalID: 7692002710657949161
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_21
+      rect:
+        serializedVersion: 2
+        x: 736
+        y: 620
+        width: 14
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e3b51516e7e6046f0800000000000000
+      internalID: -702440052792140994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_22
+      rect:
+        serializedVersion: 2
+        x: 769
+        y: 573
+        width: 7
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cdeeffcaf149ae390800000000000000
+      internalID: -7788249741816500516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_23
+      rect:
+        serializedVersion: 2
+        x: 734
+        y: 441
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 19296b07c3d7205f0800000000000000
+      internalID: -791932885921262959
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_24
+      rect:
+        serializedVersion: 2
+        x: 22
+        y: 235
+        width: 6
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 82890854a3c623460800000000000000
+      internalID: 7219952150158284840
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_25
+      rect:
+        serializedVersion: 2
+        x: 34
+        y: 187
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 056ead3b0983e54e0800000000000000
+      internalID: -1991091791107266992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Obs_PrismPillar_08_26
+      rect:
+        serializedVersion: 2
+        x: 16
+        y: 144
+        width: 15
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3b8cd719ae7c00750800000000000000
+      internalID: 6269230491576944819
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      Obs_PrismPillar_08_0: 2322377972657843833
+      Obs_PrismPillar_08_1: 6432780545477707774
+      Obs_PrismPillar_08_10: 3135652146443260521
+      Obs_PrismPillar_08_11: -1092335830178790656
+      Obs_PrismPillar_08_12: -4261110220707564958
+      Obs_PrismPillar_08_13: -4229278694153901240
+      Obs_PrismPillar_08_14: 5064272679679195343
+      Obs_PrismPillar_08_15: -4434472300843981865
+      Obs_PrismPillar_08_16: 5871034715190241888
+      Obs_PrismPillar_08_17: 2825117411179206605
+      Obs_PrismPillar_08_18: 2525179064659381452
+      Obs_PrismPillar_08_19: -1406557144918310791
+      Obs_PrismPillar_08_2: -203508605270467078
+      Obs_PrismPillar_08_20: 7692002710657949161
+      Obs_PrismPillar_08_21: -702440052792140994
+      Obs_PrismPillar_08_22: -7788249741816500516
+      Obs_PrismPillar_08_23: -791932885921262959
+      Obs_PrismPillar_08_24: 7219952150158284840
+      Obs_PrismPillar_08_25: -1991091791107266992
+      Obs_PrismPillar_08_26: 6269230491576944819
+      Obs_PrismPillar_08_3: 6353662084769720976
+      Obs_PrismPillar_08_4: 1314603784674849420
+      Obs_PrismPillar_08_5: -2467933729161668750
+      Obs_PrismPillar_08_6: -8718881623511918867
+      Obs_PrismPillar_08_7: 735656388978859584
+      Obs_PrismPillar_08_8: 6054204843867163363
+      Obs_PrismPillar_08_9: -5642787692672481711
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -3,80 +3,58 @@ using Photon.Pun;
 
 public class AutoTurret : MonoBehaviour
 {
-    public float detectionRadius = 15f;
+    public float detectionRadius = 24f;
     public float fireRate = 1.5f;
     public float damage = 10f;
     public string bulletPrefabName = "BulletPrefab";
     public Transform firePoint;
-
-    private float nextFireTime = 0f;
-    private Transform target;
+    private float nextFireTime;
+    private float nextScan;
+    private PlayerController target;
 
     void Update()
     {
-        // ??????????????????????????? ?????????????????????????????
-        FindClosestTarget();
-        
-        if (target != null)
+        if (!PhotonNetwork.InRoom || GameplayManager.Instance == null || !GameplayManager.Instance.MatchInputAllowed) return;
+        if (Time.time >= nextScan)
         {
-            // ???????????????????????
-            Vector2 direction = target.position - transform.position;
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
-            Quaternion targetRotation = Quaternion.Euler(0, 0, angle);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 5f);
-        }
-        else
-        {
-            // ???????????????? ????????????????
-            transform.Rotate(0, 0, Time.deltaTime * -20f);
-        }
-
-        // ????? MasterClient ????????????????? ??????????????????????
-        if (PhotonNetwork.IsMasterClient)
-        {
-            if (target != null && Time.time >= nextFireTime)
+            nextScan = Time.time + .2f;
+            target = null;
+            float nearest = detectionRadius;
+            foreach (var player in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
             {
-                Shoot();
-                nextFireTime = Time.time + fireRate;
+                float distance = Vector2.Distance(transform.position, player.transform.position);
+                if (!player.isDead && distance < nearest && ClearSight(player))
+                { target = player; nearest = distance; }
             }
         }
+        if (target == null || target.isDead) return;
+        Vector2 direction = target.transform.position - transform.position;
+        Quaternion aim = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, aim, 120 * Time.deltaTime);
+        if (!PhotonNetwork.IsMasterClient || Time.time < nextFireTime || Quaternion.Angle(transform.rotation, aim) > 8 || !ClearSight(target)) return;
+        nextFireTime = Time.time + Mathf.Max(.3f, fireRate);
+        Vector3 muzzle = transform.position + transform.up * MuzzleDistance();
+        if (firePoint != null) muzzle = firePoint.position;
+        PhotonNetwork.InstantiateRoomObject(bulletPrefabName, muzzle, transform.rotation, 0, new object[] { damage, true });
     }
 
-    void FindClosestTarget()
+    float MuzzleDistance()
     {
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
-        float closestDist = Mathf.Infinity;
-        Transform closestPlayer = null;
+        var shape = GetComponent<Collider2D>();
+        return shape != null ? shape.bounds.extents.magnitude + .5f : 2.5f;
+    }
 
-        foreach (GameObject player in players)
+    bool ClearSight(PlayerController player)
+    {
+        Vector2 delta = player.transform.position - transform.position;
+        foreach (var hit in Physics2D.RaycastAll(transform.position, delta.normalized, delta.magnitude))
         {
-            float dist = Vector2.Distance(transform.position, player.transform.position);
-            if (dist < detectionRadius)
-            {
-                // ???????????????????????
-                Vector2 dir = player.transform.position - transform.position;
-                RaycastHit2D hit = Physics2D.Raycast(transform.position, dir.normalized, dist, LayerMask.GetMask("Obstacle"));
-                
-                if (hit.collider == null) // ????????????
-                {
-                    if (dist < closestDist)
-                    {
-                        closestDist = dist;
-                        closestPlayer = player.transform;
-                    }
-                }
-            }
+            if (hit.collider.isTrigger || hit.collider.transform.IsChildOf(transform)) continue;
+            if (hit.collider.GetComponentInParent<PlayerController>() != null) continue;
+            if (hit.collider.GetComponentInParent<BulletController>() != null || hit.collider.GetComponentInParent<SkillController>() != null) continue;
+            return false;
         }
-        target = closestPlayer;
-    }
-
-    void Shoot()
-    {
-        Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position;
-        object[] customInitData = new object[1];
-        customInitData[0] = damage;
-        
-        PhotonNetwork.Instantiate(bulletPrefabName, spawnPos, transform.rotation, 0, customInitData);
+        return delta.magnitude > MuzzleDistance();
     }
 }
 

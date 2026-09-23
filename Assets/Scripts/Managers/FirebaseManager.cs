@@ -239,49 +239,104 @@ public class FirebaseManager : MonoBehaviour
 
     // === อ่านข้อมูลเหรียญ ===
 
-    public void GetCoinBalance(Action<int> onResult)
+    private static bool TryReadCoins(object value, out long coins)
+    {
+        return long.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture),
+            System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out coins)
+            && coins >= 0;
+    }
+
+    public void GetCoinBalance(Action<long> onResult, Action<string> onError = null)
     {
         if (user == null || dbReference == null)
         {
-            onResult?.Invoke(0);
+            onError?.Invoke("Account is not ready.");
             return;
         }
-
-        dbReference.Child("users").Child(user.UserId).Child("coin_balance")
+        string uid = user.UserId;
+        dbReference.Child("users").Child(uid).Child("coin_balance")
             .GetValueAsync().ContinueWithOnMainThread(task =>
             {
-                if (!task.IsFaulted && !task.IsCanceled && task.Result.Exists)
+                if (user == null || user.UserId != uid) { onError?.Invoke("Account changed."); return; }
+                if (task.IsFaulted || task.IsCanceled)
                 {
-                    int.TryParse(task.Result.Value.ToString(), out int coins);
-                    onResult?.Invoke(coins);
+                    Debug.LogWarning("Coin balance read failed; existing balance was not changed.");
+                    onError?.Invoke("Could not load coins. Check connection.");
+                    return;
                 }
-                else
+                if (!task.Result.Exists || !TryReadCoins(task.Result.Value, out long coins))
                 {
-                    onResult?.Invoke(0);
+                    onError?.Invoke("Coin balance is missing or invalid.");
+                    return;
                 }
+                onResult?.Invoke(coins);
             });
     }
 
-    public void UpdateCoinBalance(int newBalance, Action<bool> onResult = null)
+    // Explicit absolute writes only; gameplay rewards and purchases use transactions below.
+    public void UpdateCoinBalance(long newBalance, Action<bool> onResult = null)
     {
-        if (user == null || dbReference == null)
-        {
-            onResult?.Invoke(false);
-            return;
-        }
-
+        if (newBalance < 0 || user == null || dbReference == null) { onResult?.Invoke(false); return; }
         dbReference.Child("users").Child(user.UserId).Child("coin_balance")
             .SetValueAsync(newBalance).ContinueWithOnMainThread(task =>
-            {
-                onResult?.Invoke(task.IsCompleted && !task.IsFaulted);
-            });
+                onResult?.Invoke(!task.IsFaulted && !task.IsCanceled));
     }
 
     public void AddCoins(int amount, Action<bool> onResult = null)
     {
-        GetCoinBalance(currentBalance =>
+        if (amount < 0 || user == null || dbReference == null) { onResult?.Invoke(false); return; }
+        bool applied = false;
+        var reference = dbReference.Child("users").Child(user.UserId).Child("coin_balance");
+        reference.RunTransaction(data =>
         {
-            UpdateCoinBalance(currentBalance + amount, onResult);
+            applied = false;
+            // Firebase may first call with an empty local cache; let the server retry with its actual value.
+            if (data.Value == null) return TransactionResult.Success(data);
+            if (!TryReadCoins(data.Value, out long balance) || balance > long.MaxValue - amount)
+                return TransactionResult.Abort();
+            data.Value = balance + amount;
+            applied = true;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+            onResult?.Invoke(!task.IsFaulted && !task.IsCanceled && applied));
+    }
+
+    public void PurchaseShip(int shipIndex, int price, Action<bool, long> onResult)
+    {
+        if (user == null || dbReference == null || price < 0 || shipIndex < 0)
+        { onResult?.Invoke(false, 0); return; }
+        string uid = user.UserId;
+        bool completed = false;
+        dbReference.Child("users").Child(uid).RunTransaction(data =>
+        {
+            completed = false;
+            if (data.Value == null) return TransactionResult.Success(data);
+            if (!TryReadCoins(data.Child("coin_balance").Value, out long balance)) return TransactionResult.Abort();
+            string stored = data.Child("unlocked_ships").Value as string;
+            if (stored == null) return TransactionResult.Abort();
+            var owned = new HashSet<int>();
+            foreach (string part in stored.Split(','))
+            {
+                if (!int.TryParse(part, out int index)) return TransactionResult.Abort();
+                owned.Add(index);
+            }
+            if (!owned.Contains(shipIndex))
+            {
+                if (balance < price) return TransactionResult.Abort();
+                owned.Add(shipIndex);
+                var ordered = new List<int>(owned);
+                ordered.Sort();
+                data.Child("coin_balance").Value = balance - price;
+                data.Child("unlocked_ships").Value = string.Join(",", ordered);
+            }
+            completed = true;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+        {
+            bool success = !task.IsFaulted && !task.IsCanceled && completed && user != null && user.UserId == uid;
+            long balance = 0;
+            if (success) success = task.Result != null && TryReadCoins(task.Result.Child("coin_balance").Value, out balance);
+            onResult?.Invoke(success, balance);
         });
     }
 
@@ -472,10 +527,20 @@ public class FirebaseManager : MonoBehaviour
             }
         });
 
-        // 2. อัปเดตเหรียญ
-        GetCoinBalance(coins =>
+        // Report success only when both the reward and match history have completed.
+        int pendingSaves = 2;
+        bool savesSucceeded = true;
+        Action<bool> saved = success =>
         {
-            UpdateCoinBalance(coins + rewardCoins);
+            savesSucceeded &= success;
+            if (--pendingSaves == 0) onComplete?.Invoke(savesSucceeded);
+        };
+
+        // 2. อัปเดตเหรียญ
+        AddCoins(rewardCoins, success =>
+        {
+            if (!success) Debug.LogWarning("Match reward could not be saved. Coin balance was not overwritten.");
+            saved(success);
         });
 
         // 3. บันทึก Match History (อิงตาม ER Diagram)
@@ -498,7 +563,7 @@ public class FirebaseManager : MonoBehaviour
 
         dbReference.Child("match_history").Child(matchId).SetValueAsync(matchData).ContinueWithOnMainThread(task =>
         {
-            onComplete?.Invoke(task.IsCompleted && !task.IsFaulted);
+            saved(!task.IsFaulted && !task.IsCanceled);
         });
     }
 }
