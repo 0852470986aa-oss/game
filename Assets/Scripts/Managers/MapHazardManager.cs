@@ -161,7 +161,7 @@ public class MapHazardManager : MonoBehaviourPunCallbacks
             {
                 SpawnPrismSwamp();
                 hazardPrefabName = ""; // Permanent authored swamp regions are created once above.
-                waitTime = Random.Range(10f, 20f);
+                waitTime = Random.Range(4f, 6f);
             }
             else if (mapIndex == 2) // Abandoned Mech Warzone
             {
@@ -186,13 +186,13 @@ public class MapHazardManager : MonoBehaviourPunCallbacks
         int count = 0;
         foreach (var hazard in FindObjectsByType<HazardController>(FindObjectsSortMode.None))
             if (hazard.type == HazardController.HazardType.SlowZone) count++;
-        if (count >= 3) return;
+        if (count >= 6) return;
         Vector2 min = GameplayManager.GetArenaMin(1), max = GameplayManager.GetArenaMax(1);
         for (int attempt = 0; attempt < 60; attempt++)
         {
             Vector2 point = new Vector2(Random.Range(min.x + 6, max.x - 6), Random.Range(min.y + 6, -9));
             if (Vector2.Distance(point, new Vector2(0,-16)) < 9) continue;
-            if (Physics2D.OverlapCircleAll(point, 5).Length > 0) continue;
+            if (Physics2D.OverlapCircleAll(point, 3).Length > 0) continue;
             PhotonNetwork.InstantiateRoomObject("Hazard_SlowZone", point, Quaternion.identity, 0,
                 new object[] { false, Random.Range(85,88) });
             break;

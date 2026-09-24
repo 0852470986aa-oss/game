@@ -33,7 +33,7 @@ public class ShipSheetBurst : MonoBehaviour
     }
 }
 
-public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
+public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
 {
     [Header("Ship Stats")]
     public float maxHp = 100f;
@@ -102,123 +102,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private float lastSheetImpact = -10f;
     private static Sprite[] shipEffectSprites;
 
-    private static Sprite ShipEffectSprite(int id)
-    {
-        if (shipEffectSprites == null) shipEffectSprites = Resources.LoadAll<Sprite>("Images/VFX_ShipEffects");
-        foreach (var sprite in shipEffectSprites)
-            if (sprite.name.EndsWith("_" + id)) return sprite;
-        return null;
-    }
-
-    private void LateUpdate()
-    {
-        UpdateAimGuide();
-        if (spriteRenderer == null || spriteRenderer.sprite == null) return;
-        float traveled = Vector3.Distance(transform.position, previousVfxPosition);
-        previousVfxPosition = transform.position;
-        if (sheetThrusters == null)
-        {
-            int style = spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
-                : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship3") ? 2 : 0;
-            exhaustStyle = style;
-            Sprite source = ShipEffectSprite(4);
-            if (source == null) return;
-            // Flame-only regions in the original 1536 x 1024 sheet; omit the metal nozzle.
-            if (exhaustSprites[style] == null)
-            {
-                Rect region = style == 0 ? new Rect(486, 880, 43, 85)
-                    : style == 1 ? new Rect(557, 781, 34, 62) : new Rect(264, 870, 28, 78);
-                // Keep the UV crop correct if the texture importer downsizes the sheet.
-                Vector2 textureScale = new Vector2(source.texture.width / 1536f, source.texture.height / 1024f);
-                region = new Rect(region.x * textureScale.x, region.y * textureScale.y,
-                    region.width * textureScale.x, region.height * textureScale.y);
-                exhaustSprites[style] = Sprite.Create(source.texture, region, new Vector2(0.5f, 1f), source.pixelsPerUnit, 0, SpriteMeshType.FullRect);
-                exhaustSprites[style].name = "FlameOnly_" + style;
-            }
-            // Anchors match the replacement PNGs supplied by the user (including their transparent padding).
-            // Red: four rear nozzles. White: two rear and two forward-facing nozzles. Green: two heavy rear engines.
-            exhaustAnchors = style == 0 ? new[] {
-                new Vector2(.235f, .055f), new Vector2(.423f, .055f),
-                new Vector2(.577f, .055f), new Vector2(.754f, .055f) }
-                : style == 1 ? new[] {
-                    new Vector2(.404f, .025f), new Vector2(.594f, .025f),
-                    new Vector2(.404f, .64f), new Vector2(.594f, .64f) }
-                : new[] { new Vector2(.333f, .215f), new Vector2(.662f, .215f) };
-            exhaustAngles = style == 1 ? new[] { 0f, 0f, 180f, 180f } : new float[exhaustAnchors.Length];
-            sheetThrusters = new SpriteRenderer[exhaustAnchors.Length];
-            sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
-            exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
-                ? new Color(0.2f, 0.85f, 1f) : new Color(1f, 0.5f, 0.08f);
-            for (int i = 0; i < sheetThrusters.Length; i++)
-            {
-                var obj = new GameObject("ShipSheetThruster" + i);
-                obj.transform.SetParent(transform, false);
-                var nozzle = obj.AddComponent<SpriteRenderer>();
-                nozzle.sprite = exhaustSprites[style];
-                nozzle.sortingLayerID = spriteRenderer.sortingLayerID;
-                // Above the baked-in exhaust art, anchored at the nozzle, not behind the opaque ship sprite.
-                nozzle.sortingOrder = spriteRenderer.sortingOrder + 2;
-                sheetThrusters[i] = nozzle;
-                var glowObject = new GameObject("ExhaustGlow" + i);
-                glowObject.transform.SetParent(transform, false);
-                var glow = glowObject.AddComponent<SpriteRenderer>();
-                glow.sprite = nozzle.sprite;
-                glow.sortingLayerID = nozzle.sortingLayerID;
-                glow.sortingOrder = spriteRenderer.sortingOrder + 1;
-                sheetThrusterGlows[i] = glow;
-            }
-            if (thrusterEffect != null) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-        }
-        Bounds hull = spriteRenderer.sprite.bounds;
-        float actualThrust = Mathf.Clamp01(traveled / Mathf.Max(0.001f, Time.deltaTime * speed));
-        // Smooth fixed-step motion, while keeping the engine visibly burning when pushing against cover.
-        float requestedThrust = photonView.IsMine && !isStunned ? movementInput.magnitude : actualThrust;
-        displayedThrust = Mathf.MoveTowards(displayedThrust, Mathf.Clamp01(requestedThrust), Time.deltaTime * 5f);
-        float pulse = 1f + 0.025f * Mathf.Sin(Time.time * 19f);
-        float length = hull.size.y * Mathf.Lerp(0.12f, 0.21f, displayedThrust) * pulse;
-        for (int i = 0; i < sheetThrusters.Length; i++)
-        {
-            var nozzle = sheetThrusters[i];
-            nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled;
-            float engineSize = exhaustStyle == 2 ? 1.3f : exhaustStyle == 1 && i >= 2 ? .75f : 1f;
-            float scale = length * engineSize / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
-            float width = hull.size.x * (exhaustStyle == 2 ? Mathf.Lerp(.10f, .14f, displayedThrust)
-                : Mathf.Lerp(.052f, .072f, displayedThrust));
-            if (exhaustStyle == 1 && i >= 2) width *= .85f;
-            nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
-            Vector2 anchor = exhaustAnchors[i];
-            if (spriteRenderer.flipX) anchor.x = 1f - anchor.x;
-            if (spriteRenderer.flipY) anchor.y = 1f - anchor.y;
-            nozzle.transform.localRotation = Quaternion.Euler(0, 0, exhaustAngles[i] + (spriteRenderer.flipY ? 180 : 0));
-            nozzle.transform.localPosition = new Vector3(hull.min.x + hull.size.x * anchor.x, hull.min.y + hull.size.y * anchor.y, 0);
-            nozzle.color = new Color(1, 1, 1, Mathf.Lerp(0.85f, 1f, displayedThrust));
-            var glow = sheetThrusterGlows[i];
-            glow.enabled = nozzle.enabled;
-            glow.transform.localPosition = nozzle.transform.localPosition;
-            glow.transform.localRotation = nozzle.transform.localRotation;
-            glow.transform.localScale = Vector3.Scale(nozzle.transform.localScale, new Vector3(1.8f, 1.03f, 1));
-            glow.color = new Color(exhaustGlowColor.r, exhaustGlowColor.g, exhaustGlowColor.b,
-                Mathf.Lerp(0.18f, 0.32f, displayedThrust));
-        }
-        if (thrusterEffect != null && thrusterEffect.isPlaying) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-    }
-
-    private bool PlaySheetBurst(bool death)
-    {
-        Sprite sprite = ShipEffectSprite(death ? 117 : 129);
-        if (sprite == null || spriteRenderer == null) return false;
-        if (!death && Time.time - lastSheetImpact < 0.07f) return true;
-        lastSheetImpact = Time.time;
-        var obj = new GameObject(death ? "ShipSheetExplosion" : "ShipSheetImpact");
-        obj.transform.position = transform.position;
-        var renderer = obj.AddComponent<SpriteRenderer>();
-        renderer.sprite = sprite;
-        renderer.sortingLayerID = spriteRenderer.sortingLayerID;
-        renderer.sortingOrder = spriteRenderer.sortingOrder + 3;
-        float size = Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * (death ? 1.8f : 0.45f);
-        obj.AddComponent<ShipSheetBurst>().Initialize(renderer, size, death ? 0.65f : 0.2f);
-        return true;
-    }
 
     void Start()
     {
@@ -352,12 +235,24 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         if (photonView.IsMine)
         {
             if (!BattleInputAllowed) return;
+            if (swampSources.Count == 0) swampExposure = 0;
+            else
+            {
+                float before = swampExposure;
+                swampExposure += Time.deltaTime;
+                float elapsed = Mathf.Max(0, swampExposure-BattleBalance.PoisonDelay)-Mathf.Max(0,before-BattleBalance.PoisonDelay);
+                if (elapsed > 0 && !isShielded && !isSpawnProtected)
+                {
+                    currentHp = Mathf.Max(0,currentHp-BattleBalance.PoisonDamagePerSecond*elapsed);
+                    if (currentHp <= 0) { Die(-1); return; }
+                }
+            }
             if (isEnergyOverloaded)
             {
                 // ลดเลือดอย่างต่อเนื่อง 5 หน่วยต่อวินาที เมื่ออยู่ใน Energy Core
                 if (!isShielded && !isSpawnProtected)
                 {
-                    currentHp -= 5f * Time.deltaTime;
+                    currentHp -= BattleBalance.CoreDamagePerSecond * Time.deltaTime;
                     if (currentHp <= 0)
                     {
                         currentHp = 0;
@@ -369,7 +264,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
             if (currentCooldown > 0)
                 currentCooldown -= Time.deltaTime;
 
-            if (!isStunned)
+            if (!isStunned && !BattleSettingsPanel.IsOpen)
             {
                 HandleMovement();
                 HandleAiming();
@@ -389,7 +284,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
     private void FixedUpdate()
     {
         if (!photonView.IsMine || playerRigidbody == null) return;
-        if (matchEnded || isStunned || isDead || !BattleInputAllowed)
+        if (matchEnded || isStunned || isDead || !BattleInputAllowed || BattleSettingsPanel.IsOpen)
         {
             movementInput = Vector2.zero;
             playerRigidbody.linearVelocity = Vector2.zero;
@@ -415,6 +310,7 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         CancelInvoke("DeactivateShield");
         isStunned = isSlowed = isShielded = isSpawnProtected = false;
         swampSources.Clear();
+        swampExposure = 0;
         coreSources.Clear();
         SetEnergyOverloadRPC(false);
         UpdateEffectiveSpeed();
@@ -524,75 +420,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         base.OnDisable();
     }
 
-    private void HandleAiming()
-    {
-        if (fireButton == null || !fireButton.isPressed || !fireButton.HasAim) return;
-        Vector2 direction = fireButton.AimDirection;
-        float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
-        // Only the right stick rotates the ship; translation remains controlled by the left stick.
-        float facing = Mathf.LerpAngle(transform.eulerAngles.z, angle, 1f - Mathf.Exp(-rotationSpeed * Time.deltaTime));
-        transform.rotation = Quaternion.Euler(0, 0, facing);
-    }
-
-    private void HandleMovement()
-    {
-        if (isStunned) return; // ไม่สามารถขยับได้ตอนติด Stun
-        if (joystick != null)
-        {
-            Vector2 input = Vector2.ClampMagnitude(new Vector2(joystick.GetHorizontal(), joystick.GetVertical()), 1f);
-            if (input.magnitude > 0.1f)
-            {
-                // Smooth Acceleration แทนการเปลี่ยน velocity ทันที
-                float response = Vector2.Dot(movementInput, input) < 0 ? .55f : .35f;
-                movementInput = Vector2.MoveTowards(movementInput, input, Time.deltaTime * acceleration * response);
-                
-                if (playerRigidbody == null)
-                {
-                    Vector2 targetPosition = (Vector2)transform.position + movementInput * speed * Time.deltaTime;
-                    transform.position = ClampToArena(targetPosition);
-                }
-                
-                // คำนวณองศาการเลี้ยวเพื่อเอียงยาน (Tilt)
-
-                // หมุนยานไปในทิศทางที่เดิน (ใช้ rotationSpeed ต่างกันตามยาน)
-                
-                // เร่งไฟไอพ่น
-                if (thrusterEffect != null)
-                {
-                    var emission = thrusterEffect.emission;
-                    emission.rateOverTime = 50f;
-                    var main = thrusterEffect.main;
-                    main.startSize = 1.2f;
-                    main.startSpeed = 4f;
-                }
-            }
-            else
-            {
-                // Smooth Deceleration
-                movementInput = Vector2.MoveTowards(movementInput, Vector2.zero, Time.deltaTime * acceleration * .75f);
-                if (movementInput.magnitude < 0.01f) movementInput = Vector2.zero;
-                
-                // ค่อยๆ คืนยานกลับมาตรงๆ
-
-                // เบาไฟไอพ่นลงเมื่อจอดนิ่ง
-                if (thrusterEffect != null)
-                {
-                    var emission = thrusterEffect.emission;
-                    emission.rateOverTime = 10f;
-                    var main = thrusterEffect.main;
-                    main.startSize = 0.6f;
-                    main.startSpeed = 1.5f;
-                }
-            }
-        }
-    }
-
-    private Vector2 ClampToArena(Vector2 position)
-    {
-        return new Vector2(
-            Mathf.Clamp(position.x, arenaMin.x, arenaMax.x),
-            Mathf.Clamp(position.y, arenaMin.y, arenaMax.y));
-    }
 
     private void HandleShooting()
     {
@@ -604,193 +431,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         }
     }
 
-    private void HandleSkill()
-    {
-        bool isSkillPressed = UIButton.IsPressed("Skill") || UIButton.IsPressed("skill") || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E);
-
-        // เช็คจาก GameplayManager โดยตรงเผื่อปุ่มไม่ได้ตั้งชื่อว่า Skill
-        if (GameplayManager.Instance != null && GameplayManager.Instance.skillButton != null)
-        {
-            if (GameplayManager.Instance.skillButton.isPressed)
-            {
-                isSkillPressed = true;
-            }
-        }
-
-        if (isSkillPressed && currentCooldown <= 0)
-        {
-            currentCooldown = maxCooldown;
-            UseSkill();
-        }
-    }
-
-    private void UseSkill()
-    {
-        Debug.Log("Used Skill: " + skillName);
-        Vector3 spawnPos = transform.position;
-
-        if (skillType == 0) // STUN
-        {
-            object[] data = new object[] { attack * 0.5f }; // ดาเมจน้อยลง
-            PhotonNetwork.Instantiate("Skill_StunWave", firePoint != null ? firePoint.position : spawnPos, transform.rotation, 0, data);
-        }
-        else if (skillType == 1) // SHIELD
-        {
-            photonView.RPC("ActivateShieldRPC", RpcTarget.All);
-        }
-        else if (skillType == 2) // NOVA
-        {
-            object[] data = new object[] { attack * 2.0f };
-            PhotonNetwork.Instantiate("Skill_NovaBlast", spawnPos, Quaternion.identity, 0, data);
-        }
-        else if (skillType == 3) // SEEKER
-        {
-            object[] data = new object[] { attack * 1.5f };
-            PhotonNetwork.Instantiate("Skill_SeekerMissile", firePoint != null ? firePoint.position : spawnPos, transform.rotation, 0, data);
-        }
-    }
-
-    [PunRPC]
-    public void ActivateShieldRPC()
-    {
-        if (isDead || matchEnded) return;
-        isShielded = true;
-        if (authoredShield != null) Destroy(authoredShield.gameObject);
-        var frames = SkillSheetVisual.Load("VFX_Shield");
-        float diameter = spriteRenderer != null ? Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * 1.2f : 4f;
-        authoredShield = SkillSheetVisual.Create(frames, transform, transform.position, diameter, 2.3f);
-        if (authoredShield != null) authoredShield.breakTime = 2f;
-        if (shieldVisual != null) shieldVisual.SetActive(authoredShield == null);
-        UpdateEffectiveSpeed();
-        CancelInvoke("DeactivateShield");
-        Invoke("DeactivateShield", 2f);
-    }
-
-    private void DeactivateShield()
-    {
-        isShielded = false;
-        UpdateEffectiveSpeed();
-        if (shieldVisual != null) shieldVisual.SetActive(false);
-
-        // Shield Break Effect (เอฟเฟกต์โล่แตก สีฟ้า ขนาดใหญ่)
-        if (authoredShield != null)
-        {
-            authoredShield.Break();
-            if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldBreak");
-            return;
-        }
-        GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
-        if (impactPrefab != null)
-        {
-            GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
-            fx.transform.localScale = new Vector3(2f, 2f, 2f);
-            var sr = fx.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.color = new Color(0.2f, 0.8f, 1f, 1f); // สีฟ้าสว่าง
-        }
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldBreak");
-    }
-
-    // Stun Visual
-    private GameObject stunVisual;
-
-    [PunRPC]
-    public void ApplyStunRPC()
-    {
-        if (!BattleInputAllowed || isDead || isSpawnProtected) return;
-        if (isShielded) return; // ติดโล่ป้องกันสถานะได้
-        isStunned = true;
-        CancelInvoke("RemoveStun");
-        Invoke("RemoveStun", 2.5f);
-
-        // Stun Visual Feedback — ทั้งสองฝั่ง (ตัวเองและศัตรู) เห็นว่ายานนี้โดนสตัน
-        if (spriteRenderer != null) spriteRenderer.color = new Color(1f, 1f, 0.3f, 1f); // เหลืองจัด
-
-        // สร้างไอคอน Stun หมุนเหนือหัว
-        if (stunVisual == null)
-        {
-            stunVisual = new GameObject("StunIndicator");
-            stunVisual.transform.SetParent(transform);
-            stunVisual.transform.localPosition = new Vector3(0, 1.2f, 0);
-            stunVisual.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
-            var sr = stunVisual.AddComponent<SpriteRenderer>();
-            sr.color = new Color(1f, 1f, 0f, 0.9f);
-            sr.sortingOrder = 10;
-            // ใช้ sprite จากยานตัวเอง (วงกลมเหลือง)
-            SpriteRenderer mainSr = GetComponent<SpriteRenderer>();
-            if (mainSr != null) sr.sprite = mainSr.sprite;
-        }
-        stunVisual.SetActive(true);
-
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Stun");
-    }
-
-    private void RemoveStun()
-    {
-        isStunned = false;
-        if (spriteRenderer != null) spriteRenderer.color = Color.white;
-        if (stunVisual != null) stunVisual.SetActive(false);
-    }
-
-    [PunRPC]
-    public void ApplySlowRPC()
-    {
-        if (isDead || !BattleInputAllowed) return;
-        if (isShielded) return;
-        
-        // ถ้าเพิ่งโดน slow ไป ให้รีเฟรชเวลา
-        CancelInvoke("RemoveSlow");
-        isSlowed = true;
-        UpdateEffectiveSpeed();
-        Invoke("RemoveSlow", 0.35f);
-    }
-
-    [PunRPC]
-    public void RemoveSlowRPC()
-    {
-        CancelInvoke("RemoveSlow");
-        isSlowed = false;
-        UpdateEffectiveSpeed();
-    }
-
-    private void RemoveSlow()
-    {
-        isSlowed = false;
-        UpdateEffectiveSpeed();
-    }
-
-    private bool isSlowed;
-
-    private void UpdateEffectiveSpeed()
-    {
-        if (baseSpeed <= 0f) return;
-        speed = baseSpeed * (isShielded ? 1.5f : 1f) * ((isSlowed || swampSources.Count > 0) ? 0.7f : 1f);
-    }
-
-    private readonly System.Collections.Generic.HashSet<int> swampSources = new System.Collections.Generic.HashSet<int>();
-    private readonly System.Collections.Generic.HashSet<int> coreSources = new System.Collections.Generic.HashSet<int>();
-
-    public void SetBattlefieldZone(int source, bool core, bool inside)
-    {
-        if (isDead && inside) return;
-        var sources = core ? coreSources : swampSources;
-        if (inside) sources.Add(source); else sources.Remove(source);
-        if (core) SetEnergyOverloadRPC(coreSources.Count > 0);
-        else UpdateEffectiveSpeed();
-    }
-
-    [PunRPC]
-    public void SetEnergyOverloadRPC(bool active)
-    {
-        isEnergyOverloaded = active;
-        if (active)
-        {
-            fireCooldown = baseFireCooldown * 0.3f; // ยิงเร็วขึ้นมาก
-        }
-        else
-        {
-            fireCooldown = baseFireCooldown;
-        }
-    }
 
     private void Shoot()
     {
@@ -817,292 +457,6 @@ public class PlayerController : MonoBehaviourPunCallbacks, IPunObservable
         PhotonNetwork.Instantiate("BulletPrefab", spawnPos, transform.rotation, 0, customInitData);
     }
 
-    [PunRPC]
-    public void TakeDamage(float damage, int killerId)
-    {
-        if (!BattleInputAllowed) return;
-        if (!photonView.IsMine) return;
-        if (matchEnded || isDead) return;
-        if (isSpawnProtected) return; // กันตัวตอน Spawn
-        if (GameplayManager.Instance != null) GameplayManager.Instance.ShowIncomingDamage(killerId);
-
-        if (isShielded)
-        {
-            // Shield Hit Feedback (โล่รับดาเมจแทน แสดงเอฟเฟกต์โดนโล่)
-            ConfirmHitToShooter(killerId, true);
-            photonView.RPC("PlayShieldHitRPC", RpcTarget.All);
-            return;
-        }
-
-        ConfirmHitToShooter(killerId, false);
-        currentHp -= damage;
-        
-        photonView.RPC("PlayHitEffectsRPC", RpcTarget.All, damage);
-
-        // Camera Shake ตามดาเมจที่โดน (ยิ่งดาเมจสูง = สั่นแรง)
-        if (CameraShake.Instance != null)
-        {
-            float shakeIntensity = Mathf.Clamp(damage / 50f, 0.1f, 0.5f);
-            CameraShake.Instance.TriggerShake(0.15f, shakeIntensity);
-        }
-
-        if (currentHp <= 0)
-        {
-            currentHp = 0;
-            Die(killerId);
-        }
-    }
-
-    private void ConfirmHitToShooter(int shooterId, bool shield)
-    {
-        var shooter = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.GetPlayer(shooterId) : null;
-        if (shooter != null && shooterId != photonView.OwnerActorNr)
-            photonView.RPC("ConfirmProjectileHitRPC", shooter, shield);
-    }
-
-    [PunRPC]
-    public void ConfirmProjectileHitRPC(bool shield, PhotonMessageInfo info)
-    {
-        if (info.Sender != photonView.Owner) return;
-        if (GameplayManager.Instance != null) GameplayManager.Instance.ShowConfirmedHit(shield);
-    }
-
-    [PunRPC]
-    public void PlayHitEffectsRPC(float damage)
-    {
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Hit");
-
-        // 1. Hit Flash (ขาวก่อนแดง ดูดีกว่าแดงอย่างเดียว)
-        if (spriteRenderer != null)
-        {
-            StartCoroutine(HitFlashRoutine());
-        }
-
-        // 2. Knockback (กระเด้งหลังเล็กน้อยตอนโดนยิง)
-        if (playerRigidbody != null)
-        {
-            Vector2 knockDir = (Vector2)transform.position - (Vector2)transform.up;
-            playerRigidbody.AddForce(knockDir.normalized * damage * 0.5f, ForceMode2D.Impulse);
-        }
-
-        // 3. Impact Explosion (เนื้อหนัง เลือดสาด/ประกายไฟสีแดง)
-        GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
-        if (!PlaySheetBurst(false) && impactPrefab != null)
-        {
-            GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
-            var sr = fx.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.color = new Color(1f, 0.2f, 0.2f, 1f); // สีแดงสด
-        }
-
-        // 4. Floating Text
-        GameObject floatingTextPrefab = Resources.Load<GameObject>("FloatingText");
-        if (floatingTextPrefab != null)
-        {
-            GameObject txtObj = Instantiate(floatingTextPrefab, transform.position + new Vector3(0, 0.5f, 0), Quaternion.identity);
-            FloatingText ft = txtObj.GetComponent<FloatingText>();
-            if (ft != null) ft.Setup(damage);
-        }
-    }
-
-    [PunRPC]
-    public void PlayShieldHitRPC()
-    {
-        // Shield กระพริบตอนโดนโจมตี
-        if (shieldVisual != null)
-        {
-            StartCoroutine(ShieldHitFlashRoutine());
-        }
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
-        
-        // Impact Effect ของโล่ (สีฟ้าอ่อน)
-        GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
-        if (impactPrefab != null)
-        {
-            GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
-            var sr = fx.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.color = new Color(0.4f, 0.8f, 1f, 1f); // สีฟ้า
-        }
-    }
-
-    private System.Collections.IEnumerator ShieldHitFlashRoutine()
-    {
-        if (shieldVisual == null) yield break;
-        SpriteRenderer shieldSR = shieldVisual.GetComponent<SpriteRenderer>();
-        if (shieldSR == null) yield break;
-        Color orig = shieldSR.color;
-        shieldSR.color = new Color(1f, 1f, 1f, 0.9f);
-        yield return new WaitForSeconds(0.08f);
-        shieldSR.color = orig;
-    }
-
-    private System.Collections.IEnumerator HitFlashRoutine()
-    {
-        // White flash ก่อน แล้ว Red flash (ดูดีกว่าแดงอย่างเดียว)
-        if (spriteRenderer == null) yield break;
-        spriteRenderer.color = Color.white;
-        yield return new WaitForSeconds(0.05f);
-        if (spriteRenderer == null) yield break;
-        spriteRenderer.color = Color.red;
-        yield return new WaitForSeconds(0.1f);
-        if (spriteRenderer == null) yield break;
-        spriteRenderer.color = Color.white;
-    }
-
-    private void Die(int killerId)
-    {
-        if (matchEnded || isDead) return;
-        
-        // แจ้งทุกคนว่ายานนี้ตาย (ทุกคนจะได้เล่นเอฟเฟกต์ระเบิดและซ่อนยาน)
-        photonView.RPC("OnPlayerDiedRPC", RpcTarget.All, killerId);
-        
-        // เริ่มกระบวนการเกิดใหม่ (รันเฉพาะฝั่งเจ้าของยาน)
-        StartCoroutine(RespawnRoutine());
-    }
-
-    [PunRPC]
-    public void OnPlayerDiedRPC(int killerId)
-    {
-        if (isDead || matchEnded) return;
-        isDead = true;
-        ResetLifeState();
-        RespawnReadyAt = Time.unscaledTime + 3f;
-        var killer = PhotonNetwork.CurrentRoom != null ? PhotonNetwork.CurrentRoom.GetPlayer(killerId) : null;
-        DeathReason = killerId == photonView.OwnerActorNr ? "SELF DESTRUCTION"
-            : killer != null ? "DESTROYED BY " + killer.NickName : "DESTROYED BY BATTLEFIELD HAZARD";
-        Debug.Log("Player Died!");
-
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Explosion");
-
-        // Death Explosion
-        GameObject deathPrefab = GameplayManager.GetPrefab("DeathExplosion");
-        if (!PlaySheetBurst(true) && deathPrefab != null)
-        {
-            Instantiate(deathPrefab, transform.position, Quaternion.identity);
-            Instantiate(deathPrefab, transform.position + new Vector3(1, 1, 0), Quaternion.identity);
-            Instantiate(deathPrefab, transform.position + new Vector3(-1, -1, 0), Quaternion.identity);
-        }
-        
-        // สั่นกล้องเฉพาะเครื่องคนที่ตาย
-        if (CameraShake.Instance != null && photonView.IsMine) CameraShake.Instance.TriggerShake(1.0f, 1.0f);
-        
-        // PHASE 4: หน่วงเวลา Slow motion เล็กน้อยเพื่ออารมณ์ที่สะใจขึ้น (รันทุกคน)
-        // Keep online simulation and the round clock at normal speed after a kill.
-
-        // ซ่อนยาน
-        if (spriteRenderer != null) spriteRenderer.enabled = false;
-        if (GetComponent<Collider2D>()) GetComponent<Collider2D>().enabled = false;
-        if (shieldVisual != null) shieldVisual.SetActive(false);
-        if (thrusterEffect != null) thrusterEffect.Stop();
-        // ถ้า "ตัวฉันเอง" (เครื่องนี้) คือคนที่ฆ่า (ActorNumber ตรงกับ killerId)
-        if (PhotonNetwork.LocalPlayer.ActorNumber == killerId)
-        {
-            int currentKills = 0;
-            if (PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("Kills", out object kills))
-            {
-                currentKills = (int)kills;
-            }
-            currentKills++;
-            ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
-            props.Add("Kills", currentKills);
-            PhotonNetwork.LocalPlayer.SetCustomProperties(props);
-            
-            // ลอยข้อความ "Kill +1" ที่กลางจอหรือบนยานศัตรูก็ได้
-            if (GameplayManager.Instance != null) GameplayManager.Instance.ShowKillMessage();
-        }
-    }
-
-    private System.Collections.IEnumerator SlowMotionRoutine()
-    {
-        // หน่วงเวลาเกมให้ช้าลง 3 เท่า
-        Time.timeScale = 0.3f;
-        Time.fixedDeltaTime = 0.02f * Time.timeScale;
-        
-        // รอ 1.5 วินาทีของเวลาจริง (เท่ากับ 0.5 วินาทีในเกมที่ช้าลง)
-        yield return new WaitForSecondsRealtime(1.5f);
-        
-        // คืนค่าปกติ
-        Time.timeScale = 1f;
-        Time.fixedDeltaTime = 0.02f;
-    }
-
-    private System.Collections.IEnumerator RespawnRoutine()
-    {
-        RespawnReadyAt = Time.unscaledTime + 3f;
-        while (Time.unscaledTime < RespawnReadyAt)
-        {
-            if (matchEnded || !PhotonNetwork.InRoom) yield break;
-            yield return null;
-        }
-        Vector2 spawnPos;
-        while (!GameplayManager.TryFindSafeSpawn(gameObject, GameplayManager.GetCurrentMapIndex(),
-            PhotonNetwork.IsMasterClient, out spawnPos))
-        {
-            if (matchEnded || !PhotonNetwork.InRoom) yield break;
-            yield return new WaitForSecondsRealtime(.5f);
-        }
-        if (matchEnded || !PhotonNetwork.InRoom) yield break;
-        photonView.RPC("OnPlayerRespawnedRPC", RpcTarget.All, spawnPos);
-    }
-
-    [PunRPC]
-    public void OnPlayerRespawnedRPC(Vector2 spawnPos)
-    {
-        if (matchEnded || !isDead) return;
-        ResetLifeState();
-        currentHp = maxHp;
-        isDead = false;
-        transform.position = spawnPos;
-        if (playerRigidbody != null) playerRigidbody.position = spawnPos;
-        
-        // Reset Visuals
-        if (spriteRenderer != null) spriteRenderer.enabled = true;
-        if (GetComponent<Collider2D>()) GetComponent<Collider2D>().enabled = true;
-        if (thrusterEffect != null) thrusterEffect.Play();
-        
-        StartCoroutine(SpawnProtectionRoutine());
-    }
-
-    private System.Collections.IEnumerator ShowResultWithDelay(bool isWinner)
-    {
-        // หน่วงเวลา 2 วินาทีให้ดูระเบิดก่อน
-        yield return new WaitForSeconds(2.0f);
-
-        if (GameplayManager.Instance != null)
-        {
-            if (isWinner)
-            {
-                string enemyShip = gameObject.name.Replace("(Clone)", "");
-                string enemyName = photonView.Owner.NickName;
-                string myShip = GameplayManager.Instance.localPlayer != null ? GameplayManager.Instance.localPlayer.gameObject.name.Replace("(Clone)", "") : "MyShip";
-                GameplayManager.Instance.ShowResultScreen(true, myShip, enemyShip, enemyName);
-            }
-            else
-            {
-                string myShip = gameObject.name.Replace("(Clone)", "");
-                string enemyName = GameplayManager.Instance.remotePlayer != null ? GameplayManager.Instance.remotePlayer.photonView.Owner.NickName : "Enemy";
-                string enemyShip = GameplayManager.Instance.remotePlayer != null ? GameplayManager.Instance.remotePlayer.gameObject.name.Replace("(Clone)", "") : "Unknown";
-                GameplayManager.Instance.ShowResultScreen(false, myShip, enemyShip, enemyName);
-            }
-        }
-    }
-
-    [PunRPC]
-    public void GameOverRPC()
-    {
-        if (matchEnded) return;
-        matchEnded = true;
-
-        // ฝั่งคนชนะ ก็ดูระเบิดหน่วงเวลา 2 วินาทีเหมือนกัน
-        StartCoroutine(ShowResultWithDelay(true));
-    }
-
-    [PunRPC]
-    public void SetMatchEndedRPC()
-    {
-        matchEnded = true;
-        movementInput = Vector2.zero;
-        if (playerRigidbody != null) playerRigidbody.linearVelocity = Vector2.zero;
-    }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
     {

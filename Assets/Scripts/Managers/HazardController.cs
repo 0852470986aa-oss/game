@@ -14,7 +14,7 @@ public class MoltenContactSurface : MonoBehaviour
         if (player == null || !player.photonView.IsMine || player.isDead) return;
         if (nextDamageTimes.TryGetValue(player.GetInstanceID(), out float next) && Time.time < next) return;
         nextDamageTimes[player.GetInstanceID()] = Time.time + 1f;
-        player.TakeDamage(10f, -1);
+        player.TakeDamage(BattleBalance.LavaDamage, -1);
     }
 }
 
@@ -146,19 +146,29 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             var data = photonView.InstantiationData;
             if (data != null && data.Length > 1 && data[1] is int variant)
             {
-                var sprites = SkillSheetVisual.Load("Props_Prism");
-                var swamp = System.Array.Find(sprites, sprite => sprite.name == "Props_Prism_" + variant);
+                warningTime = 1f;
+                var swamp = PolishSprites.Swamp(variant-85);
                 if (swamp != null && effectVisual != null)
                 {
                     effectVisual.sprite = swamp;
                     effectVisual.color = Color.white;
                     effectVisual.sortingOrder = -2;
-                    float scale = 8f / Mathf.Max(.01f, swamp.bounds.size.x);
+                    float scale = 4.5f / Mathf.Max(.01f, swamp.bounds.size.x);
                     effectVisual.transform.localScale = Vector3.one * scale;
                     effectVisual.transform.localPosition = -swamp.bounds.center * scale;
                     // Trigger follows the visible pool rather than the original placeholder size.
                     if (hitCollider != null) hitCollider.enabled = false;
                     var area = effectVisual.gameObject.AddComponent<PolygonCollider2D>();
+                    // Pool surface only: airborne droplets must not apply slow or poison.
+                    var points = new Vector2[24];
+                    var bounds = swamp.bounds;
+                    for (int i=0;i<points.Length;i++)
+                    {
+                        float angle = i*Mathf.PI*2/points.Length;
+                        points[i] = new Vector2(bounds.center.x+Mathf.Cos(angle)*bounds.size.x*.43f,
+                            bounds.min.y+bounds.size.y*.29f+Mathf.Sin(angle)*bounds.size.y*.20f);
+                    }
+                    area.SetPath(0,points);
                     area.isTrigger = true;
                     hitCollider = area;
                     var body = GetComponent<Rigidbody2D>();
@@ -203,7 +213,9 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             while (elapsed < warningTime)
             {
                 if (warningArea != null)
-                    warningArea.color = new Color(1, 0, 0, Mathf.PingPong(Time.time * 3f, 0.5f) + 0.1f);
+                    warningArea.color = type == HazardType.SlowZone
+                        ? new Color(.45f,1,.08f,Mathf.PingPong(Time.time*3,.5f)+.1f)
+                        : new Color(1, 0, 0, Mathf.PingPong(Time.time * 3f, 0.5f) + 0.1f);
                 elapsed += Time.deltaTime;
                 yield return null;
             }
@@ -235,7 +247,18 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         }
 
         if (permanent) yield break;
-        yield return new WaitForSeconds(lifetime - warningTime);
+        if (type == HazardType.SlowZone)
+        {
+            yield return new WaitForSeconds(Mathf.Max(0,lifetime-warningTime-1.5f));
+            float fade = 0;
+            while (fade < 1.5f)
+            {
+                fade += Time.deltaTime;
+                if (effectVisual != null) effectVisual.color = new Color(1,1,1,Mathf.Clamp01(1-fade/1.5f));
+                yield return null;
+            }
+        }
+        else yield return new WaitForSeconds(lifetime - warningTime);
 
         // 3. Cleanup
         if (photonView.IsMine)
@@ -276,7 +299,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             else if (type == HazardType.Meteor || type == HazardType.MoltenAsteroid)
             {
                 if (type == HazardType.MoltenAsteroid) meteorHit = true;
-                hitPlayer.photonView.RPC("TakeDamage", RpcTarget.All, 35f, -1); // PHASE 7: ลดดาเมจจาก 50 เป็น 35 ให้แฟร์ขึ้น
+                hitPlayer.photonView.RPC("TakeDamage", RpcTarget.All, BattleBalance.MeteorDamage, -1); // PHASE 7: ลดดาเมจจาก 50 เป็น 35 ให้แฟร์ขึ้น
                 if (type == HazardType.MoltenAsteroid && photonView.IsMine)
                 {
                     photonView.RPC(nameof(MeteorImpactRPC), RpcTarget.All, transform.position);

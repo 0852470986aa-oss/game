@@ -4,8 +4,8 @@ using Photon.Pun;
 public class AutoTurret : MonoBehaviour
 {
     public float detectionRadius = 24f;
-    public float fireRate = 1.5f;
-    public float damage = 10f;
+    public float fireRate = BattleBalance.TurretShotInterval;
+    public float damage = BattleBalance.TurretDamage;
     public string bulletPrefabName = "BulletPrefab";
     public Transform firePoint;
     private float nextFireTime;

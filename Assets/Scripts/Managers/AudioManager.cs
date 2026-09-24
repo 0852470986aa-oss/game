@@ -143,6 +143,7 @@ public class AudioManager : MonoBehaviour
             samples[i] = Mathf.Clamp((pad + pluck + kick) * edge, -.4f, .4f);
         }
         var clip = AudioClip.Create(name + "_SynthLoop", count, 1, rate, false);
+        NormalizeGeneratedAudio(samples, .6f, 3f);
         clip.SetData(samples, 0);
         generated.Add(clip);
         return clip;
@@ -176,9 +177,29 @@ public class AudioManager : MonoBehaviour
             samples[i] = .22f * envelope * Mathf.Lerp(Mathf.Sin(phase), (float)random.NextDouble() * 2 - 1, noise);
         }
         var clip = AudioClip.Create("Temporary_" + name, samples.Length, 1, rate, false);
+        NormalizeGeneratedAudio(samples, name == "SFX_Click" ? .35f : .55f, 3f);
         clip.SetData(samples, 0);
         generated.Add(clip);
         return clip;
+    }
+
+    private static void NormalizeGeneratedAudio(float[] samples, float targetPeak, float maximumGain)
+    {
+        float peak = 0;
+        foreach (float sample in samples) peak = Mathf.Max(peak, Mathf.Abs(sample));
+        if (peak < .0001f) return;
+        float gain = Mathf.Min(maximumGain, targetPeak / peak);
+        for (int i = 0; i < samples.Length; i++) samples[i] *= gain;
+    }
+
+    // Share headroom during busy firefights instead of letting many louder effects pile up.
+    private void LateUpdate()
+    {
+        int voices = 0;
+        foreach (var source in sfxSources) if (source != null && source.isPlaying) voices++;
+        float mix = 1f / Mathf.Sqrt(Mathf.Max(1, voices));
+        foreach (var source in sfxSources)
+            if (source != null) source.volume = masterVolume * sfxVolume * mix;
     }
 
     private void OnDestroy()
