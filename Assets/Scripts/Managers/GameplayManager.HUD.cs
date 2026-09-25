@@ -33,8 +33,8 @@ public partial class GameplayManager
                 var root = BattleRect("ShipNameplate_" + key, shipHudLayer, 0, 0, 156, 38);
                 var name = BattleLabel("Pilot", root, "", 0, 11, 156, 22, 15);
                 name.richText = false;
-                name.outlineWidth = .18f;
-                name.outlineColor = new Color(0, 0, 0, .85f);
+                name.outlineWidth = .28f;
+                name.outlineColor = new Color(0, 0, 0, 1f);
                 var track = BattlePanel("HullTrack", root, 0, -7, 112, 8, new Color(.015f, .025f, .04f, .8f));
                 var fill = BattlePanel("HullFill", track.transform, -54, 0, 108, 4, Color.cyan);
                 fill.rectTransform.pivot = new Vector2(0, .5f);
@@ -64,7 +64,7 @@ public partial class GameplayManager
             bool mine = plate.ship.photonView.IsMine;
             string nickname = plate.ship.photonView.Owner != null ? plate.ship.photonView.Owner.NickName : "PILOT";
             plate.name.text = (mine ? "YOU / " : "") + nickname;
-            plate.name.color = mine ? new Color(.4f, 1f, .9f) : new Color(1f, .7f, .65f);
+            plate.name.color = mine ? new Color(.72f, 1f, .95f) : new Color(1f, .82f, .72f);
             float hp = Mathf.Clamp01(plate.ship.currentHp / Mathf.Max(1, plate.ship.maxHp));
             plate.fill.rectTransform.localScale = new Vector3(hp, 1, 1);
             plate.fill.color = hp < .3f ? new Color(1f, .25f, .2f) : hp < .6f ? new Color(1f, .8f, .2f)

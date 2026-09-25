@@ -16,7 +16,9 @@ public static class PolishSprites
     {
         if (swamps == null)
         {
-            var texture = Resources.Load<Texture2D>("Images/Obs_PrismSwamps");
+            // This copy has a real alpha channel.  The source sheet has an opaque
+            // black backdrop, which becomes a large dark rectangle in game.
+            var texture = Resources.Load<Texture2D>("Images/Obs_PrismSwamps_Transparent");
             if(texture == null) return null;
             swamps = new Sprite[3];
             float[] edges={0,.28f,.60f,1};
@@ -30,9 +32,29 @@ public static class PolishSprites
         if(label == null || label.transform.Find("CoinIcon") != null) return;
         var obj=new GameObject("CoinIcon",typeof(RectTransform),typeof(UnityEngine.UI.Image));
         var rect=obj.GetComponent<RectTransform>(); rect.SetParent(label.transform,false);
-        rect.anchorMin=rect.anchorMax=new Vector2(0,.5f);
-        rect.anchoredPosition=new Vector2(-25,0); rect.sizeDelta=new Vector2(36,36);
+        rect.anchorMin=rect.anchorMax=label.rectTransform.pivot;
+        rect.sizeDelta=new Vector2(32,32);
         var image=obj.GetComponent<UnityEngine.UI.Image>(); image.sprite=Coin(); image.preserveAspect=true; image.raycastTarget=false;
         image.enabled=image.sprite != null;
+        // Follow the actual letters, not the left edge of the wide centered label.
+        // TMP calls this again when the balance, font size or layout changes.
+        label.OnPreRenderText += textInfo =>
+        {
+            if (rect == null) return;
+            float left = float.PositiveInfinity;
+            float bottom = float.PositiveInfinity;
+            float top = float.NegativeInfinity;
+            for (int i = 0; i < textInfo.characterCount; i++)
+            {
+                var character = textInfo.characterInfo[i];
+                if (!character.isVisible) continue;
+                left = Mathf.Min(left, character.bottomLeft.x);
+                bottom = Mathf.Min(bottom, character.bottomLeft.y);
+                top = Mathf.Max(top, character.topRight.y);
+            }
+            if (!float.IsPositiveInfinity(left))
+                rect.anchoredPosition = new Vector2(left - 24f, (bottom + top) * .5f);
+        };
+        label.ForceMeshUpdate();
     }
 }

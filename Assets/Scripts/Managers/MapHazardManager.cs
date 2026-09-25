@@ -6,8 +6,8 @@ using System.Collections;
 public class JellyArenaVisuals : MonoBehaviour
 {
     private static JellyArenaVisuals active;
-    private readonly Vector2[] wells = { new Vector2(-19, 12), new Vector2(19,-12),
-        new Vector2(21,18), new Vector2(-21,-18), new Vector2(-28,0), new Vector2(28,0) };
+    private readonly Vector2[] wells = { new Vector2(-17, 10), new Vector2(17,-10),
+        new Vector2(19,16), new Vector2(-19,-16), new Vector2(-27,0), new Vector2(27,0) };
     private readonly System.Collections.Generic.List<SpriteRenderer> ornaments = new System.Collections.Generic.List<SpriteRenderer>();
     private readonly System.Collections.Generic.List<Vector3> origins = new System.Collections.Generic.List<Vector3>();
     private readonly System.Collections.Generic.List<SpriteRenderer> debris = new System.Collections.Generic.List<SpriteRenderer>();
@@ -31,14 +31,17 @@ public class JellyArenaVisuals : MonoBehaviour
         foreach (Transform child in transform)
             if (child.name != "Background") child.gameObject.SetActive(false);
         active = this;
+        // A visible core anchors the map visually and matches the EnergyCore zone.
+        var core = Add(orb, Vector2.zero, 10, "EnergyCoreArtwork", -1);
+        ornaments.Add(core); origins.Add(core.transform.localPosition);
         foreach (Vector2 point in wells)
         {
-            var art = Add(orb, point, 6, "GravityWell", -1);
+            var art = Add(orb, point, 5, "GravityWell", -1);
             ornaments.Add(art); origins.Add(art.transform.localPosition);
         }
-        foreach (Vector2 point in new[] { new Vector2(-25,25), new Vector2(25,-25) })
+        foreach (Vector2 point in new[] { new Vector2(-16,18), new Vector2(18,-17), new Vector2(22,14) })
         {
-            var art = Add(jelly, point, 12, "FloatingJellyfish", -4);
+            var art = Add(jelly, point, 10, "FloatingJellyfish", -2);
             ornaments.Add(art); origins.Add(art.transform.localPosition);
         }
         var rocks = SkillSheetVisual.Load("Obs_Asteroids");
@@ -65,9 +68,10 @@ public class JellyArenaVisuals : MonoBehaviour
         for (int i=0;i<ornaments.Count;i++)
         {
             var art = ornaments[i];
-            if (i < wells.Length) art.transform.localRotation = Quaternion.Euler(0,0,time*12+i*47);
+            // Index 0 is the core, followed by the gravity wells.
+            if (i <= wells.Length) art.transform.localRotation = Quaternion.Euler(0,0,time*12+i*47);
             else art.transform.localPosition = origins[i] + Vector3.up * Mathf.Sin(time*.65f+i)*.65f;
-            art.color = new Color(1,1,1,i < wells.Length ? .7f+.12f*Mathf.Sin(time*2+i) : .65f);
+            art.color = new Color(1,1,1,i <= wells.Length ? .78f+.14f*Mathf.Sin(time*2+i) : .78f);
         }
         for (int i=0;i<debris.Count;i++)
         {

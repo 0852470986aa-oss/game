@@ -153,9 +153,15 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
                     effectVisual.sprite = swamp;
                     effectVisual.color = Color.white;
                     effectVisual.sortingOrder = -2;
-                    float scale = 4.5f / Mathf.Max(.01f, swamp.bounds.size.x);
+                    const float targetWorldWidth = 3.4f;
+                    // Hazard prefabs may already be scaled. Compensate for their
+                    // parent so the pool stays the same small size in every map.
+                    float parentScale = effectVisual.transform.parent != null
+                        ? Mathf.Abs(effectVisual.transform.parent.lossyScale.x) : 1f;
+                    float scale = targetWorldWidth /
+                        Mathf.Max(.01f, swamp.bounds.size.x * Mathf.Max(.01f, parentScale));
                     effectVisual.transform.localScale = Vector3.one * scale;
-                    effectVisual.transform.localPosition = -swamp.bounds.center * scale;
+                    effectVisual.transform.localPosition = Vector3.zero;
                     // Trigger follows the visible pool rather than the original placeholder size.
                     if (hitCollider != null) hitCollider.enabled = false;
                     var area = effectVisual.gameObject.AddComponent<PolygonCollider2D>();
