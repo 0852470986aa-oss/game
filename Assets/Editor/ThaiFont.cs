@@ -6,7 +6,7 @@ public class ThaiFont
 {
     private static TMP_FontAsset _cachedFont;
 
-    [MenuItem("Battlefield/สร้างฟอนต์ไทย (Generate Thai Font)")]
+    // [MenuItem("Battlefield/สร้างฟอนต์ไทย (Generate Thai Font)")]
     public static void GenerateThaiFont()
     {
         TMP_FontAsset font = CreateThaiFont();
@@ -71,3 +71,4 @@ public class ThaiFont
         return AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
     }
 }
+

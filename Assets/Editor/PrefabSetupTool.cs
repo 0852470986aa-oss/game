@@ -4,7 +4,7 @@ using System.IO;
 
 public class PrefabSetupTool : EditorWindow
 {
-    [MenuItem("Battlefield/Setup Ships and Bullets")]
+    // [MenuItem("Battlefield/Setup Ships and Bullets")]
     public static void SetupPrefabs()
     {
         CreateLaserSprite();
@@ -244,3 +244,4 @@ public class PrefabSetupTool : EditorWindow
         DestroyImmediate(instance);
     }
 }
+

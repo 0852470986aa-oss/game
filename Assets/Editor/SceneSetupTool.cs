@@ -10,7 +10,7 @@ using UnityEngine.Rendering.Universal;
 
 public class SceneSetupTool
 {
-    [MenuItem("Battlefield/Setup Initial Scenes")]
+    // [MenuItem("Battlefield/Setup Initial Scenes")]
     public static void SetupScenes()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
@@ -31,7 +31,7 @@ public class SceneSetupTool
         EditorSceneManager.OpenScene("Assets/Scenes/LoginScene.unity");
     }
 
-    [MenuItem("Battlefield/Configure Images as Sprites")]
+    // [MenuItem("Battlefield/Configure Images as Sprites")]
     public static void ConfigureImagesAsSprites()
     {
         string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Resources/Images" });
@@ -54,7 +54,7 @@ public class SceneSetupTool
         Debug.Log("=== อัปเดตตั้งค่ารูปภาพทั้งหมดเป็น Sprite เรียบร้อย! ===");
     }
 
-    [MenuItem("Battlefield/Build Ship Prefabs")]
+    // [MenuItem("Battlefield/Build Ship Prefabs")]
     public static void BuildShipPrefabs()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Resources/ShipPrefabs"))
@@ -125,7 +125,7 @@ public class SceneSetupTool
         Object.DestroyImmediate(go);
     }
 
-    [MenuItem("Battlefield/Build Bullet Prefab")]
+    // [MenuItem("Battlefield/Build Bullet Prefab")]
     public static void BuildBulletPrefab()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets", "Resources");
@@ -1797,7 +1797,7 @@ public static class MechCollisionValidation
         };
     }
 
-    [MenuItem("Battlefield/Mech/Validate Solid Cover")]
+    // [MenuItem("Battlefield/Mech/Validate Solid Cover")]
     public static void Validate()
     {
         const string reportPath = "Library/MechCollisionValidation.txt";
@@ -1932,7 +1932,7 @@ public static class LobbyPreviewValidation
         };
     }
 
-    [MenuItem("Battlefield/Lobby/Validate and Render Preview")]
+    // [MenuItem("Battlefield/Lobby/Validate and Render Preview")]
     public static void ValidateAndRender()
     {
         var preview = EditorSceneManager.OpenPreviewScene("Assets/Scenes/LobbyScene.unity");
@@ -2068,3 +2068,4 @@ public static class LobbyPreviewValidation
         finally { EditorSceneManager.ClosePreviewScene(preview); }
     }
 }
+

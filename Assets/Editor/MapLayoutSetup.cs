@@ -18,7 +18,7 @@ public class MapLayoutSetup : EditorWindow
         };
     }
 
-    [MenuItem("Battlefield/Preview Prism Atmosphere")]
+    // [MenuItem("Battlefield/Preview Prism Atmosphere")]
     public static void RenderPrismPreview()
     {
         Scene scene = EditorSceneManager.OpenPreviewScene(GameplayScenePath);
@@ -72,7 +72,7 @@ public class MapLayoutSetup : EditorWindow
         }
     }
 
-    [MenuItem("Battlefield/Decorate Prism Atmosphere")]
+    // [MenuItem("Battlefield/Decorate Prism Atmosphere")]
     public static void DecoratePrismAtmosphere()
     {
         GameObject layout = FindSceneRoot("Map1_Layout");
@@ -166,7 +166,7 @@ public class MapLayoutSetup : EditorWindow
         renderer.sortingOrder = sortingOrder;
     }
 
-    [MenuItem("Battlefield/Setup Map Layouts")]
+    // [MenuItem("Battlefield/Setup Map Layouts")]
     public static void SetupMaps()
     {
         // 1. ????? BackgroundMap ???????????
@@ -238,7 +238,7 @@ public class MapLayoutSetup : EditorWindow
         Debug.Log("?? ???????????????????????????????????! ???????????????????????????????!");
     }
 
-    [MenuItem("Battlefield/Setup Map 1 Prism Obstacles")]
+    // [MenuItem("Battlefield/Setup Map 1 Prism Obstacles")]
     public static void SetupMap1Obstacles()
     {
         Scene scene = SceneManager.GetActiveScene();
@@ -350,7 +350,7 @@ public class MapLayoutSetup : EditorWindow
         Debug.Log("Map1 composition created: 1 central obelisk, 8 crystal covers, 4 domes and 12 energy barriers.");
     }
 
-    [MenuItem("Battlefield/Setup Map 2 Full Arena Obstacles")]
+    // [MenuItem("Battlefield/Setup Map 2 Full Arena Obstacles")]
     public static void SetupMap2RockObstacles()
     {
         Scene scene = SceneManager.GetActiveScene();
@@ -623,7 +623,7 @@ public class MapLayoutSetup : EditorWindow
 // Render-only inspection: never starts gameplay, saves the active scene, or joins Photon.
 public static class MechThrusterPreview
 {
-    [MenuItem("Battlefield/Mech/Render Thrusters")]
+    // [MenuItem("Battlefield/Mech/Render Thrusters")]
     public static void Render()
     {
         if (EditorApplication.isPlayingOrWillChangePlaymode)
@@ -723,4 +723,5 @@ public static class MechThrusterPreview
         }
     }
 }
+
 
