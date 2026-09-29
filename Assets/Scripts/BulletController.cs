@@ -4,7 +4,8 @@ using Photon.Pun;
 // Shared swept-volume check: explicit trigger filtering keeps results independent of project query settings.
 public static class ProjectileSweep
 {
-    public static bool FirstHit(Transform projectile, int shooter, Vector2 start, Vector2 end, out RaycastHit2D nearest)
+    public static bool FirstHit(Transform projectile, int shooter, Vector2 start, Vector2 end, out RaycastHit2D nearest,
+        bool ignoreTurrets = false)
     {
         nearest = default;
         float radius = .08f;
@@ -19,6 +20,7 @@ public static class ProjectileSweep
         foreach (var hit in hits)
         {
             if (hit.collider == null || hit.collider.transform.IsChildOf(projectile)) continue;
+            if (ignoreTurrets && hit.collider.GetComponentInParent<AutoTurret>() != null) continue;
             var player = hit.collider.GetComponentInParent<PlayerController>();
             if (player != null)
             {
@@ -38,6 +40,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
     public float lifeTime = 3f;
     private float damage = 10f; // จะถูกตั้งค่าตอน instantiate
     private bool isDestroyed = false;
+    private bool isTurretProjectile;
     private int Shooter => photonView.InstantiationData != null && photonView.InstantiationData.Length > 1
         && photonView.InstantiationData[1] is bool environmental && environmental ? -1 : photonView.CreatorActorNr;
     private Rigidbody2D body;
@@ -47,7 +50,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (!photonView.IsMine || isDestroyed) return;
         Vector2 start = body != null ? body.position : (Vector2)transform.position;
         Vector2 end = start + (Vector2)transform.up * speed * Time.fixedDeltaTime;
-        if (ProjectileSweep.FirstHit(transform, Shooter, start, end, out var hit))
+        if (ProjectileSweep.FirstHit(transform, Shooter, start, end, out var hit, isTurretProjectile))
         {
             transform.position = hit.centroid;
             OnTriggerEnter2D(hit.collider);
@@ -102,12 +105,14 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (instantiationData != null && instantiationData.Length > 0)
         {
             damage = (float)instantiationData[0];
+            isTurretProjectile = instantiationData.Length > 2 && instantiationData[2] is bool turretShot && turretShot;
         }
     }
 
     void OnTriggerEnter2D(Collider2D hitInfo)
     {
         if (!photonView.IsMine || isDestroyed) return; // เฉพาะคนยิงเท่านั้นที่จะเป็นคนคำนวณดาเมจ และถ้ากระสุนถูกทำลายไปแล้วจะไม่คิดซ้ำ
+        if (isTurretProjectile && hitInfo.GetComponentInParent<AutoTurret>() != null) return;
 
         PlayerController enemy = hitInfo.GetComponentInParent<PlayerController>();
         if (enemy != null)

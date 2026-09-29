@@ -1,0 +1,1716 @@
+fileFormatVersion: 2
+guid: a982e6d1c52011d4580bc3ef65ca314d
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 383524375554544214
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_0"
+  - first:
+      213: 8635549393845719006
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_1"
+  - first:
+      213: 240170959565820462
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_2"
+  - first:
+      213: -7240263366098015984
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_3"
+  - first:
+      213: -4523623010583445193
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_4"
+  - first:
+      213: -8430602207822137691
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_5"
+  - first:
+      213: -6513679762433418396
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_6"
+  - first:
+      213: -5765827997803203119
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_7"
+  - first:
+      213: 8007542853551318153
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_8"
+  - first:
+      213: 2099558955073295095
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_9"
+  - first:
+      213: 76136092776707111
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_10"
+  - first:
+      213: -6196425144409339272
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_11"
+  - first:
+      213: -6088662090313009667
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_12"
+  - first:
+      213: -1351579015115247658
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_13"
+  - first:
+      213: 4138927009490869619
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_14"
+  - first:
+      213: -373500888202750312
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_15"
+  - first:
+      213: 3237930396525061566
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_16"
+  - first:
+      213: 3836210113615474007
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_17"
+  - first:
+      213: 6983776634677130666
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_18"
+  - first:
+      213: -731206214315159266
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_19"
+  - first:
+      213: 4698626231507165984
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_20"
+  - first:
+      213: -5826537758973795275
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_21"
+  - first:
+      213: 9319981899028427
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_22"
+  - first:
+      213: -2234522915957245479
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_23"
+  - first:
+      213: 766755941137108629
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_24"
+  - first:
+      213: 5870849850899999745
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_25"
+  - first:
+      213: 3193621626355334532
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_26"
+  - first:
+      213: -36726615649363952
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_27"
+  - first:
+      213: -4508375673474052665
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_28"
+  - first:
+      213: 3987662678062185273
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_29"
+  - first:
+      213: -7070549703296788411
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_30"
+  - first:
+      213: 3295312931351027413
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_31"
+  - first:
+      213: -4656047163920693890
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_32"
+  - first:
+      213: 4547129526125345278
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_33"
+  - first:
+      213: -4900698297972400323
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_34"
+  - first:
+      213: 2398990375692981973
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_35"
+  - first:
+      213: 1525430804207169476
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_36"
+  - first:
+      213: -6696492831965526497
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_37"
+  - first:
+      213: -3298624031942612134
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_38"
+  - first:
+      213: -725023728103581173
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_39"
+  - first:
+      213: 389223784677809606
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_40"
+  - first:
+      213: 3049419344321038012
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_41"
+  - first:
+      213: -2473210596527149685
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_42"
+  - first:
+      213: 3388398719494642896
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_43"
+  - first:
+      213: 8784257026357181567
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_44"
+  - first:
+      213: 1939922808037834429
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_45"
+  - first:
+      213: 1151963022759407820
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_46"
+  - first:
+      213: -3167153903959274875
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_47"
+  - first:
+      213: -5557617230382105934
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_48"
+  - first:
+      213: -5779034149337477041
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_49"
+  - first:
+      213: -2927518041076130051
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_50"
+  - first:
+      213: 6900860711007347662
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_51"
+  - first:
+      213: 5195347022363769536
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_52"
+  - first:
+      213: -6947147175229256909
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_53"
+  - first:
+      213: -2639436258289249823
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_54"
+  - first:
+      213: -9115683122269404572
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_55"
+  - first:
+      213: -1135119127635001697
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_56"
+  - first:
+      213: -2499508883907945475
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_57"
+  - first:
+      213: -2572186032420118656
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_58"
+  - first:
+      213: -4207031394516208480
+    second: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_59"
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: iOS
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_0"
+      rect:
+        serializedVersion: 2
+        x: 26
+        y: 968
+        width: 268
+        height: 250
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 652d1a7336d825500800000000000000
+      internalID: 383524375554544214
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_1"
+      rect:
+        serializedVersion: 2
+        x: 667
+        y: 923
+        width: 246
+        height: 309
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: edf838cab62a7d770800000000000000
+      internalID: 8635549393845719006
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_2"
+      rect:
+        serializedVersion: 2
+        x: 920
+        y: 1177
+        width: 30
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e22194a1732455300800000000000000
+      internalID: 240170959565820462
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_3"
+      rect:
+        serializedVersion: 2
+        x: 936
+        y: 1213
+        width: 28
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 019247f34da658b90800000000000000
+      internalID: -7240263366098015984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_4"
+      rect:
+        serializedVersion: 2
+        x: 945
+        y: 939
+        width: 290
+        height: 295
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 731046cc6dcd831c0800000000000000
+      internalID: -4523623010583445193
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_5"
+      rect:
+        serializedVersion: 2
+        x: 275
+        y: 1142
+        width: 40
+        height: 42
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5a6332095fb700b80800000000000000
+      internalID: -8430602207822137691
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_6"
+      rect:
+        serializedVersion: 2
+        x: 295
+        y: 1185
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 46b518b54c2ca95a0800000000000000
+      internalID: -6513679762433418396
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_7"
+      rect:
+        serializedVersion: 2
+        x: 303
+        y: 817
+        width: 357
+        height: 391
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1d530f21cf9abffa0800000000000000
+      internalID: -5765827997803203119
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_8"
+      rect:
+        serializedVersion: 2
+        x: 317
+        y: 1154
+        width: 22
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 984e4adacc1802f60800000000000000
+      internalID: 8007542853551318153
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_9"
+      rect:
+        serializedVersion: 2
+        x: 345
+        y: 1192
+        width: 8
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7f25226eeb1232d10800000000000000
+      internalID: 2099558955073295095
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_10"
+      rect:
+        serializedVersion: 2
+        x: 611
+        y: 1156
+        width: 71
+        height: 51
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 724ba8c7f5d7e0100800000000000000
+      internalID: 76136092776707111
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_11"
+      rect:
+        serializedVersion: 2
+        x: 685
+        y: 1165
+        width: 38
+        height: 43
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 87ace264920e10aa0800000000000000
+      internalID: -6196425144409339272
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_12"
+      rect:
+        serializedVersion: 2
+        x: 932
+        y: 1148
+        width: 34
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: df57185861ab08ba0800000000000000
+      internalID: -6088662090313009667
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_13"
+      rect:
+        serializedVersion: 2
+        x: 932
+        y: 1158
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6dfee26fb0a3e3de0800000000000000
+      internalID: -1351579015115247658
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_14"
+      rect:
+        serializedVersion: 2
+        x: 297
+        y: 1098
+        width: 28
+        height: 27
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 37d19f7af2c607930800000000000000
+      internalID: 4138927009490869619
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_15"
+      rect:
+        serializedVersion: 2
+        x: 922
+        y: 1108
+        width: 46
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 896d16bcbee01daf0800000000000000
+      internalID: -373500888202750312
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_16"
+      rect:
+        serializedVersion: 2
+        x: 901
+        y: 1090
+        width: 18
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eb5e0545a807fec20800000000000000
+      internalID: 3237930396525061566
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_17"
+      rect:
+        serializedVersion: 2
+        x: 948
+        y: 1078
+        width: 18
+        height: 25
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 75dafc1f5c4fc3530800000000000000
+      internalID: 3836210113615474007
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_18"
+      rect:
+        serializedVersion: 2
+        x: 293
+        y: 1066
+        width: 19
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: aa57a9cf8db5be060800000000000000
+      internalID: 6983776634677130666
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_19"
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 1064
+        width: 18
+        height: 23
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e11df2a72db3ad5f0800000000000000
+      internalID: -731206214315159266
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_20"
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 1064
+        width: 6
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0232155c9afd43140800000000000000
+      internalID: 4698626231507165984
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_21"
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 1060
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 53467fd47caf32fa0800000000000000
+      internalID: -5826537758973795275
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_22"
+      rect:
+        serializedVersion: 2
+        x: 319
+        y: 1054
+        width: 10
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: bc79762697c112000800000000000000
+      internalID: 9319981899028427
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_23"
+      rect:
+        serializedVersion: 2
+        x: 914
+        y: 1030
+        width: 30
+        height: 32
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9d9f5e73f316df0e0800000000000000
+      internalID: -2234522915957245479
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_24"
+      rect:
+        serializedVersion: 2
+        x: 916
+        y: 1002
+        width: 18
+        height: 29
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59ec5ec477014aa00800000000000000
+      internalID: 766755941137108629
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_25"
+      rect:
+        serializedVersion: 2
+        x: 920
+        y: 1024
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 10cac8495d2797150800000000000000
+      internalID: 5870849850899999745
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_26"
+      rect:
+        serializedVersion: 2
+        x: 928
+        y: 998
+        width: 12
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 48d3ae9d2f5025c20800000000000000
+      internalID: 3193621626355334532
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_27"
+      rect:
+        serializedVersion: 2
+        x: 936
+        y: 1000
+        width: 6
+        height: 9
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 018da6076558d7ff0800000000000000
+      internalID: -36726615649363952
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_28"
+      rect:
+        serializedVersion: 2
+        x: 940
+        y: 1000
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 7cd019c16380f61c0800000000000000
+      internalID: -4508375673474052665
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_29"
+      rect:
+        serializedVersion: 2
+        x: 914
+        y: 966
+        width: 16
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 93bbaf10416075730800000000000000
+      internalID: 3987662678062185273
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_30"
+      rect:
+        serializedVersion: 2
+        x: 922
+        y: 970
+        width: 16
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5485048918c50ed90800000000000000
+      internalID: -7070549703296788411
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_31"
+      rect:
+        serializedVersion: 2
+        x: 932
+        y: 980
+        width: 16
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5dedde8d6ad4bbd20800000000000000
+      internalID: 3295312931351027413
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_32"
+      rect:
+        serializedVersion: 2
+        x: 938
+        y: 972
+        width: 8
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e75ca01f5c5626fb0800000000000000
+      internalID: -4656047163920693890
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_33"
+      rect:
+        serializedVersion: 2
+        x: 281
+        y: 947
+        width: 18
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ef934685636aa1f30800000000000000
+      internalID: 4547129526125345278
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_34"
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 640
+        width: 294
+        height: 303
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d3f5efdecd83dfbb0800000000000000
+      internalID: -4900698297972400323
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_35"
+      rect:
+        serializedVersion: 2
+        x: 603
+        y: 648
+        width: 323
+        height: 278
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5d6d2ca490dea4120800000000000000
+      internalID: 2398990375692981973
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_36"
+      rect:
+        serializedVersion: 2
+        x: 735
+        y: 921
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4cfe43efb3b6b2510800000000000000
+      internalID: 1525430804207169476
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_37"
+      rect:
+        serializedVersion: 2
+        x: 922
+        y: 632
+        width: 321
+        height: 309
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f16ceb5bf374113a0800000000000000
+      internalID: -6696492831965526497
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_38"
+      rect:
+        serializedVersion: 2
+        x: 325
+        y: 650
+        width: 281
+        height: 270
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a5b6e787beee832d0800000000000000
+      internalID: -3298624031942612134
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_39"
+      rect:
+        serializedVersion: 2
+        x: 617
+        y: 901
+        width: 11
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b0a18a8b2c230f5f0800000000000000
+      internalID: -725023728103581173
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_40"
+      rect:
+        serializedVersion: 2
+        x: 336
+        y: 883
+        width: 19
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6cd9adf48fcc66500800000000000000
+      internalID: 389223784677809606
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_41"
+      rect:
+        serializedVersion: 2
+        x: 291
+        y: 863
+        width: 8
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb6c575bcb6b15a20800000000000000
+      internalID: 3049419344321038012
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_42"
+      rect:
+        serializedVersion: 2
+        x: 295
+        y: 869
+        width: 14
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b8d644be0146dadd0800000000000000
+      internalID: -2473210596527149685
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_43"
+      rect:
+        serializedVersion: 2
+        x: 297
+        y: 728
+        width: 9
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0dcddd0dea2060f20800000000000000
+      internalID: 3388398719494642896
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_44"
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 734
+        width: 8
+        height: 8
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f7cbfb77933f7e970800000000000000
+      internalID: 8784257026357181567
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_45"
+      rect:
+        serializedVersion: 2
+        x: 313
+        y: 728
+        width: 12
+        height: 20
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbef5c8048dfbea10800000000000000
+      internalID: 1939922808037834429
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_46"
+      rect:
+        serializedVersion: 2
+        x: 297
+        y: 714
+        width: 11
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cc0b5fd04489cff00800000000000000
+      internalID: 1151963022759407820
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_47"
+      rect:
+        serializedVersion: 2
+        x: 307
+        y: 718
+        width: 6
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 58a048dfd420c04d0800000000000000
+      internalID: -3167153903959274875
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_48"
+      rect:
+        serializedVersion: 2
+        x: 305
+        y: 678
+        width: 7
+        height: 6
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2bafb7113906fd2b0800000000000000
+      internalID: -5557617230382105934
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_49"
+      rect:
+        serializedVersion: 2
+        x: 311
+        y: 674
+        width: 14
+        height: 19
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f4053ef4f0fbccfa0800000000000000
+      internalID: -5779034149337477041
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_50"
+      rect:
+        serializedVersion: 2
+        x: 496
+        y: 650
+        width: 10
+        height: 15
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfe1c103add5f57d0800000000000000
+      internalID: -2927518041076130051
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_51"
+      rect:
+        serializedVersion: 2
+        x: 504
+        y: 650
+        width: 9
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ec3ea0c1148c4cf50800000000000000
+      internalID: 6900860711007347662
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_52"
+      rect:
+        serializedVersion: 2
+        x: 593
+        y: 658
+        width: 13
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0ca30e83794991840800000000000000
+      internalID: 5195347022363769536
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_53"
+      rect:
+        serializedVersion: 2
+        x: 858
+        y: 646
+        width: 9
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33b0a12a376c69f90800000000000000
+      internalID: -6947147175229256909
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_54"
+      rect:
+        serializedVersion: 2
+        x: 920
+        y: 660
+        width: 11
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1e1126915b6de5bd0800000000000000
+      internalID: -2639436258289249823
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_55"
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 1254
+        height: 654
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 462cb1c4f769e7180800000000000000
+      internalID: -9115683122269404572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_56"
+      rect:
+        serializedVersion: 2
+        x: 510
+        y: 636
+        width: 20
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9e7093ea2f3f30f0800000000000000
+      internalID: -1135119127635001697
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_57"
+      rect:
+        serializedVersion: 2
+        x: 924
+        y: 644
+        width: 8
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dfbdbbdb9e5ff4dd0800000000000000
+      internalID: -2499508883907945475
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_58"
+      rect:
+        serializedVersion: 2
+        x: 723
+        y: 7
+        width: 12
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 08f90697e62cd4cd0800000000000000
+      internalID: -2572186032420118656
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_59"
+      rect:
+        serializedVersion: 2
+        x: 890
+        y: 10
+        width: 7
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0a4f1fa8c3f9d95c0800000000000000
+      internalID: -4207031394516208480
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_0": 383524375554544214
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_1": 8635549393845719006
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_10": 76136092776707111
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_11": -6196425144409339272
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_12": -6088662090313009667
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_13": -1351579015115247658
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_14": 4138927009490869619
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_15": -373500888202750312
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_16": 3237930396525061566
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_17": 3836210113615474007
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_18": 6983776634677130666
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_19": -731206214315159266
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_2": 240170959565820462
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_20": 4698626231507165984
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_21": -5826537758973795275
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_22": 9319981899028427
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_23": -2234522915957245479
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_24": 766755941137108629
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_25": 5870849850899999745
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_26": 3193621626355334532
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_27": -36726615649363952
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_28": -4508375673474052665
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_29": 3987662678062185273
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_3": -7240263366098015984
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_30": -7070549703296788411
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_31": 3295312931351027413
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_32": -4656047163920693890
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_33": 4547129526125345278
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_34": -4900698297972400323
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_35": 2398990375692981973
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_36": 1525430804207169476
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_37": -6696492831965526497
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_38": -3298624031942612134
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_39": -725023728103581173
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_4": -4523623010583445193
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_40": 389223784677809606
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_41": 3049419344321038012
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_42": -2473210596527149685
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_43": 3388398719494642896
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_44": 8784257026357181567
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_45": 1939922808037834429
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_46": 1151963022759407820
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_47": -3167153903959274875
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_48": -5557617230382105934
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_49": -5779034149337477041
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_5": -8430602207822137691
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_50": -2927518041076130051
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_51": 6900860711007347662
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_52": 5195347022363769536
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_53": -6947147175229256909
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_54": -2639436258289249823
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_55": -9115683122269404572
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_56": -1135119127635001697
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_57": -2499508883907945475
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_58": -2572186032420118656
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_59": -4207031394516208480
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_6": -6513679762433418396
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_7": -5765827997803203119
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_8": 8007542853551318153
+      "Nova Bomb \u0E23\u0E30\u0E40\u0E1A\u0E34\u0E14_9": 2099558955073295095
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

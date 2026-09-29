@@ -101,13 +101,24 @@ public partial class PlayerController
         }
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
         
-        // Impact Effect ของโล่ (สีฟ้าอ่อน)
-        GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
-        if (impactPrefab != null)
+        // Blue animated impact from the supplied shield-hit sheet.
+        Sprite[] frames = SkillSheetVisual.LoadGrid("VFX/VFX_ShieldImpact");
+        if (frames != null && frames.Length > 0)
         {
-            GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
-            var sr = fx.GetComponent<SpriteRenderer>();
-            if (sr != null) sr.color = new Color(0.4f, 0.8f, 1f, 1f); // สีฟ้า
+            float size = spriteRenderer != null
+                ? Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * 1.35f
+                : 1.6f;
+            SkillSheetVisual.Create(frames, null, transform.position, size, 0.3f);
+        }
+        else
+        {
+            GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
+            if (impactPrefab != null)
+            {
+                GameObject fx = Instantiate(impactPrefab, transform.position, Quaternion.identity);
+                var sr = fx.GetComponent<SpriteRenderer>();
+                if (sr != null) sr.color = new Color(0.4f, 0.8f, 1f, 1f);
+            }
         }
     }
 

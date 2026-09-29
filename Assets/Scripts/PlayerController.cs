@@ -383,7 +383,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
                 aimGuide.sortingOrder = spriteRenderer.sortingOrder + 4;
             }
         }
-        Vector2 start = firePoint != null ? firePoint.position : transform.position + transform.up * .5f;
+        Vector2 start = GetFirePosition();
         Vector2 direction = transform.up;
         const float range = 8f;
         float length = range;
@@ -431,16 +431,35 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
         }
     }
 
+    // Derive the firing origin from the ship sprite's actual nose so a stale FirePoint
+    // position in a prefab cannot make projectiles appear from inside the hull.
+    private Vector3 GetFirePosition()
+    {
+        if (spriteRenderer == null) spriteRenderer = GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null && spriteRenderer.sprite != null)
+        {
+            Bounds hull = spriteRenderer.sprite.bounds;
+            float noseY = spriteRenderer.flipY ? hull.min.y : hull.max.y;
+            Vector3 localNose = new Vector3(hull.center.x, noseY, 0f);
+            return transform.TransformPoint(localNose) + transform.up * 0.12f;
+        }
+
+        return firePoint != null ? firePoint.position : transform.position + transform.up * 0.5f;
+    }
+
 
     private void Shoot()
     {
-        Vector3 spawnPos = firePoint != null ? firePoint.position : transform.position + transform.up * 0.5f;
+        Vector3 spawnPos = GetFirePosition();
         
-        // Muzzle Flash
-        GameObject muzzleFlashPrefab = GameplayManager.GetPrefab("MuzzleFlash");
-        if (muzzleFlashPrefab != null)
+        // Local muzzle flash from the supplied sprite sheet; retain the prefab as fallback.
+        var muzzleFrames = SkillSheetVisual.LoadGrid("VFX/VFX_MuzzleFlash");
+        if (muzzleFrames != null && muzzleFrames.Length > 0)
+            SkillSheetVisual.Create(muzzleFrames, transform, spawnPos, 1.2f, 0.14f, false);
+        else
         {
-            Instantiate(muzzleFlashPrefab, spawnPos, transform.rotation, transform);
+            GameObject muzzleFlashPrefab = GameplayManager.GetPrefab("MuzzleFlash");
+            if (muzzleFlashPrefab != null) Instantiate(muzzleFlashPrefab, spawnPos, transform.rotation, transform);
         }
         
         // Play SFX

@@ -27,12 +27,11 @@ public partial class PlayerController
     private void UseSkill()
     {
         Debug.Log("Used Skill: " + skillName);
-        Vector3 spawnPos = transform.position;
 
         if (skillType == 0) // STUN
         {
             object[] data = new object[] { BattleBalance.StunDamage }; // ดาเมจน้อยลง
-            PhotonNetwork.Instantiate("Skill_StunWave", firePoint != null ? firePoint.position : spawnPos, transform.rotation, 0, data);
+            PhotonNetwork.Instantiate("Skill_StunWave", GetFirePosition(), transform.rotation, 0, data);
         }
         else if (skillType == 1) // SHIELD
         {
@@ -41,12 +40,12 @@ public partial class PlayerController
         else if (skillType == 2) // NOVA
         {
             object[] data = new object[] { BattleBalance.NovaDamage };
-            PhotonNetwork.Instantiate("Skill_NovaBlast", spawnPos, Quaternion.identity, 0, data);
+            PhotonNetwork.Instantiate("Skill_NovaBlast", GetFirePosition(), Quaternion.identity, 0, data);
         }
         else if (skillType == 3) // SEEKER
         {
             object[] data = new object[] { BattleBalance.SeekerDamage };
-            PhotonNetwork.Instantiate("Skill_SeekerMissile", firePoint != null ? firePoint.position : spawnPos, transform.rotation, 0, data);
+            PhotonNetwork.Instantiate("Skill_SeekerMissile", GetFirePosition(), transform.rotation, 0, data);
         }
     }
 
@@ -57,7 +56,7 @@ public partial class PlayerController
         isShielded = true;
         if (authoredShield != null) Destroy(authoredShield.gameObject);
         var frames = SkillSheetVisual.Load("VFX_Shield");
-        float diameter = spriteRenderer != null ? Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * 1.2f : 4f;
+        float diameter = spriteRenderer != null ? Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * 1.7f : 4f;
         authoredShield = SkillSheetVisual.Create(frames, transform, transform.position, diameter, BattleBalance.ShieldSeconds + .3f);
         if (authoredShield != null) authoredShield.breakTime = BattleBalance.ShieldSeconds;
         if (shieldVisual != null) shieldVisual.SetActive(authoredShield == null);

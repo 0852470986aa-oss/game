@@ -7,6 +7,7 @@ using System.Collections.Generic;
 public sealed class SkillSheetVisual : MonoBehaviour
 {
     private static readonly Dictionary<string, Sprite[]> sheets = new Dictionary<string, Sprite[]>();
+    private static readonly Dictionary<string, Sprite[]> gridSheets = new Dictionary<string, Sprite[]>();
     public static Sprite[] Load(string name)
     {
         if (!sheets.TryGetValue(name, out var sprites))
@@ -15,6 +16,34 @@ public sealed class SkillSheetVisual : MonoBehaviour
             System.Array.Sort(sprites, (a, b) => a.rect.x.CompareTo(b.rect.x));
             sheets[name] = sprites;
         }
+        return sprites;
+    }
+
+    // User-authored VFX boards use a regular 4x4 layout. Explicitly cropping each cell
+    // avoids Unity's automatic sprite slicer treating glow fragments as separate frames.
+    public static Sprite[] LoadGrid(string name, int columns = 4, int rows = 4, bool pivotAtTop = false)
+    {
+        string cacheKey = name + "|" + columns + "x" + rows + (pivotAtTop ? "|top" : "|center");
+        if (gridSheets.TryGetValue(cacheKey, out var sprites)) return sprites;
+        var texture = Resources.Load<Texture2D>("Images/" + name);
+        if (texture == null || columns < 1 || rows < 1) return System.Array.Empty<Sprite>();
+
+        sprites = new Sprite[columns * rows];
+        int index = 0;
+        for (int row = 0; row < rows; row++)
+        for (int column = 0; column < columns; column++)
+        {
+            int left = Mathf.RoundToInt(column * texture.width / (float)columns);
+            int right = Mathf.RoundToInt((column + 1) * texture.width / (float)columns);
+            int bottom = Mathf.RoundToInt((rows - row - 1) * texture.height / (float)rows);
+            int top = Mathf.RoundToInt((rows - row) * texture.height / (float)rows);
+            sprites[index] = Sprite.Create(texture, new Rect(left, bottom, right - left, top - bottom),
+                pivotAtTop ? new Vector2(.5f, 1f) : new Vector2(.5f, .5f),
+                100, 0, SpriteMeshType.FullRect);
+            sprites[index].name = name + "_frame_" + index;
+            index++;
+        }
+        gridSheets[cacheKey] = sprites;
         return sprites;
     }
 
@@ -29,6 +58,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
         visual.follow = follow;
         visual.hadFollow = follow != null;
         visual.anchor = position;
+        visual.followOffset = follow != null ? position - follow.position : Vector3.zero;
         visual.upright = upright;
         visual.rotationOffset = rotationOffset;
         visual.bottom = bottom;
@@ -52,6 +82,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
     private Transform follow;
     private bool hadFollow, upright, bottom;
     private Vector3 anchor;
+    private Vector3 followOffset;
     private SpriteRenderer renderer2D;
     private SpriteRenderer previousRenderer;
     private float frameChangedAt;
@@ -124,7 +155,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
         }
         transform.rotation = rotation;
         transform.localScale = Vector3.one * animatedScale;
-        transform.position = (follow != null ? follow.position : anchor) - rotation * (pivot * animatedScale);
+        transform.position = (follow != null ? follow.position + followOffset : anchor) - rotation * (pivot * animatedScale);
     }
 }
 
@@ -157,9 +188,11 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         else missileColor = 2;
 
         if (behavior == SkillBehavior.NovaBlast) lifeTime = 2f;
-        string sheet = behavior == SkillBehavior.NovaBlast ? "VFX_NovaBomb"
+        string sheet = behavior == SkillBehavior.NovaBlast ? "VFX/VFX_NovaBlast"
             : behavior == SkillBehavior.SeekerMissile ? "VFX_SeekerMissile" : "VFX_StunWave";
-        frames = SkillSheetVisual.Load(sheet);
+        frames = behavior == SkillBehavior.NovaBlast
+            ? SkillSheetVisual.LoadGrid(sheet)
+            : SkillSheetVisual.Load(sheet);
         if (frames.Length > 0)
         {
             var main = GetComponent<SpriteRenderer>();

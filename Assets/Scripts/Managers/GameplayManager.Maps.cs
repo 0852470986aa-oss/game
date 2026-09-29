@@ -92,6 +92,21 @@ public partial class GameplayManager
         }
         var crystals = Resources.LoadAll<Sprite>("Images/Obs_Crystals");
         System.Array.Sort(crystals, (a,b) => string.CompareOrdinal(a.name,b.name));
+        // Hang blue crystal-rock clusters upside down beneath the floating obelisks.
+        // These are decorative only (no collider), so they cannot alter the arena layout.
+        int[] hangingRockVariants = { 0, 2, 3, 4 };
+        for (int i = 0; i < positions.Length && crystals.Length > 0; i++)
+        {
+            Sprite rock = FindNumberedSprite(crystals, "Obs_Crystals", hangingRockVariants[i % hangingRockVariants.Length]);
+            if (rock == null) continue;
+            float pillarHeight = i < 4 ? 10f : 8f;
+            float rockHeight = i < 4 ? 3.2f : 2.6f;
+            float pillarBottom = positions[i].y - pillarHeight * 0.5f;
+            Vector2 rockPosition = new Vector2(positions[i].x, pillarBottom - rockHeight * 0.5f + 1.4f);
+            SpriteRenderer hangingRock = PrismSprite(group.transform, "HangingCrystalRock_" + i,
+                rock, rockPosition, rockHeight, Color.white, 1);
+            hangingRock.flipY = true;
+        }
         Vector2[] clusters = { new Vector2(-34,5), new Vector2(34,-5), new Vector2(34,5), new Vector2(-34,-5),
             new Vector2(-55,29), new Vector2(55,-29), new Vector2(55,29), new Vector2(-55,-29) };
         for (int i = 0; i < clusters.Length && crystals.Length > 0; i++)
