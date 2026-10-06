@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.UI;
 
+// ตัวประสานงานฉากต่อสู้และสถานะห้อง Photon; ส่วน HUD/แม็พ/ผลแข่งแยกไว้ในไฟล์ partial ข้างเคียง
 public partial class GameplayManager : MonoBehaviourPunCallbacks
 {
     public static string RecoveryRoom;

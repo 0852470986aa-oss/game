@@ -3,6 +3,7 @@ using Photon.Pun;
 using System.Collections;
 using System.Collections.Generic;
 
+// ตัวช่วยโหลดและเล่น spritesheet ของเอฟเฟกต์สกิล แยกจากโค้ดที่คำนวณความเสียหายจริง
 // Pure visual; keeps frame sizes proportional and ignores the gameplay object's nonuniform scale.
 public sealed class SkillSheetVisual : MonoBehaviour
 {

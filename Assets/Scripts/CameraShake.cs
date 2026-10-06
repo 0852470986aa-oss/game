@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
+// เอฟเฟกต์สั่นกล้องชั่วคราว เรียกผ่าน CameraShake.Instance ตอนเกิดเหตุการณ์สำคัญ
 public class CameraShake : MonoBehaviour
 {
     public static CameraShake Instance;

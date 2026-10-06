@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// ติดกับกล้องหลักเพื่อไล่ตามเป้าหมาย และจำกัดภาพไม่ให้ออกนอกขอบสนาม
 public class CameraFollow : MonoBehaviour
 {
     public Transform target;

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections.Generic;
 
+// มินิแม็พ HUD: แปลงตำแหน่งยานในสนามเป็นจุดบนเรดาร์และอัปเดตตามผู้เล่นรอบตัว
 public class RadarMinimap : MonoBehaviour
 {
     public float radarRange = 25f;

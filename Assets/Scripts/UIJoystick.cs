@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+// รับการสัมผัส/ลากจอยสติ๊กบนหน้าจอ แล้วเปิดค่า inputVector ให้ PlayerController ใช้เคลื่อนยาน
 public class UIJoystick : MonoBehaviour, IDragHandler, IPointerUpHandler, IPointerDownHandler
 {
     public static UIJoystick Instance;

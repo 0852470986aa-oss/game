@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// ระบบกระสุน: ProjectileSweep หาเป้าชนระหว่างเฟรม ส่วนตัวควบคุมกระสุนจัดการการเคลื่อนที่และผลการชน
 // Shared swept-volume check: explicit trigger filtering keeps results independent of project query settings.
 public static class ProjectileSweep
 {

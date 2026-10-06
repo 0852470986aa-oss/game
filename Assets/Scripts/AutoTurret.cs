@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// ป้อมปืนของฉาก: หมุนหัวปืนหาเป้าหมายและให้ผู้เล่น Master เป็นผู้สร้างกระสุนในเครือข่าย
 public class AutoTurret : MonoBehaviour
 {
     public float detectionRadius = 24f;

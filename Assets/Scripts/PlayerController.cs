@@ -1,6 +1,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// เอฟเฟกต์ภาพตอนยานระเบิดที่แสดงเฉพาะเครื่องนี้ ไม่มี Collider หรือผลต่อเกมออนไลน์
 // Local-only visual: no collider, damage, or network object is created.
 public class ShipSheetBurst : MonoBehaviour
 {

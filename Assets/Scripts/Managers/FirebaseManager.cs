@@ -9,6 +9,7 @@ using Firebase.Database;
 using Firebase.Extensions;
 using Google;
 
+// เชื่อม Firebase Auth/Realtime Database: บัญชี โปรไฟล์ เหรียญ คลังยาน/สกิล สถิติ และประวัติแมตช์
 public class FirebaseManager : MonoBehaviour
 {
     public static FirebaseManager Instance;

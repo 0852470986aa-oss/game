@@ -6,6 +6,7 @@ using Photon.Realtime;
 using TMPro;
 using System.Collections.Generic;
 
+// ตัวประสานงานล็อบบี้: เก็บสถานะผู้เล่น/ห้อง และใช้เมธอดร่วมกับส่วน Views, Inventory และ Rooms
 public partial class LobbyManager : MonoBehaviourPunCallbacks
 {
     private const string ReadyProperty = "IsReady";

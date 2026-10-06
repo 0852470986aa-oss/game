@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 
+// หน้าล็อกอิน: รับการกด Google/Guest แสดงสถานะ และเปลี่ยนไปล็อบบี้เมื่อยืนยันตัวตนสำเร็จ
 public class LoginManager : MonoBehaviour
 {
     [Header("UI References")]

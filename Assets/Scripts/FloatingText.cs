@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 
+// ข้อความลอย เช่น ตัวเลขความเสียหาย: เคลื่อนขึ้นและค่อย ๆ จางก่อนถูกทำลาย
 public class FloatingText : MonoBehaviour
 {
     public float moveSpeed = 1.5f;

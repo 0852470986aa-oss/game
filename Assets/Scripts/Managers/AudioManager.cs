@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+// จุดรวมเสียงเพลงและเสียงเอฟเฟกต์: จัดการระดับเสียง แคชเสียง และเรียกเล่นจากระบบเกม
 public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance;
