@@ -17,6 +17,12 @@ public partial class GameplayManager
         return 2;
     }
 
+    public static string GetCurrentMapName()
+    {
+        string[] names = { "Electric Jellyfish Core", "Obelisk Plains of Prism", "Abandoned Mech Warzone" };
+        return names[GetCurrentMapIndex()];
+    }
+
     public static Vector2 GetArenaMin(int mapIndex)
     {
         mapIndex = Mathf.Clamp(mapIndex, 0, ArenaHalfWidths.Length - 1);

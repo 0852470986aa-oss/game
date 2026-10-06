@@ -60,6 +60,15 @@ public partial class GameplayManager
         if (localResultCoins != null) localResultCoins.text = "0";
         if (remoteResultCoins != null) remoteResultCoins.text = "0";
         PresentResult(null);
+        if (FirebaseManager.Instance != null)
+        {
+            string opponentUid = remotePlayer != null && remotePlayer.photonView != null
+                ? remotePlayer.photonView.Owner.UserId : "";
+            int localScore = PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("Kills", out object kills)
+                ? (int)kills : 0;
+            FirebaseManager.Instance.RecordDrawMatch(opponentUid, localScore,
+                GameplayManager.GetCurrentMapName());
+        }
         if (btnReturnToMenu != null)
         {
             btnReturnToMenu.onClick.RemoveAllListeners();
@@ -67,7 +76,7 @@ public partial class GameplayManager
         }
     }
 
-    public void ShowResultScreen(bool isWinner, string localShipName, string remoteShipName, string remotePlayerName)
+    public void ShowResultScreen(bool isWinner, string localShipName, string remoteShipName, string remotePlayerName, int localScore = -1)
     {
         if (resultShown) return;
         resultShown = true;
@@ -103,7 +112,10 @@ public partial class GameplayManager
             // Update Firebase
             if (FirebaseManager.Instance != null)
             {
-                FirebaseManager.Instance.RecordMatchResult(true, remotePlayerName, 190);
+                string opponentUid = remotePlayer != null && remotePlayer.photonView != null
+                    ? remotePlayer.photonView.Owner.UserId : "";
+                FirebaseManager.Instance.RecordMatchResult(true, opponentUid, 190,
+                    ResolveLocalScore(localScore), GameplayManager.GetCurrentMapName());
             }
         }
         else
@@ -119,7 +131,10 @@ public partial class GameplayManager
             // Update Firebase
             if (FirebaseManager.Instance != null)
             {
-                FirebaseManager.Instance.RecordMatchResult(false, remotePlayerName, 10);
+                string opponentUid = remotePlayer != null && remotePlayer.photonView != null
+                    ? remotePlayer.photonView.Owner.UserId : "";
+                FirebaseManager.Instance.RecordMatchResult(false, opponentUid, 10,
+                    ResolveLocalScore(localScore), GameplayManager.GetCurrentMapName());
             }
         }
 
@@ -131,5 +146,13 @@ public partial class GameplayManager
             btnReturnToMenu.onClick.RemoveAllListeners();
             btnReturnToMenu.onClick.AddListener(LeaveRoom);
         }
+    }
+
+    private static int ResolveLocalScore(int suppliedScore)
+    {
+        if (suppliedScore >= 0) return suppliedScore;
+        return PhotonNetwork.LocalPlayer != null
+            && PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("Kills", out object kills)
+            ? (int)kills : 0;
     }
 }

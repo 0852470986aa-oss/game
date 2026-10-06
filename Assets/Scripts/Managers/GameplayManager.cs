@@ -515,7 +515,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         if (isDraw)
             ShowDrawResultScreen(enemyName);
         else
-            ShowResultScreen(isWinner, myShip, enemyShip, enemyName);
+            ShowResultScreen(isWinner, myShip, enemyShip, enemyName, myKills);
     }
 
 

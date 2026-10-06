@@ -64,6 +64,11 @@ public partial class LobbyManager
             playerNameText.richText = false;
             playerNameText.text = FirebaseManager.Instance.GetUsername();
         }
+        FirebaseManager.Instance.GetPlayerStats((highScore, wins, losses) =>
+        {
+            if (this == null || generation != profileGeneration || winsText == null) return;
+            winsText.text = $"HIGH SCORE  {highScore:N0}     W  {wins:N0}  /  L  {losses:N0}";
+        });
         FirebaseManager.Instance.GetCoinBalance(coins => {
             if (this == null || generation != profileGeneration) return;
             UpdateCoinDisplay(coins);
@@ -364,10 +369,15 @@ public partial class LobbyManager
         RectTransform root = BuildSurface(mainPanel);
         UILabel("GameTitle", root, "BATTLEFIELD OF THE STARS", -225, 315, 760, 48, 33, Color.white);
         settingsButton = UIButton("Settings", root, "SETTINGS", 465, 315, 220, 50, OnSettingsClicked);
-        var profile = UIPanel("PilotProfile", root, -330, 222, 550, 74, panelColor);
-        playerNameText = UILabel("PilotName", profile.transform, "LOADING PILOT...", 0, 15, 520, 34, 24, Color.white);
+        var profile = UIPanel("PilotProfile", root, -330, 222, 550, 94, panelColor);
+        Image pilotPortrait = UIPanel("PilotPortrait", profile.transform, -222, 0, 58, 82, Color.white);
+        pilotPortrait.sprite = Resources.Load<Sprite>("Images/หน้าตัวละครเอก");
+        pilotPortrait.preserveAspect = true;
+        pilotPortrait.raycastTarget = false;
+        playerNameText = UILabel("PilotName", profile.transform, "LOADING PILOT...", 35, 25, 420, 32, 23, Color.white);
         playerNameText.richText = false;
-        playersOnlineText = UILabel("OnlineStatus", profile.transform, "CONNECTING...", 0, -20, 520, 25, 15, accentColor);
+        winsText = UILabel("PilotStats", profile.transform, "HIGH SCORE  0     W  0  /  L  0", 35, -5, 420, 25, 15, new Color(1f, 0.8f, 0.35f));
+        playersOnlineText = UILabel("OnlineStatus", profile.transform, "CONNECTING...", 35, -32, 420, 22, 13, accentColor);
         coinText = UILabel("CoinBalance", root, "Astronium Coins : ...", 305, 230, 550, 40, 24, new Color(1f, 0.8f, 0.35f));
         PolishSprites.AddCoinIcon(coinText);
         UILabel("CurrencyHint", root, "YOUR PILOT WALLET", 305, 195, 550, 24, 14, Color.gray);

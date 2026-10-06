@@ -195,18 +195,25 @@ public class FirebaseManager : MonoBehaviour
 
     private void SaveInitialUserData(string uid, string username)
     {
-        dbReference.Child("users").Child(uid).Child("username").SetValueAsync(username);
-        dbReference.Child("users").Child(uid).Child("callsign").SetValueAsync(username); // ตาม ERD
-        dbReference.Child("users").Child(uid).Child("coin_balance").SetValueAsync(5000); 
-        dbReference.Child("users").Child(uid).Child("high_score").SetValueAsync(0); // ตาม ERD
-        dbReference.Child("users").Child(uid).Child("last_login").SetValueAsync(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
-        dbReference.Child("users").Child(uid).Child("unlocked_ships").SetValueAsync("0"); 
-        dbReference.Child("users").Child(uid).Child("selected_ship").SetValueAsync(0);
-        dbReference.Child("users").Child(uid).Child("selected_skill").SetValueAsync(0);
-        
-        // สำหรับระบบสถิติ
-        dbReference.Child("users").Child(uid).Child("total_wins").SetValueAsync(0);
-        dbReference.Child("users").Child(uid).Child("total_losses").SetValueAsync(0);
+        string now = DateTime.UtcNow.ToString("o");
+        var initialProfile = new Dictionary<string, object>
+        {
+            { "username", username },
+            { "callsign", username },
+            { "coin_balance", 5000L },
+            { "high_score", 0 },
+            { "last_login", now },
+            { "unlocked_ships", "0" },
+            { "selected_ship", 0 },
+            { "selected_skill", 0 },
+            { "total_wins", 0 },
+            { "total_losses", 0 }
+        };
+        dbReference.Child("users").Child(uid).UpdateChildrenAsync(initialProfile);
+
+        EnsureLoadoutRecord(uid, 0, 0);
+        EnsureUserSpacecraftRecord(uid, 0, now, true);
+        EnsureGameCatalog();
     }
 
     private void EnsureUserRecord(string uid, string fallbackUsername, Action<string> onComplete)
@@ -220,12 +227,13 @@ public class FirebaseManager : MonoBehaviour
                 return;
             }
 
-            if (task.Result.Exists && task.Result.HasChild("username"))
+            if (task.Result.Exists)
             {
                 string savedName = task.Result.Child("username").Value?.ToString();
+                if (string.IsNullOrEmpty(savedName))
+                    savedName = task.Result.Child("callsign").Value?.ToString();
                 currentUsername = string.IsNullOrEmpty(savedName) ? fallbackUsername : savedName;
-                dbReference.Child("users").Child(uid).Child("last_login")
-                    .SetValueAsync(DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"));
+                BackfillExistingProfile(uid, task.Result, fallbackUsername);
             }
             else
             {
@@ -233,7 +241,156 @@ public class FirebaseManager : MonoBehaviour
                 SaveInitialUserData(uid, currentUsername);
             }
 
+            EnsureGameCatalog();
+            EnsureUserERRecords(uid);
+
             onComplete?.Invoke(currentUsername);
+        });
+    }
+
+    private void BackfillExistingProfile(string uid, DataSnapshot snapshot, string fallbackUsername)
+    {
+        var missing = new Dictionary<string, object>();
+        AddMissing(missing, snapshot, "username", fallbackUsername);
+        AddMissing(missing, snapshot, "callsign", fallbackUsername);
+        AddMissing(missing, snapshot, "coin_balance", 5000L);
+        AddMissing(missing, snapshot, "high_score", 0);
+        AddMissing(missing, snapshot, "unlocked_ships", "0");
+        AddMissing(missing, snapshot, "selected_ship", 0);
+        AddMissing(missing, snapshot, "selected_skill", 0);
+        AddMissing(missing, snapshot, "total_wins", 0);
+        AddMissing(missing, snapshot, "total_losses", 0);
+        missing["last_login"] = DateTime.UtcNow.ToString("o");
+        dbReference.Child("users").Child(uid).UpdateChildrenAsync(missing);
+    }
+
+    private static void AddMissing(Dictionary<string, object> fields, DataSnapshot snapshot, string key, object value)
+    {
+        if (!snapshot.HasChild(key)) fields[key] = value;
+    }
+
+    private void EnsureUserERRecords(string uid)
+    {
+        dbReference.Child("users").Child(uid).GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled || task.Result == null || !task.Result.Exists) return;
+            DataSnapshot profile = task.Result;
+            int shipIndex = ReadInt(profile.Child("selected_ship").Value, 0);
+            int skillIndex = ReadInt(profile.Child("selected_skill").Value, 0);
+            EnsureLoadoutRecord(uid, shipIndex, skillIndex);
+
+            string unlocked = profile.Child("unlocked_ships").Value?.ToString() ?? "0";
+            foreach (string part in unlocked.Split(','))
+                if (int.TryParse(part, out int index) && index >= 0 && index < BattleLoadoutCatalog.Ships.Length)
+                    EnsureUserSpacecraftRecord(uid, index, DateTime.UtcNow.ToString("o"), false);
+        });
+    }
+
+    private static int ReadInt(object value, int fallback)
+    {
+        return int.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture), out int parsed)
+            ? parsed : fallback;
+    }
+
+    private void EnsureLoadoutRecord(string uid, int shipIndex, int skillIndex)
+    {
+        shipIndex = BattleLoadoutCatalog.ValidShip(shipIndex);
+        skillIndex = BattleLoadoutCatalog.ValidSkill(skillIndex);
+        var loadout = new Dictionary<string, object>
+        {
+            { "loadout_id", uid },
+            { "user_id", uid },
+            { "spacecraft_model", shipIndex + 1 },
+            { "skill_id", skillIndex + 1 }
+        };
+        dbReference.Child("loadouts").Child(uid).UpdateChildrenAsync(loadout);
+    }
+
+    private void EnsureUserSpacecraftRecord(string uid, int shipIndex, string acquiredAt, bool overwrite)
+    {
+        if (shipIndex < 0 || shipIndex >= BattleLoadoutCatalog.Ships.Length) return;
+        string spacecraftId = (shipIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        DatabaseReference record = dbReference.Child("user_spacecraft").Child(uid).Child(spacecraftId);
+        if (overwrite)
+        {
+            WriteUserSpacecraftRecord(record, uid, shipIndex, acquiredAt);
+            return;
+        }
+        record.GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled || (task.Result != null && task.Result.Exists)) return;
+            WriteUserSpacecraftRecord(record, uid, shipIndex, acquiredAt);
+        });
+    }
+
+    private static void WriteUserSpacecraftRecord(DatabaseReference record, string uid, int shipIndex, string acquiredAt)
+    {
+        record.SetValueAsync(new Dictionary<string, object>
+        {
+            { "user_id", uid },
+            { "spacecraft_model", shipIndex + 1 },
+            { "buy_date", acquiredAt }
+        });
+    }
+
+    // Catalog entries are seeded once from the same values used by gameplay. Keep these paths
+    // read-only for normal clients in Firebase Database Rules after the initial seed.
+    private void EnsureGameCatalog()
+    {
+        EnsureCatalogBranch(dbReference.Child("spacecraft"), BuildSpacecraftCatalog());
+        EnsureCatalogBranch(dbReference.Child("skills"), BuildSkillCatalog());
+    }
+
+    private static Dictionary<string, object> BuildSpacecraftCatalog()
+    {
+        var catalog = new Dictionary<string, object>();
+        for (int i = 0; i < BattleLoadoutCatalog.Ships.Length; i++)
+        {
+            ShipData ship = BattleLoadoutCatalog.Ships[i];
+            catalog[(i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)] = new Dictionary<string, object>
+            {
+                { "spacecraft_model", i + 1 },
+                { "spacecraft_name", ship.name },
+                { "base_hp", ship.hp },
+                { "speed", ship.spd },
+                { "fire_rate", ship.shotInterval },
+                { "bullet_damage", ship.atk },
+                { "spacecraft_price", ship.price }
+            };
+        }
+        return catalog;
+    }
+
+    private static Dictionary<string, object> BuildSkillCatalog()
+    {
+        var catalog = new Dictionary<string, object>();
+        int[] damage = { (int)BattleBalance.StunDamage, 0, (int)BattleBalance.NovaDamage, (int)BattleBalance.SeekerDamage };
+        float[] duration = { BattleBalance.StunSeconds, BattleBalance.ShieldSeconds, 1.5f, 0f };
+        for (int i = 0; i < BattleLoadoutCatalog.Skills.Length; i++)
+        {
+            SkillData skill = BattleLoadoutCatalog.Skills[i];
+            catalog[(i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)] = new Dictionary<string, object>
+            {
+                { "skill_id", i + 1 },
+                { "skill_name", skill.name },
+                { "damage", damage[i] },
+                { "cooldown", skill.cooldown },
+                { "duration", duration[i] },
+                { "skill_price", 0 }
+            };
+        }
+        return catalog;
+    }
+
+    private static void EnsureCatalogBranch(DatabaseReference reference, Dictionary<string, object> initialValue)
+    {
+        reference.RunTransaction(data =>
+        {
+            if (data.Value == null) data.Value = initialValue;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled) Debug.LogWarning("Firebase game catalog could not be initialized: " + reference.Key);
         });
     }
 
@@ -307,9 +464,11 @@ public class FirebaseManager : MonoBehaviour
         { onResult?.Invoke(false, 0); return; }
         string uid = user.UserId;
         bool completed = false;
+        bool purchasedNewShip = false;
         dbReference.Child("users").Child(uid).RunTransaction(data =>
         {
             completed = false;
+            purchasedNewShip = false;
             if (data.Value == null) return TransactionResult.Success(data);
             if (!TryReadCoins(data.Child("coin_balance").Value, out long balance)) return TransactionResult.Abort();
             string stored = data.Child("unlocked_ships").Value as string;
@@ -328,6 +487,7 @@ public class FirebaseManager : MonoBehaviour
                 ordered.Sort();
                 data.Child("coin_balance").Value = balance - price;
                 data.Child("unlocked_ships").Value = string.Join(",", ordered);
+                purchasedNewShip = true;
             }
             completed = true;
             return TransactionResult.Success(data);
@@ -336,7 +496,26 @@ public class FirebaseManager : MonoBehaviour
             bool success = !task.IsFaulted && !task.IsCanceled && completed && user != null && user.UserId == uid;
             long balance = 0;
             if (success) success = task.Result != null && TryReadCoins(task.Result.Child("coin_balance").Value, out balance);
-            onResult?.Invoke(success, balance);
+            if (!success || !purchasedNewShip)
+            {
+                onResult?.Invoke(success, balance);
+                return;
+            }
+
+            int purchasedIndex = shipIndex;
+            string spacecraftId = (purchasedIndex + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+            DatabaseReference shipRecord = dbReference.Child("user_spacecraft").Child(uid).Child(spacecraftId);
+            shipRecord.SetValueAsync(new Dictionary<string, object>
+            {
+                { "user_id", uid },
+                { "spacecraft_model", purchasedIndex + 1 },
+                { "buy_date", DateTime.UtcNow.ToString("o") }
+            }).ContinueWithOnMainThread(recordTask =>
+                {
+                    if (recordTask.IsFaulted || recordTask.IsCanceled)
+                        Debug.LogWarning("Ship is unlocked, but its ownership record will be repaired on next login.");
+                    onResult?.Invoke(true, balance);
+                });
         });
     }
 
@@ -438,8 +617,13 @@ public class FirebaseManager : MonoBehaviour
 
     public void SaveSelectedShip(int shipIndex)
     {
-        if (user == null || dbReference == null) return;
-        dbReference.Child("users").Child(user.UserId).Child("selected_ship").SetValueAsync(shipIndex);
+        if (user == null || dbReference == null || shipIndex < 0 || shipIndex >= BattleLoadoutCatalog.Ships.Length) return;
+        string uid = user.UserId;
+        dbReference.Child("users").Child(uid).Child("selected_ship").SetValueAsync(shipIndex);
+        dbReference.Child("loadouts").Child(uid).UpdateChildrenAsync(new Dictionary<string, object>
+        {
+            { "loadout_id", uid }, { "user_id", uid }, { "spacecraft_model", shipIndex + 1 }
+        });
     }
 
     public void GetSelectedSkill(Action<int> onResult)
@@ -467,8 +651,46 @@ public class FirebaseManager : MonoBehaviour
 
     public void SaveSelectedSkill(int skillIndex)
     {
-        if (user == null || dbReference == null) return;
-        dbReference.Child("users").Child(user.UserId).Child("selected_skill").SetValueAsync(skillIndex);
+        if (user == null || dbReference == null || skillIndex < 0 || skillIndex >= BattleLoadoutCatalog.Skills.Length) return;
+        string uid = user.UserId;
+        dbReference.Child("users").Child(uid).Child("selected_skill").SetValueAsync(skillIndex);
+        dbReference.Child("loadouts").Child(uid).UpdateChildrenAsync(new Dictionary<string, object>
+        {
+            { "loadout_id", uid }, { "user_id", uid }, { "skill_id", skillIndex + 1 }
+        });
+    }
+
+    public void GetPlayerStats(Action<int, int, int> onResult)
+    {
+        if (user == null || dbReference == null) { onResult?.Invoke(0, 0, 0); return; }
+        string uid = user.UserId;
+        dbReference.Child("users").Child(uid).GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (user == null || user.UserId != uid || task.IsFaulted || task.IsCanceled || task.Result == null)
+            {
+                onResult?.Invoke(0, 0, 0);
+                return;
+            }
+            DataSnapshot profile = task.Result;
+            onResult?.Invoke(ReadInt(profile.Child("high_score").Value, 0),
+                ReadInt(profile.Child("total_wins").Value, 0),
+                ReadInt(profile.Child("total_losses").Value, 0));
+        });
+    }
+
+    private void UpdateHighScore(int score)
+    {
+        if (score < 0 || user == null || dbReference == null) return;
+        DatabaseReference reference = dbReference.Child("users").Child(user.UserId).Child("high_score");
+        reference.RunTransaction(data =>
+        {
+            int current = ReadInt(data.Value, 0);
+            if (score > current) data.Value = score;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled) Debug.LogWarning("High score could not be saved.");
+        });
     }
 
     // === อัปเดตชื่อผู้เล่น ===
@@ -482,8 +704,8 @@ public class FirebaseManager : MonoBehaviour
         }
 
         currentUsername = newName;
-        dbReference.Child("users").Child(user.UserId).Child("username")
-            .SetValueAsync(newName).ContinueWithOnMainThread(task =>
+        dbReference.Child("users").Child(user.UserId).UpdateChildrenAsync(new Dictionary<string, object>
+            { { "username", newName }, { "callsign", newName } }).ContinueWithOnMainThread(task =>
             {
                 onResult?.Invoke(task.IsCompleted && !task.IsFaulted);
             });
@@ -501,8 +723,24 @@ public class FirebaseManager : MonoBehaviour
         }
     }
 
-    // === บันทึกผลการแข่งขัน ===
-    public void RecordMatchResult(bool isWinner, string opponentName, int rewardCoins, Action<bool> onComplete = null)
+    // === สถิติและประวัติการแข่งขัน ===
+    private void IncrementUserCounter(string field)
+    {
+        if (user == null || dbReference == null) return;
+        string uid = user.UserId;
+        dbReference.Child("users").Child(uid).Child(field).RunTransaction(data =>
+        {
+            int current = ReadInt(data.Value, 0);
+            data.Value = current + 1;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled) Debug.LogWarning("Could not update player statistic: " + field);
+        });
+    }
+
+    public void RecordMatchResult(bool isWinner, string opponentUid,
+        int rewardCoins, int score, string mapName, Action<bool> onComplete = null)
     {
         if (user == null || dbReference == null)
         {
@@ -511,59 +749,53 @@ public class FirebaseManager : MonoBehaviour
         }
 
         string uid = user.UserId;
-
-        // 1. อัปเดตสถิติแพ้ชนะ
-        string statKey = isWinner ? "total_wins" : "total_losses";
-        dbReference.Child("users").Child(uid).Child(statKey).GetValueAsync().ContinueWithOnMainThread(task =>
-        {
-            if (!task.IsFaulted && !task.IsCanceled && task.Result.Exists)
-            {
-                int.TryParse(task.Result.Value.ToString(), out int currentStat);
-                dbReference.Child("users").Child(uid).Child(statKey).SetValueAsync(currentStat + 1);
-            }
-            else
-            {
-                dbReference.Child("users").Child(uid).Child(statKey).SetValueAsync(1);
-            }
-        });
-
-        // Report success only when both the reward and match history have completed.
-        int pendingSaves = 2;
-        bool savesSucceeded = true;
-        Action<bool> saved = success =>
-        {
-            savesSucceeded &= success;
-            if (--pendingSaves == 0) onComplete?.Invoke(savesSucceeded);
-        };
-
-        // 2. อัปเดตเหรียญ
+        IncrementUserCounter(isWinner ? "total_wins" : "total_losses");
+        UpdateHighScore(score);
         AddCoins(rewardCoins, success =>
         {
             if (!success) Debug.LogWarning("Match reward could not be saved. Coin balance was not overwritten.");
-            saved(success);
-        });
-
-        // 3. บันทึก Match History (อิงตาม ER Diagram)
-        string matchId = dbReference.Child("match_history").Push().Key;
-        
-        string currentRoom = Photon.Pun.PhotonNetwork.CurrentRoom != null ? Photon.Pun.PhotonNetwork.CurrentRoom.Name : "QuickMatch";
-        
-        Dictionary<string, object> matchData = new Dictionary<string, object>
-        {
-            { "user_a", currentUsername },
-            { "user_b", opponentName },
-            { "status", "Completed" },
-            { "Result", isWinner ? "Win" : "Loss" },
-            { "reward_a", rewardCoins },
-            { "reward_b", isWinner ? 10 : 190 }, // รางวัลฝั่งตรงข้าม
-            { "room_code", currentRoom },
-            { "map_name", "Arena" },
-            { "play_date", DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss") }
-        };
-
-        dbReference.Child("match_history").Child(matchId).SetValueAsync(matchData).ContinueWithOnMainThread(task =>
-        {
-            saved(!task.IsFaulted && !task.IsCanceled);
+            if (!Photon.Pun.PhotonNetwork.IsMasterClient)
+            {
+                onComplete?.Invoke(success);
+                return;
+            }
+            WriteMatchRecord(uid, opponentUid, isWinner ? "Win_A" : "Win_B", rewardCoins,
+                isWinner ? 10 : 190, mapName, saved => onComplete?.Invoke(success && saved));
         });
     }
+
+    public void RecordDrawMatch(string opponentUid, int score, string mapName)
+    {
+        if (user == null || dbReference == null || !Photon.Pun.PhotonNetwork.IsMasterClient) return;
+        UpdateHighScore(score);
+        WriteMatchRecord(user.UserId, opponentUid, "Draw", 0, 0, mapName, null);
+    }
+
+    private void WriteMatchRecord(string userA, string userB, string result,
+        int rewardA, int rewardB, string mapName, Action<bool> onComplete)
+    {
+        string matchId = dbReference.Child("match_history").Push().Key;
+        string currentRoom = Photon.Pun.PhotonNetwork.CurrentRoom != null
+            ? Photon.Pun.PhotonNetwork.CurrentRoom.Name : "QuickMatch";
+        var matchData = new Dictionary<string, object>
+        {
+            { "match_id", matchId },
+            { "user_a", userA },
+            { "user_b", string.IsNullOrWhiteSpace(userB) ? "" : userB },
+            { "status", "Completed" },
+            { "Result", result },
+            { "reward_a", rewardA },
+            { "reward_b", rewardB },
+            { "room_code", currentRoom },
+            { "map_name", mapName },
+            { "play_date", DateTime.UtcNow.ToString("o") }
+        };
+        dbReference.Child("match_history").Child(matchId).SetValueAsync(matchData).ContinueWithOnMainThread(task =>
+        {
+            bool success = !task.IsFaulted && !task.IsCanceled;
+            if (!success) Debug.LogWarning("Match history could not be saved.");
+            onComplete?.Invoke(success);
+        });
+    }
+
 }
