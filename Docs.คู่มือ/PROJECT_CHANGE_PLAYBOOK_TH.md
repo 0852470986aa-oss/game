@@ -59,6 +59,14 @@ Scene หลักตามลำดับ:
 | ภาพไอพ่น/เอฟเฟกต์ยาน | `Assets/Scripts/PlayerController.Visuals.cs` | ไฟล์ใน `Assets/Resources/Images/VFX/` และ `.meta` |
 | เสียง | `Assets/Scripts/Managers/AudioManager.cs` | `BattleSettingsPanel.cs`, ไฟล์เสียงใต้ `Assets/Resources/` |
 | ภาพเหรียญ/บึงใน UI | `Assets/Scripts/PolishSprites.cs` | `Assets/Resources/Images/` |
+| ออกจากระบบ | `Assets/Scripts/Managers/LobbyManager.cs` (`OnLogoutButtonClicked`) | `FirebaseManager.cs` (`Logout`), `BattleSettingsPanel.cs` |
+| สียาน | `ShipPaint` ใน `Assets/Scripts/BattleLoadoutCatalog.cs` | `LobbyManager.Views.cs` (`BuildPaintPicker`), `LobbyManager.Rooms.cs`, `PlayerController.Cosmetics.cs` |
+| อีโมต | `Assets/Scripts/PlayerController.Cosmetics.cs` | `GameplayManager.HUD.cs` (`BuildEmoteControls`, `ShowEmote`) |
+| แจ้งยิงโดน/ทิศที่โดนยิง/ตัวเลขดาเมจ | `Assets/Scripts/PlayerController.Health.cs` | `GameplayManager.cs`, `FloatingText.cs` |
+| คริสตัลสะท้อนกระสุน | `Assets/Scripts/PrismReflector.cs` | `BulletController.cs` (`BounceRPC`), `GameplayManager.Maps.cs` |
+| แท่นวาร์ป | `Assets/Scripts/WarpPad.cs` | `PlayerController.Warp.cs`, `GameplayManager.Maps.cs` (`AddWarpPads`) |
+| ภาพบรรยากาศแม็พปริซึม | `Assets/Scripts/PrismArenaVisuals.cs` | `PrismBurst.cs`, `GameplayManager.Maps.cs` |
+| แก้ HUD/แม็พที่โค้ดสร้าง ในหน้า Edit | `Assets/Scripts/EditableTemplate.cs` | `EditableLayout.cs`, เมนู `Editable/...` ใน GameplayManager, `EDITABLE_UI_TH.md` |
 
 ถ้าค้นชื่อเมธอดไม่เจอ ให้ค้นข้อความหรือชื่อปุ่มในโปรเจกต์ก่อน แล้วไล่จากผู้เรียกไปยังผู้ทำงานจริง อย่าเดาว่าชื่อไฟล์ที่ดูคล้ายกันคือจุดเดียวที่ต้องแก้
 
@@ -138,7 +146,7 @@ match_history/{match_id}/map_name
 1. ยาน: เปิด `Assets/Scripts/BattleLoadoutCatalog.cs` หา `Ships` และแก้ argument ที่ตรงกับยาน โดย constructor ระบุ `name, hp, atk, spd, skill, price, spritePath, shotInterval, acceleration, turnSpeed`
 2. สกิล: `Skills` อยู่ไฟล์เดียวกัน; เวลาดาเมจ/ระยะ Stun, Shield, Poison และ Hazard ร่วมอยู่ `BattleBalance.cs`
 3. พฤติกรรมการยิง/สกิลอยู่ `PlayerController.cs`, `PlayerController.Skills.cs` และ `SkillController.cs`; แก้ค่ากลางอย่างเดียวอาจไม่พอถ้าพฤติกรรมไม่รองรับ
-4. ลำดับ index เป็นสัญญาข้อมูล: ยาน `0..2`, สกิล `0..3`; **ห้ามสลับลำดับ** เพราะ Firebase/Photon อาจอ้าง index เดิม
+4. ลำดับ index เป็นสัญญาข้อมูล: ยาน `0..2`, สกิล `0..3`, สียาน `0..5`, อีโมต `0..3`; **ห้ามสลับลำดับ** เพราะ Firebase/Photon อาจอ้าง index เดิม (เพิ่มได้เฉพาะต่อท้าย)
 5. ทดสอบทุกยาน/สกิลที่ได้รับผล ตรวจหน้าคลังกับในสนามจริง และทดสอบสองเครื่องหากมี RPC/Photon
 
 ## 8. ตัวอย่าง D — เพิ่ม Hazard หรือสิ่งกีดขวางในแผนที่
@@ -147,6 +155,7 @@ match_history/{match_id}/map_name
 
 - **ของตกแต่งนิ่ง ๆ:** เริ่มที่ `GameplayManager.Maps.cs` หรือเครื่องมือ `Assets/Editor/MapLayoutSetup.cs`; ตรวจ sorting/collider และว่าแต่ละ client สร้างเหมือนกัน
 - **อันตรายที่สุ่ม/เกิดตามเวลา:** เริ่ม `MapHazardManager.cs`; ผลตอนชน/สถานะ/ดาเมจอยู่ `HazardController.cs`; ค่าตัวเลขกลางอยู่ `BattleBalance.cs`
+- **ของที่มีผลต่อกระสุน/ยานแต่ไม่สุ่ม (เช่น คริสตัลสะท้อน แท่นวาร์ป):** สร้างใน `GameplayManager.Maps.cs` ให้ทุกเครื่องสร้างตำแหน่งเดียวกัน แล้วให้เจ้าของ (คนยิง/เจ้าของยาน) ตัดสินผลและส่ง RPC ดูตัวอย่าง `BulletController.BounceRPC` และ `PlayerController.WarpRPC`
 - **ป้อม/สิ่งที่ยิงได้:** `AutoTurret.cs` และ Prefab/จุด `firePoint`; ตรวจว่าเฉพาะ Master Client สร้างกระสุนร่วมและกระสุนออกจากปลายปืน
 
 เช็กลิสต์ Hazard ใหม่:

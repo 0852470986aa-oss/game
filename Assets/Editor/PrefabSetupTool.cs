@@ -1,10 +1,17 @@
+// ไฟล์ PrefabSetupTool.cs — เครื่องมือ Unity Editor (ไม่ได้รันในเกม / ไม่ถูก build ลงมือถือ)
+// ตั้งค่า Prefab อัตโนมัติ: สร้างภาพกระสุนเลเซอร์, Prefab เอฟเฟกต์ MuzzleFlash/ImpactEffect,
+// ปรับ Prefab ยาน Ship1–3 (ภาพ, Collider, FirePoint, ไอพ่น) และ BulletPrefab (ภาพ, Collider, หาง)
+// ไฟล์ทั้งหมดอยู่ใน Assets/Resources เพื่อให้เกมโหลดจากโฟลเดอร์ Resources ได้ตอนรัน
+// เมนู [MenuItem] ถูกคอมเมนต์ปิดไว้ ต้องเรียก SetupPrefabs() เองถ้าจะใช้
 using UnityEngine;
 using UnityEditor;
 using System.IO;
 
+// คลาส EditorWindow ที่รวมเมธอด static สำหรับสร้าง/แก้ Prefab
 public class PrefabSetupTool : EditorWindow
 {
     // [MenuItem("Battlefield/Setup Ships and Bullets")]
+    // จุดเริ่ม: เรียกทุกขั้นตอนตามลำดับ แล้วแจ้งผลใน Console
     public static void SetupPrefabs()
     {
         CreateLaserSprite();
@@ -14,6 +21,8 @@ public class PrefabSetupTool : EditorWindow
         Debug.Log("✅ Ships, VFX, and Bullets setup completed successfully!");
     }
 
+    // สร้างไฟล์ภาพกระสุน laser_bullet.png ขนาด 4x16 พิกเซล สีฟ้า (ขอบซ้ายขวาโปร่งครึ่งหนึ่ง)
+    // แล้วตั้งให้ import เป็น Sprite (16 พิกเซลต่อหน่วย) ถ้ามีไฟล์อยู่แล้วจะข้าม
     private static void CreateLaserSprite()
     {
         string path = "Assets/Resources/Images/laser_bullet.png";
@@ -46,6 +55,8 @@ public class PrefabSetupTool : EditorWindow
         }
     }
 
+    // สร้าง Prefab เอฟเฟกต์อนุภาค 2 ตัว (ถ้ายังไม่มีไฟล์): MuzzleFlash = ประกายสีเหลืองตอนยิง
+    // และ ImpactEffect = ประกายสีส้มแดงตอนกระสุนโดน แต่ละตัวลบตัวเองด้วย DestroyAfterSeconds
     private static void CreateVFXPrefabs()
     {
         // 1. Muzzle Flash
@@ -105,6 +116,8 @@ public class PrefabSetupTool : EditorWindow
         }
     }
 
+    // ปรับ Prefab ยาน Ship1–Ship3 ใน Resources/ShipPrefabs: สเกล 0.6, ภาพ ship{i}, PolygonCollider2D ใหม่,
+    // จุดยิง FirePoint ที่หัวยาน และ Particle ไอพ่นท้ายยาน แล้วผูกกับ PlayerController แล้วเซฟทับ Prefab
     private static void SetupShips()
     {
         for (int i = 1; i <= 3; i++)
@@ -194,6 +207,8 @@ public class PrefabSetupTool : EditorWindow
         }
     }
 
+    // ปรับ BulletPrefab: ใช้ภาพ laser_bullet, BoxCollider2D แบบ trigger ขนาด 0.2x0.8,
+    // หาง TrailRenderer ยาว 0.15 วิ ไล่สีฟ้า->ขาวจางหาย และตั้ง BulletController ความเร็ว 15 อายุ 2 วิ
     private static void SetupBullet()
     {
         string prefabPath = "Assets/Resources/BulletPrefab.prefab";
@@ -224,6 +239,7 @@ public class PrefabSetupTool : EditorWindow
         tr.endWidth = 0f;
         tr.material = new Material(Shader.Find("Sprites/Default"));
         
+        // ไล่สีหาง: สีฟ้าทึบที่หัว -> ขาวโปร่งใสที่ปลาย
         Gradient gradient = new Gradient();
         gradient.SetKeys(
             new GradientColorKey[] { new GradientColorKey(new Color(0.4f, 0.8f, 1f), 0.0f), new GradientColorKey(Color.white, 1.0f) },

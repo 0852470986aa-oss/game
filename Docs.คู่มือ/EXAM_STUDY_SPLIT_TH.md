@@ -12,7 +12,7 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 
 พาธในรายการด้านล่างเริ่มจากโฟลเดอร์หลักนี้ เช่น `Assets/Scripts/PlayerController.cs`
 
-คู่มือแผนที่โค้ดฉบับละเอียดอยู่ที่ `Docs/CODE_GUIDE_TH.md` ให้อ่านควบคู่กับแผนแบ่งงานฉบับนี้
+คู่มือแผนที่โค้ดฉบับละเอียดอยู่ที่ `Docs.คู่มือ/CODE_GUIDE_TH.md` ให้อ่านควบคู่กับแผนแบ่งงานฉบับนี้
 
 ## ภาพรวมที่ทั้งสองคนควรเข้าใจก่อน
 
@@ -28,7 +28,7 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 - `Assets/Scripts/BattleBalance.cs` — ค่าดาเมจและค่ากลางของการต่อสู้
 - `Assets/Scripts/Managers/GameplayManager.cs` — จุดควบคุมหลักระหว่างการแข่งขัน
 - `Assets/Scripts/Managers/LobbyManager.cs` — จุดควบคุมหลักของ Lobby
-- `Docs/CODE_GUIDE_TH.md` — คำอธิบายพาธและจุดเริ่มอ่านของแต่ละระบบ
+- `Docs.คู่มือ/CODE_GUIDE_TH.md` — คำอธิบายพาธและจุดเริ่มอ่านของแต่ละระบบ
 
 คลาสที่แบ่งเป็น `.cs` หลายไฟล์ เช่น `PlayerController.*.cs` ยังเป็นคลาสเดียวกันผ่าน `partial class` ไม่ใช่ Component แยกคนละตัว และสคริปต์เกมของโปรเจกต์ยังอยู่ใน Assembly เดียวกัน
 
@@ -51,6 +51,10 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | Layout ขอบเขตแม็พ จุดเกิด และสิ่งกำบัง |
 | `Assets/Scripts/Managers/MapHazardManager.cs` | การสุ่ม/สร้างอันตรายและภาพบรรยากาศแม็พ |
 | `Assets/Scripts/Managers/HazardController.cs` | การชน ดาเมจ และสถานะผิดปกติจาก Hazard |
+| `Assets/Scripts/PlayerController.Warp.cs`, `Assets/Scripts/WarpPad.cs` | แท่นวาร์ปแม็พปริซึม: ใครสั่งวาร์ป ส่ง RPC อย่างไร คูลดาวน์ 3 วินาที |
+| `Assets/Scripts/PrismReflector.cs` + ส่วน `BounceRPC` ใน `BulletController.cs` | กระสุนเด้งคริสตัล 2 ครั้ง: คนยิงคำนวณแล้วแจ้งเครื่องอื่น |
+| `Assets/Scripts/PrismArenaVisuals.cs`, `Assets/Scripts/PrismBurst.cs` | ภาพบรรยากาศแม็พปริซึม (ภาพล้วน ไม่มีผลต่อการเล่น) |
+| `Assets/Scripts/PlayerController.Cosmetics.cs` | สียานและอีโมตฝั่งยาน (`ShowEmoteRPC`) |
 
 ### ควรอธิบายให้ได้
 
@@ -60,6 +64,7 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 - การลด HP และการเกิดใหม่ทำงานผ่านไฟล์ใดบ้าง
 - แม็พทั้งสามเลือกด้วย index อะไร: `0 = แมงกะพรุน`, `1 = ปริซึม`, `2 = หุ่นยนต์`
 - การตัดสินใจว่าใครสร้าง Hazard หรือทำดาเมจในเกมออนไลน์ถูกควบคุมอย่างไร
+- ทำไมกระสุนเด้งและการวาร์ปต้องให้เจ้าของ (คนยิง/เจ้าของยาน) เป็นคนตัดสิน แล้วส่ง RPC ให้เครื่องอื่น
 
 ### ซ้อมโจทย์ปากเปล่า
 
@@ -68,6 +73,8 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 3. ถ้าจะเพิ่มเวลาสตั้น ต้องดูค่ากลางและจุดเรียกใช้ตรงไหน
 4. ถ้าผู้เล่นเกิดใหม่ซ้อน/HP ไม่เต็ม จะตรวจขั้นตอนใดใน `PlayerController.Health.cs`
 5. ถ้าจะเพิ่มจำนวนบึงหรือเปลี่ยนจังหวะสุ่ม ต้องแยกตรวจไฟล์สร้าง Hazard กับไฟล์รับการชนอย่างไร
+6. ถ้าอาจารย์ให้กระสุนเด้งคริสตัลได้ 3 ครั้ง หรือย้ายแท่นวาร์ป จะแก้ที่ไหน
+7. ถ้าวาร์ปแล้วอีกเครื่องเห็นยานไหลข้ามแม็พ จะตรวจ `WarpRPC` ตรงไหน
 
 ## คนที่ 2 — ล็อกอิน, Lobby, บัญชี, UI และเสียง
 
@@ -87,6 +94,11 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 | `Assets/Scripts/UIButton.cs` | รับ pointer และลากปุ่มยิงบนหน้าจอ |
 | `Assets/Scripts/UIJoystick.cs` | รับการลากจอยสติ๊ก |
 | `Assets/Scripts/PolishSprites.cs` | ภาพเหรียญและภาพบึงที่แสดงใน UI |
+| `Assets/Scripts/Managers/LobbyManager.cs` (`OnLogoutButtonClicked`) + `FirebaseManager.Logout` | ปุ่ม LOG OUT ในหน้าตั้งค่า Lobby: ออก Google/Firebase แล้วกลับหน้า Login |
+| `Assets/Scripts/Managers/LobbyManager.Views.cs` (`BuildPaintPicker`) + `ShipPaint` ใน `BattleLoadoutCatalog.cs` | ปุ่มเลือกสียาน 6 สี เก็บใน PlayerPrefs ส่งผ่าน Photon property `ShipSkin` |
+| `Assets/Scripts/Managers/GameplayManager.HUD.cs` (`BuildEmoteControls`, `ShowEmote`) | ปุ่มอีโมตและฟองข้อความเหนือยาน |
+| `Assets/Scripts/Managers/GameplayManager.cs` (`ShowIncomingDamage`, HIT) + `FloatingText.cs` | ข้อความ HIT ลูกศรทิศที่โดนยิง และตัวเลขดาเมจลอย |
+| `Assets/Scripts/EditableTemplate.cs` + `Docs.คู่มือ/EDITABLE_UI_TH.md` | วิธีเอา UI ที่สร้างด้วยโค้ดมาแก้ในหน้า Edit |
 
 ### ควรอธิบายให้ได้
 
@@ -96,6 +108,8 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 - การสร้าง/เข้าห้อง Photon ต่างจากการเริ่มเกมอย่างไร และใครมีสิทธิ์กดเริ่ม
 - ส่วนใดของ Lobby เป็นการสร้าง UI ตอนรัน และส่วนใดเป็น Scene/Prefab ที่ทำไว้แล้ว
 - ค่าตั้งค่าเสียงและความไวเล็งถูกบันทึกและนำกลับมาใช้ตอนไหน
+- ออกจากระบบแล้วข้อมูลอะไรถูกล้าง และทำไมต้องออกทั้ง Google และ Firebase
+- สียานเก็บที่ไหน และคู่แข่งเห็นสีเราได้อย่างไร (Photon Custom Properties)
 
 ### ซ้อมโจทย์ปากเปล่า
 
@@ -104,6 +118,8 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project
 3. ถ้าผู้เล่นเข้าห้องแล้วอีกคนไม่เห็น Ready จะเริ่มตรวจ Photon callback หรือ property ใด
 4. ถ้าปุ่มบนหน้าล็อบบี้กดไม่ติด จะตรวจ callback ที่สร้าง UI กับ EventSystem/UIButton อย่างไร
 5. ถ้าต้องเพิ่มปุ่มยืนยันออกจากเกม จะวางพฤติกรรมในแผงตั้งค่าและรักษาการทำงานของห้องอย่างไร
+6. ถ้ากด LOG OUT แล้วเข้าใหม่ยังเป็นบัญชีเดิม จะตรวจที่ไหน
+7. ถ้าจะเพิ่มข้อความอีโมตใหม่ ต้องแก้ไฟล์ใด และทำไมต้องเพิ่มต่อท้าย
 
 ## หัวข้อที่ทั้งสองคนควรช่วยกันซ้อม
 

@@ -1,3 +1,8 @@
+// FirebaseManager.cs — ตัวกลางเชื่อม Firebase Auth + Realtime Database ของทั้งเกม
+// เป็น Singleton (DontDestroyOnLoad) วางไว้ใน LoginScene แล้วอยู่ต่อข้ามทุก Scene
+// LoginManager เรียกล็อกอิน, LobbyManager เรียกอ่าน/บันทึกเหรียญ ยาน สกิล สถิติ
+// GameplayManager.Results เรียก RecordMatchResult/RecordDrawMatch ตอนจบแมตช์
+// เหรียญใช้ RunTransaction เพื่อกันการเขียนทับกัน (อธิบายละเอียดที่ AddCoins/PurchaseShip)
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System;
@@ -12,6 +17,7 @@ using Google;
 // เชื่อม Firebase Auth/Realtime Database: บัญชี โปรไฟล์ เหรียญ คลังยาน/สกิล สถิติ และประวัติแมตช์
 public class FirebaseManager : MonoBehaviour
 {
+    // ตัวแปร static ให้สคริปต์อื่นเรียกได้ทันทีผ่าน FirebaseManager.Instance
     public static FirebaseManager Instance;
 
     // ตัวแปรสำหรับใช้งาน Firebase
@@ -20,8 +26,10 @@ public class FirebaseManager : MonoBehaviour
     private DatabaseReference dbReference;
     private bool firebaseReady = false;
     private string currentUsername = "Unknown";
+    // Web Client ID ของ Google OAuth ใช้ขอ IdToken จาก Google Sign-In เพื่อนำไปยืนยันกับ Firebase
     private string webClientId = "371326537675-e1kev9fitqvsqomdlhdbgp07kd300nbk.apps.googleusercontent.com";
 
+    // Unity เรียกตอนสร้าง Object: ตั้งตัวเองเป็น Singleton ตัวเดียว ถ้ามีอยู่แล้ว (เช่นกลับมา LoginScene) ให้ทำลายตัวซ้ำทิ้ง
     void Awake()
     {
         // ทำเป็น Singleton เพื่อไม่ให้ถูกทำลายเมื่อเปลี่ยน Scene
@@ -37,6 +45,8 @@ public class FirebaseManager : MonoBehaviour
         }
     }
 
+    // ตรวจและแก้ dependency ของ Firebase SDK แบบ async; ถ้าพร้อมจึงเริ่มบริการต่าง ๆ
+    // ContinueWithOnMainThread ทำให้ callback กลับมารันบน Main Thread ของ Unity (แตะ GameObject ได้)
     private void InitializeFirebase()
     {
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -58,6 +68,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // เก็บ reference ของ Auth และ Database root, ตั้ง firebaseReady = true และตั้งค่า Google Sign-In ให้ขอ IdToken
     private void InitializeFirebaseServices()
     {
         Debug.Log("Firebase พร้อมใช้งานแล้ว!");
@@ -74,26 +85,50 @@ public class FirebaseManager : MonoBehaviour
 
     // === ตรวจสอบสถานะ ===
 
+    // LoginManager ใช้เช็คว่า Firebase พร้อมหรือยังก่อนเปิดปุ่มล็อกอิน
     public bool IsFirebaseReady()
     {
         return firebaseReady;
     }
 
+    // true ถ้ามีผู้ใช้ล็อกอินอยู่
     public bool IsLoggedIn()
     {
         return user != null;
     }
 
+    // ชื่อผู้เล่นปัจจุบัน (LobbyManager ใช้ตั้ง PhotonNetwork.NickName)
     public string GetUsername()
     {
         return currentUsername;
     }
 
+    // UID ของ Firebase (ว่างถ้ายังไม่ล็อกอิน) ใช้เป็น key ของข้อมูลผู้เล่นใน Database และส่งต่อให้ Photon
     public string GetUserId()
     {
         return user != null ? user.UserId : "";
     }
 
+    // === Logout ===
+    // ออกจากระบบทั้ง Firebase และ Google เพื่อให้ครั้งหน้าเลือกบัญชีใหม่ได้
+    public void Logout()
+    {
+        try
+        {
+            if (GoogleSignIn.Configuration != null) GoogleSignIn.DefaultInstance.SignOut();
+        }
+        catch (Exception e)
+        {
+            // ใน Unity Editor ปลั๊กอิน Google อาจใช้งานไม่ได้ ไม่เป็นไร ออกจาก Firebase ต่อได้
+            Debug.LogWarning("Google sign-out skipped: " + e.Message);
+        }
+        if (auth != null) auth.SignOut();
+        user = null;
+        currentUsername = "Unknown";
+        Debug.Log("Logged out.");
+    }
+
+    // คืน reference ราก (root) ของ Realtime Database ให้สคริปต์อื่นใช้
     public DatabaseReference GetDbReference()
     {
         return dbReference;
@@ -101,6 +136,9 @@ public class FirebaseManager : MonoBehaviour
 
     // === Login Google ===
 
+    // ล็อกอินด้วย Google (เรียกจาก LoginManager.LoginGoogle) ขั้นตอน:
+    // 1) Google Sign-In ให้ผู้ใช้เลือกบัญชี ได้ IdToken  2) แปลงเป็น Credential แล้ว SignInWithCredentialAsync กับ Firebase
+    // 3) ตั้งชื่อผู้เล่นจาก DisplayName (ไม่มีก็สุ่ม Player_xxxx)  4) EnsureUserRecord สร้าง/เติมข้อมูลผู้เล่น แล้วเรียก onSuccess
     public void LoginGoogle(Action<string> onSuccess = null, Action<string> onFailed = null)
     {
         if (auth == null)
@@ -151,6 +189,8 @@ public class FirebaseManager : MonoBehaviour
 
     // === Login Guest (พร้อม Callback) ===
 
+    // ล็อกอินแบบ Guest (Anonymous Auth) เรียกจาก LoginManager.LoginGuest
+    // สำเร็จแล้วตั้งชื่อสุ่ม Guest_xxxx แล้วไป EnsureUserRecord เหมือนกรณี Google; ถ้าล้มเหลวแปลง error เป็นข้อความอ่านง่าย
     public void LoginGuest(Action<string> onSuccess = null, Action<string> onFailed = null)
     {
         if (auth == null)
@@ -194,6 +234,8 @@ public class FirebaseManager : MonoBehaviour
 
     // === บันทึกข้อมูลผู้เล่น ===
 
+    // สร้างข้อมูลผู้เล่นใหม่ครั้งแรกที่ users/{uid}: เหรียญเริ่มต้น 5000, ยานเริ่มต้น index 0, สกิล 0, สถิติเป็น 0
+    // แล้วสร้าง loadouts, user_spacecraft ของยานลำแรก และ catalog ของเกม
     private void SaveInitialUserData(string uid, string username)
     {
         string now = DateTime.UtcNow.ToString("o");
@@ -217,6 +259,8 @@ public class FirebaseManager : MonoBehaviour
         EnsureGameCatalog();
     }
 
+    // อ่าน users/{uid} หลังล็อกอิน: ถ้ามีอยู่แล้วใช้ชื่อเดิมและเติม field ที่ขาด (ไม่เขียนทับ)
+    // ถ้ายังไม่มีจึงสร้างใหม่ด้วย SaveInitialUserData; ถ้าอ่านไม่ได้จะไม่เขียนอะไรเลยเพื่อกันข้อมูลเดิมหาย
     private void EnsureUserRecord(string uid, string fallbackUsername, Action<string> onComplete)
     {
         dbReference.Child("users").Child(uid).GetValueAsync().ContinueWithOnMainThread(task =>
@@ -249,6 +293,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // เติมเฉพาะ field ที่ยังไม่มีในโปรไฟล์ผู้เล่นเก่า (เช่นบัญชีที่สร้างก่อนมี field ใหม่) และอัปเดต last_login
     private void BackfillExistingProfile(string uid, DataSnapshot snapshot, string fallbackUsername)
     {
         var missing = new Dictionary<string, object>();
@@ -265,11 +310,13 @@ public class FirebaseManager : MonoBehaviour
         dbReference.Child("users").Child(uid).UpdateChildrenAsync(missing);
     }
 
+    // ใส่ key ลง dictionary เฉพาะเมื่อ snapshot ยังไม่มี key นั้น
     private static void AddMissing(Dictionary<string, object> fields, DataSnapshot snapshot, string key, object value)
     {
         if (!snapshot.HasChild(key)) fields[key] = value;
     }
 
+    // ซ่อมข้อมูลตารางเสริม (loadouts และ user_spacecraft) ให้ตรงกับโปรไฟล์ใน users/{uid} ทุกครั้งที่ล็อกอิน
     private void EnsureUserERRecords(string uid)
     {
         dbReference.Child("users").Child(uid).GetValueAsync().ContinueWithOnMainThread(task =>
@@ -287,12 +334,14 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // แปลงค่าจาก Database (อาจเป็น long/string) เป็น int ถ้าแปลงไม่ได้ใช้ค่า fallback
     private static int ReadInt(object value, int fallback)
     {
         return int.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture), out int parsed)
             ? parsed : fallback;
     }
 
+    // เขียน loadouts/{uid}: ยานและสกิลที่ใส่อยู่ (ใน Database เก็บเป็นเลขเริ่มที่ 1 คือ index + 1)
     private void EnsureLoadoutRecord(string uid, int shipIndex, int skillIndex)
     {
         shipIndex = BattleLoadoutCatalog.ValidShip(shipIndex);
@@ -307,6 +356,8 @@ public class FirebaseManager : MonoBehaviour
         dbReference.Child("loadouts").Child(uid).UpdateChildrenAsync(loadout);
     }
 
+    // สร้างบันทึกการครอบครองยาน user_spacecraft/{uid}/{เลขยาน}
+    // overwrite = true เขียนทับเลย, false จะเขียนเฉพาะเมื่อยังไม่มีบันทึก (ไม่ทับ buy_date เดิม)
     private void EnsureUserSpacecraftRecord(string uid, int shipIndex, string acquiredAt, bool overwrite)
     {
         if (shipIndex < 0 || shipIndex >= BattleLoadoutCatalog.Ships.Length) return;
@@ -324,6 +375,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // เขียนข้อมูลยานที่ครอบครอง (เจ้าของ, รุ่นยาน, วันที่ได้มา)
     private static void WriteUserSpacecraftRecord(DatabaseReference record, string uid, int shipIndex, string acquiredAt)
     {
         record.SetValueAsync(new Dictionary<string, object>
@@ -336,12 +388,50 @@ public class FirebaseManager : MonoBehaviour
 
     // Catalog entries are seeded once from the same values used by gameplay. Keep these paths
     // read-only for normal clients in Firebase Database Rules after the initial seed.
+    // สร้าง catalog ยาน (spacecraft) และสกิล (skills) ใน Database ถ้ายังไม่มี
     private void EnsureGameCatalog()
     {
-        EnsureCatalogBranch(dbReference.Child("spacecraft"), BuildSpacecraftCatalog());
-        EnsureCatalogBranch(dbReference.Child("skills"), BuildSkillCatalog());
+        LoadFeatureFlags();
+        // เฟส 9: เติมทีละรายการ (ยาน/สกิลใหม่เฟส 7 จะถูกเพิ่มให้แอดมินเห็นใน Console ด้วย) ไม่เขียนทับค่าที่มีอยู่
+        EnsureCatalogEntries(dbReference.Child("spacecraft"), BuildSpacecraftCatalog());
+        EnsureCatalogEntries(dbReference.Child("skills"), BuildSkillCatalog());
     }
 
+    private static void EnsureCatalogEntries(DatabaseReference reference, Dictionary<string, object> entries)
+    {
+        foreach (var entry in entries) EnsureCatalogBranch(reference.Child(entry.Key), entry.Value as Dictionary<string, object>);
+    }
+
+    // เฟส 9: อ่านค่ายาน/สกิลที่แอดมินแก้ใน Firebase มาใช้ในเกม (RemoteCatalog.cs) — ทำหลังโหลดสวิตช์ฟีเจอร์แล้ว
+    private void LoadRemoteCatalog()
+    {
+        if (dbReference == null || !FeatureFlags.RemoteCatalog) return;
+        dbReference.Child("spacecraft").GetValueAsync().ContinueWithOnMainThread(ships =>
+        {
+            if (ships.IsFaulted || ships.IsCanceled || ships.Result == null) return;
+            object shipValue = ships.Result.Value;
+            dbReference.Child("skills").GetValueAsync().ContinueWithOnMainThread(skills =>
+            {
+                object skillValue = skills.IsFaulted || skills.IsCanceled || skills.Result == null ? null : skills.Result.Value;
+                RemoteCatalog.Apply(shipValue, skillValue);
+            });
+        });
+    }
+
+    // โหลดสวิตช์ฟีเจอร์จาก feature_flags/{ชื่อ} = true/false (แอดมินแก้ใน Firebase Console ได้)
+    // ไม่มีข้อมูลหรือโหลดไม่สำเร็จ = ใช้ค่าเริ่มต้นใน FeatureFlags.cs
+    private void LoadFeatureFlags()
+    {
+        if (dbReference == null) return;
+        dbReference.Child("feature_flags").GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (!task.IsFaulted && !task.IsCanceled && task.Result != null && task.Result.Exists
+                && task.Result.Value is IDictionary<string, object> values) FeatureFlags.Apply(values);
+            LoadRemoteCatalog();
+        });
+    }
+
+    // สร้างข้อมูล catalog ยานจาก BattleLoadoutCatalog.Ships (HP, ความเร็ว, อัตรายิง, ดาเมจ, ราคา)
     private static Dictionary<string, object> BuildSpacecraftCatalog()
     {
         var catalog = new Dictionary<string, object>();
@@ -362,11 +452,13 @@ public class FirebaseManager : MonoBehaviour
         return catalog;
     }
 
+    // สร้างข้อมูล catalog สกิลจาก BattleLoadoutCatalog.Skills และค่าใน BattleBalance (ดาเมจ, cooldown, ระยะเวลา)
     private static Dictionary<string, object> BuildSkillCatalog()
     {
         var catalog = new Dictionary<string, object>();
-        int[] damage = { (int)BattleBalance.StunDamage, 0, (int)BattleBalance.NovaDamage, (int)BattleBalance.SeekerDamage };
-        float[] duration = { BattleBalance.StunSeconds, BattleBalance.ShieldSeconds, 1.5f, 0f };
+        // เฟส 9 แก้บั๊ก: สกิลมี 7 แบบแล้ว (เดิมอาร์เรย์มี 4 ช่อง ทำให้ index เกินตอนล็อกอิน)
+        int[] damage = { (int)BattleBalance.StunDamage, 0, (int)BattleBalance.NovaDamage, (int)BattleBalance.SeekerDamage, 0, 0, 0 };
+        float[] duration = { BattleBalance.StunSeconds, BattleBalance.ShieldSeconds, 1.5f, 0f, 0f, 0f, 3f };
         for (int i = 0; i < BattleLoadoutCatalog.Skills.Length; i++)
         {
             SkillData skill = BattleLoadoutCatalog.Skills[i];
@@ -374,15 +466,17 @@ public class FirebaseManager : MonoBehaviour
             {
                 { "skill_id", i + 1 },
                 { "skill_name", skill.name },
-                { "damage", damage[i] },
+                { "damage", i < damage.Length ? damage[i] : 0 },
                 { "cooldown", skill.cooldown },
-                { "duration", duration[i] },
+                { "duration", i < duration.Length ? duration[i] : 0f },
                 { "skill_price", 0 }
             };
         }
         return catalog;
     }
 
+    // ใช้ Transaction เขียน catalog เฉพาะเมื่อ path ยังว่าง (data.Value == null) ถ้ามีอยู่แล้วคืนค่าเดิมไม่แก้
+    // Transaction ทำให้ถึงผู้เล่นหลายคนล็อกอินพร้อมกันก็ไม่เขียนทับกัน
     private static void EnsureCatalogBranch(DatabaseReference reference, Dictionary<string, object> initialValue)
     {
         reference.RunTransaction(data =>
@@ -397,6 +491,7 @@ public class FirebaseManager : MonoBehaviour
 
     // === อ่านข้อมูลเหรียญ ===
 
+    // อ่านค่าเหรียญจาก Database เป็น long; คืน false ถ้าไม่ใช่ตัวเลขหรือติดลบ (ข้อมูลเสีย)
     private static bool TryReadCoins(object value, out long coins)
     {
         return long.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture),
@@ -404,6 +499,8 @@ public class FirebaseManager : MonoBehaviour
             && coins >= 0;
     }
 
+    // อ่านยอดเหรียญปัจจุบัน (LobbyManager เรียกตอนโหลดโปรไฟล์) แบบอ่านอย่างเดียว
+    // ถ้าระหว่างรอผลผู้ใช้เปลี่ยนบัญชี หรืออ่านไม่สำเร็จ จะเรียก onError และไม่แก้ยอดเหรียญ
     public void GetCoinBalance(Action<long> onResult, Action<string> onError = null)
     {
         if (user == null || dbReference == null)
@@ -432,6 +529,8 @@ public class FirebaseManager : MonoBehaviour
     }
 
     // Explicit absolute writes only; gameplay rewards and purchases use transactions below.
+    // เขียนยอดเหรียญแบบกำหนดค่าตรง ๆ (SetValueAsync) ไม่ได้ใช้ Transaction
+    // จึงไม่ควรใช้กับการบวก/หักเหรียญ เพราะอาจทับค่าที่เพิ่งเปลี่ยนจากที่อื่น
     public void UpdateCoinBalance(long newBalance, Action<bool> onResult = null)
     {
         if (newBalance < 0 || user == null || dbReference == null) { onResult?.Invoke(false); return; }
@@ -440,6 +539,11 @@ public class FirebaseManager : MonoBehaviour
                 onResult?.Invoke(!task.IsFaulted && !task.IsCanceled));
     }
 
+    // เพิ่มเหรียญ (เช่นรางวัลจบแมตช์จาก RecordMatchResult) ด้วย RunTransaction
+    // ทำไมต้องใช้ Transaction: ถ้าใช้ "อ่านค่า -> บวก -> เขียนกลับ" ธรรมดา เมื่อมีการเปลี่ยนเหรียญสองครั้งพร้อมกัน
+    // (เช่นรับรางวัลขณะซื้อยาน หรือเล่นสองเครื่อง) ค่าหนึ่งจะเขียนทับอีกค่าแล้วเหรียญหาย/เพิ่มผิด (lost update)
+    // Transaction จะส่งค่าปัจจุบันจริงให้ฟังก์ชันคำนวณ ถ้าบน server ค่าเปลี่ยนไประหว่างนั้น Firebase จะเรียกฟังก์ชันใหม่ด้วยค่าล่าสุดเอง
+    // ฟังก์ชันอาจถูกเรียกหลายรอบ จึงรีเซ็ต applied ทุกรอบ; ค่าไม่ถูกต้องหรือบวกแล้วล้น long จะ Abort (ไม่เขียนอะไร)
     public void AddCoins(int amount, Action<bool> onResult = null)
     {
         if (amount < 0 || user == null || dbReference == null) { onResult?.Invoke(false); return; }
@@ -459,6 +563,12 @@ public class FirebaseManager : MonoBehaviour
             onResult?.Invoke(!task.IsFaulted && !task.IsCanceled && applied));
     }
 
+    // ซื้อยาน (เรียกจาก LobbyManager.OnInventoryActionClicked) ทำใน Transaction เดียวบน users/{uid}
+    // เพื่อให้ "เช็คเหรียญพอ + หักเหรียญ + เพิ่มยานใน unlocked_ships" เกิดพร้อมกันแบบ atomic
+    // กันกดซื้อซ้ำ/ซื้อจากสองเครื่องพร้อมกันแล้วหักเงินซ้ำ หรือเหรียญติดลบ; ถ้ามียานอยู่แล้วจะไม่หักเงิน
+    // ขั้นตอนใน Transaction: อ่านเหรียญและรายการยาน -> ข้อมูลเสียให้ Abort -> ยังไม่มียานและเงินพอจึงหักเงินและเพิ่มยาน
+    // หลัง Transaction สำเร็จ ถ้าเป็นยานใหม่จะเขียน user_spacecraft เพิ่ม แล้วเรียก onResult(สำเร็จ, ยอดเหรียญใหม่)
+    // completed/purchasedNewShip ถูกรีเซ็ตทุกรอบเพราะ Firebase อาจเรียกฟังก์ชันซ้ำหลายรอบ
     public void PurchaseShip(int shipIndex, int price, Action<bool, long> onResult)
     {
         if (user == null || dbReference == null || price < 0 || shipIndex < 0)
@@ -520,6 +630,8 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // เพิ่มจำนวนชนะใน users/{uid}/wins แบบอ่านแล้วเขียน (ไม่ใช่ Transaction)
+    // หมายเหตุ: ระบบสถิติปัจจุบันใช้ total_wins ผ่าน IncrementUserCounter แทน
     public void AddWin(Action<bool> onResult = null)
     {
         if (user == null || dbReference == null)
@@ -547,6 +659,8 @@ public class FirebaseManager : MonoBehaviour
 
     // === ระบบคลังยาน (Inventory) ===
 
+    // อ่านรายการยานที่ปลดล็อกแล้ว (เก็บเป็น string คั่นด้วยจุลภาค เช่น "0,2") แปลงเป็น List<int>
+    // ถ้าอ่านไม่ได้หรือไม่ได้ล็อกอินคืน [0] คือมีแค่ยานเริ่มต้น
     public void GetUnlockedShips(Action<List<int>> onResult)
     {
         if (user == null || dbReference == null)
@@ -575,6 +689,7 @@ public class FirebaseManager : MonoBehaviour
             });
     }
 
+    // เพิ่มยานเข้า unlocked_ships แบบอ่านแล้วเขียนทับ ไม่หักเหรียญ (การซื้อจริงใช้ PurchaseShip)
     public void UnlockShip(int shipIndex, Action<bool> onResult = null)
     {
         GetUnlockedShips(unlocked =>
@@ -593,6 +708,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // อ่าน index ยานที่ผู้เล่นใส่อยู่ (selected_ship) ไม่มีข้อมูลคืน 0
     public void GetSelectedShip(Action<int> onResult)
     {
         if (user == null || dbReference == null)
@@ -616,6 +732,7 @@ public class FirebaseManager : MonoBehaviour
             });
     }
 
+    // บันทึกยานที่เลือกลง users/{uid}/selected_ship และ loadouts/{uid} (เรียกเมื่อกด Equip ในคลังยาน)
     public void SaveSelectedShip(int shipIndex)
     {
         if (user == null || dbReference == null || shipIndex < 0 || shipIndex >= BattleLoadoutCatalog.Ships.Length) return;
@@ -627,6 +744,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // อ่าน index สกิลที่ผู้เล่นใส่อยู่ (selected_skill) ไม่มีข้อมูลคืน 0
     public void GetSelectedSkill(Action<int> onResult)
     {
         if (user == null || dbReference == null)
@@ -650,6 +768,7 @@ public class FirebaseManager : MonoBehaviour
             });
     }
 
+    // บันทึกสกิลที่เลือกลง users/{uid}/selected_skill และ loadouts/{uid} (เรียกเมื่อกด Install)
     public void SaveSelectedSkill(int skillIndex)
     {
         if (user == null || dbReference == null || skillIndex < 0 || skillIndex >= BattleLoadoutCatalog.Skills.Length) return;
@@ -661,6 +780,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // อ่านคะแนนสูงสุด จำนวนชนะ และแพ้ ให้หน้าล็อบบี้แสดง; ผิดพลาดหรือเปลี่ยนบัญชีระหว่างรอคืน 0 ทั้งหมด
     public void GetPlayerStats(Action<int, int, int> onResult)
     {
         if (user == null || dbReference == null) { onResult?.Invoke(0, 0, 0); return; }
@@ -679,6 +799,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // อัปเดตคะแนนสูงสุดด้วย Transaction: เขียนเฉพาะเมื่อคะแนนใหม่มากกว่าค่าบน server ตอนนั้นจริง ๆ
     private void UpdateHighScore(int score)
     {
         if (score < 0 || user == null || dbReference == null) return;
@@ -696,6 +817,7 @@ public class FirebaseManager : MonoBehaviour
 
     // === อัปเดตชื่อผู้เล่น ===
 
+    // เปลี่ยนชื่อผู้เล่น (username และ callsign) ในเครื่องและใน Database
     public void UpdateUsername(string newName, Action<bool> onResult = null)
     {
         if (user == null || dbReference == null)
@@ -714,6 +836,7 @@ public class FirebaseManager : MonoBehaviour
 
     // === แปลง Error ให้อ่านง่าย ===
 
+    // แปลงรหัส error ของ Firebase เป็นข้อความภาษาไทยให้ผู้เล่นอ่านเข้าใจ
     private string GetFirebaseErrorMessage(FirebaseException ex)
     {
         switch (ex.ErrorCode)
@@ -725,6 +848,7 @@ public class FirebaseManager : MonoBehaviour
     }
 
     // === สถิติและประวัติการแข่งขัน ===
+    // บวก 1 ให้ตัวนับสถิติ (total_wins หรือ total_losses) ด้วย Transaction กันการนับหายเมื่อเขียนพร้อมกัน
     private void IncrementUserCounter(string field)
     {
         if (user == null || dbReference == null) return;
@@ -740,6 +864,9 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // บันทึกผลแมตช์ของผู้เล่นเครื่องนี้ (GameplayManager.Results เรียกทุกเครื่องตอนจบเกม: ชนะได้ 190 แพ้ได้ 10 เหรียญ)
+    // ขั้นตอน: เพิ่มตัวนับชนะ/แพ้ -> อัปเดตคะแนนสูงสุด -> เพิ่มเหรียญด้วย AddCoins (Transaction)
+    // แล้วเฉพาะ Master Client เท่านั้นที่เขียน match_history เพื่อไม่ให้แมตช์เดียวถูกบันทึกซ้ำสองแถว
     public void RecordMatchResult(bool isWinner, string opponentUid,
         int rewardCoins, int score, string mapName, Action<bool> onComplete = null)
     {
@@ -765,6 +892,106 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // ===== ความก้าวหน้าของผู้เล่น (เฟส 4: เลเวล ภารกิจ Achievement ประวัติแมตช์) =====
+    // เก็บเป็น JSON ก้อนเดียวที่ users/{uid}/progress_json (โครงสร้างดูที่ Progression.cs) อ่าน/เขียนครั้งเดียวต่อการเปลี่ยนแปลง
+    // และเก็บ level / xp แยกไว้ที่ users/{uid} ด้วย (เผื่อทำตารางอันดับเลเวลภายหลัง)
+    public void LoadProgressJson(Action<string> onResult)
+    {
+        if (user == null || dbReference == null) { onResult?.Invoke(null); return; }
+        dbReference.Child("users").Child(user.UserId).Child("progress_json").GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled || task.Result == null || !task.Result.Exists) { onResult?.Invoke(null); return; }
+            onResult?.Invoke(task.Result.Value as string);
+        });
+    }
+
+    public void SaveProgressJson(string json, int level, int xp)
+    {
+        if (user == null || dbReference == null || string.IsNullOrEmpty(json)) return;
+        dbReference.Child("users").Child(user.UserId).UpdateChildrenAsync(new Dictionary<string, object>
+        {
+            { "progress_json", json },
+            { "level", level },
+            { "xp", xp }
+        });
+    }
+
+    // ===== ข้อมูล JSON ทั่วไปของผู้เล่น (เฟส 5: economy_json = ตีบวก/ไอเท็ม) =====
+    public void LoadUserJson(string key, Action<string> onResult)
+    {
+        if (user == null || dbReference == null || string.IsNullOrEmpty(key)) { onResult?.Invoke(null); return; }
+        dbReference.Child("users").Child(user.UserId).Child(key).GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled || task.Result == null || !task.Result.Exists) { onResult?.Invoke(null); return; }
+            onResult?.Invoke(task.Result.Value as string);
+        });
+    }
+
+    public void SaveUserJson(string key, string json)
+    {
+        if (user == null || dbReference == null || string.IsNullOrEmpty(key) || json == null) return;
+        dbReference.Child("users").Child(user.UserId).Child(key).SetValueAsync(json);
+    }
+
+    // หักเหรียญแบบ Transaction (เงินไม่พอ = ไม่หักและคืน false) — ใช้กับตีบวก / ร้านค้า / กล่องสุ่ม
+    // onResult(สำเร็จ, ยอดเหรียญหลังหัก)
+    public void SpendCoins(int amount, Action<bool, long> onResult)
+    {
+        if (amount < 0 || user == null || dbReference == null) { onResult?.Invoke(false, 0); return; }
+        bool applied = false;
+        long after = 0;
+        var reference = dbReference.Child("users").Child(user.UserId).Child("coin_balance");
+        reference.RunTransaction(data =>
+        {
+            applied = false;
+            if (data.Value == null) return TransactionResult.Success(data);
+            if (!TryReadCoins(data.Value, out long balance) || balance < amount) return TransactionResult.Abort();
+            after = balance - amount;
+            data.Value = after;
+            applied = true;
+            return TransactionResult.Success(data);
+        }, false).ContinueWithOnMainThread(task =>
+            onResult?.Invoke(!task.IsFaulted && !task.IsCanceled && applied, after));
+    }
+
+    // ===== แรงค์ (เฟส 6) =====
+    // mmr เก็บเป็นตัวเลขแยก (ใช้เรียงตารางอันดับ) + rank_json รายละเอียดทั้งหมด
+    public void SaveRank(int mmr, string json)
+    {
+        if (user == null || dbReference == null) return;
+        dbReference.Child("users").Child(user.UserId).UpdateChildrenAsync(new Dictionary<string, object>
+        {
+            { "mmr", mmr },
+            { "rank_json", json }
+        });
+    }
+
+    // ตารางอันดับ: ผู้เล่นที่ mmr สูงสุด count คน (เรียงมาก -> น้อย)
+    // แนะนำเพิ่มใน Firebase Rules: "users": { ".indexOn": ["mmr"] } เพื่อให้ query เร็ว (ไม่ใส่ก็ทำงานได้)
+    public void GetLeaderboard(int count, Action<List<LeaderboardEntry>> onResult)
+    {
+        if (dbReference == null) { onResult?.Invoke(new List<LeaderboardEntry>()); return; }
+        dbReference.Child("users").OrderByChild("mmr").LimitToLast(count).GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            var list = new List<LeaderboardEntry>();
+            if (!task.IsFaulted && !task.IsCanceled && task.Result != null)
+                foreach (var child in task.Result.Children)
+                {
+                    if (child.Child("mmr").Value == null) continue;
+                    list.Add(new LeaderboardEntry
+                    {
+                        uid = child.Key,
+                        name = child.Child("username").Value?.ToString() ?? "PILOT",
+                        mmr = ReadInt(child.Child("mmr").Value, 0),
+                        level = ReadInt(child.Child("level").Value, 1)
+                    });
+                }
+            list.Sort((a, b) => b.mmr.CompareTo(a.mmr));
+            onResult?.Invoke(list);
+        });
+    }
+
+    // บันทึกกรณีเสมอ: อัปเดตคะแนนสูงสุด และ Master Client เขียนประวัติผล "Draw" (ไม่มีเหรียญรางวัล)
     public void RecordDrawMatch(string opponentUid, int score, string mapName)
     {
         if (user == null || dbReference == null || !Photon.Pun.PhotonNetwork.IsMasterClient) return;
@@ -772,6 +999,8 @@ public class FirebaseManager : MonoBehaviour
         WriteMatchRecord(user.UserId, opponentUid, "Draw", 0, 0, mapName, null);
     }
 
+    // เขียนประวัติแมตช์หนึ่งแถวลง match_history/{matchId} (Push() สร้าง key ไม่ซ้ำ)
+    // user_a คือผู้เล่นเครื่อง Master, ผลเป็น Win_A/Win_B/Draw พร้อมรางวัลแต่ละฝั่ง รหัสห้อง ชื่อแม็พ และเวลาแข่ง
     private void WriteMatchRecord(string userA, string userB, string result,
         int rewardA, int rewardB, string mapName, Action<bool> onComplete)
     {
@@ -799,4 +1028,13 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+}
+
+// แถวหนึ่งในตารางอันดับแรงค์ (เฟส 6)
+public class LeaderboardEntry
+{
+    public string uid;
+    public string name;
+    public int mmr;
+    public int level;
 }

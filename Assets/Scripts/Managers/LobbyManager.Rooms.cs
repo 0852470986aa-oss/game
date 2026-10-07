@@ -1,3 +1,6 @@
+// LobbyManager.Rooms.cs — ส่วนห้อง Photon ของ LobbyManager (partial class เดียวกัน) ใน LobbyScene
+// รับ callback ของ Photon (เชื่อมต่อ, เข้า/ออกห้อง, property เปลี่ยน, หลุด) และสั่ง Quick Match / สร้างห้อง / เข้าห้องด้วยรหัส
+// callback ทั้งหมดรันบนเครื่องของผู้เล่นแต่ละคนเมื่อ Photon แจ้งเหตุการณ์ (ไม่ใช่ RPC)
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -9,9 +12,12 @@ using System.Collections.Generic;
 // ส่วน Rooms ของ LobbyManager; partial คือคลาสเดิม ไม่ต้องเพิ่ม Component
 public partial class LobbyManager
 {
+    // Photon เรียกเมื่อเชื่อมต่อ Master Server สำเร็จ: ถ้ากำลังกู้ห้องให้ Rejoin ห้องเดิม ไม่งั้นเข้า Lobby
     public override void OnConnectedToMaster()
     {
         if (loggingOut) return;
+        // โหมดออฟไลน์ (เล่นคนเดียว): สร้างห้อง SOLO แทนการเข้า Lobby
+        if (PhotonNetwork.OfflineMode) { if (pendingSolo) CreateSoloRoom(); return; }
         if (reconnecting && !string.IsNullOrEmpty(previousRoom))
         {
             if (!PhotonNetwork.RejoinRoom(previousRoom)) RecoveryFailed("Could not return to the room.");
@@ -20,40 +26,51 @@ public partial class LobbyManager
         PhotonNetwork.JoinLobby();
     }
 
+    // Photon เรียกเมื่อเข้า Lobby แล้ว: ล้างแคชห้อง (Photon จะส่งรายการใหม่มา) และเปิดปุ่มเล่น
     public override void OnJoinedLobby()
     {
         roomRequestPending = false;
+        pendingRanked = false;
         cachedRooms.Clear();
         RenderRoomList();
         UpdateStatus(profileLoaded ? "Ready! Create or join a room." : "Loading your ship and skill...");
         EnablePlayButtons(true);
     }
 
+    // Photon เรียกบนเครื่องเราเมื่อเข้าห้องสำเร็จ (ทั้งสร้างเอง เข้าห้อง หรือ Rejoin): ล้างธงสถานะ จำชื่อห้องไว้กู้
+    // ส่ง loadout ของเราแบบยังไม่ Ready แล้วเปิดหน้าห้องรอ; ถ้าแมตช์ก่อนถูกยกเลิก (BattleAborted) แจ้งผู้เล่น
     public override void OnJoinedRoom()
     {
+        if (PhotonNetwork.OfflineMode) { LaunchSoloRoom(); return; }
+        pendingRanked = false;
         roomRequestPending = false;
         readyPending = false;
         reconnecting = false;
         previousRoom = PhotonNetwork.CurrentRoom.Name;
         isLeavingRoom = false;
         isStartingGame = false;
-        UpdateStatus($"Joined room! ({PhotonNetwork.CurrentRoom.PlayerCount}/2)");
+        UpdateStatus($"Joined room! ({PhotonNetwork.CurrentRoom.PlayerCount}/{PhotonNetwork.CurrentRoom.MaxPlayers})");
         
         // ตั้งค่าเริ่มต้น: ยังไม่พร้อม
         PublishLocalLoadout(true);
         
         // เปิดหน้า Waiting Room แทนการโหลดเกมทันที
         ShowWaitingRoom();
+        // ถูก Host เตะไว้แล้ว = ออกทันที
+        CheckKicked();
         if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("BattleAborted", out object aborted) && aborted is bool wasAborted && wasAborted)
             UpdateStatus("Match cancelled: a pilot left or disconnected. Wait for both pilots, then Ready again.");
     }
 
+    // Photon เรียกบนทุกเครื่องในห้องเมื่อมีผู้เล่นใหม่เข้ามา
     public override void OnPlayerEnteredRoom(Photon.Realtime.Player newPlayer)
     {
         UpdateStatus(newPlayer.NickName + " joined the room");
         UpdateWaitingRoomUI();
     }
 
+    // Photon เรียกเมื่ออีกฝ่ายออกหรือหลุด: รีเซ็ต Ready ของเรา (ต้องกดใหม่)
+    // ถ้า IsInactive = หลุดชั่วคราว ห้องจองที่ไว้ 60 วินาที (PlayerTtl)
     public override void OnPlayerLeftRoom(Photon.Realtime.Player otherPlayer)
     {
         PublishLocalLoadout(true);
@@ -61,6 +78,8 @@ public partial class LobbyManager
         UpdateWaitingRoomUI();
     }
 
+    // Photon เรียกเมื่อ Master Client เปลี่ยน (Host เดิมออก): ถ้ากำลังเริ่มเกมอยู่ Master ใหม่จะพยายามเริ่มต่อ
+    // ไม่งั้นรีเซ็ต Ready และแจ้งว่าใครเป็น Host ใหม่
     public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient)
     {
         if (RoomStarting) { TryLaunchConfirmedRoom(); return; }
@@ -71,6 +90,8 @@ public partial class LobbyManager
         UpdateWaitingRoomUI();
     }
 
+    // Photon เรียกบนทุกเครื่องเมื่อ room property เปลี่ยน:
+    // Starting = true -> เฉพาะ Master เรียก TryLaunchConfirmedRoom เพื่อโหลดเกม; MapIndex เปลี่ยน -> ทุกคนรีเซ็ต Ready
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged)
     {
         if (propertiesThatChanged.ContainsKey("Starting") && RoomStarting && PhotonNetwork.IsMasterClient && !isStartingGame)
@@ -82,17 +103,26 @@ public partial class LobbyManager
             PublishLocalLoadout(true);
             UpdateWaitingRoomUI();
         }
+        if (propertiesThatChanged.ContainsKey(KickedProperty)) CheckKicked();
+        // Host เปลี่ยนกติกาห้อง (Kill/เวลา/อันตราย) -> รีเฟรชปุ่มและสถานะ Ready
+        else if (propertiesThatChanged.ContainsKey("MapRevision"))
+        {
+            UpdateWaitingRoomUI();
+        }
     }
 
+    // Photon เรียกเมื่อ property ของผู้เล่นเปลี่ยน: ถ้าเป็นของเราแปลว่า server ยืนยันแล้ว จึงปลด readyPending
     public override void OnPlayerPropertiesUpdate(Photon.Realtime.Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps)
     {
         if (targetPlayer.IsLocal) readyPending = false;
         UpdateWaitingRoomUI();
     }
 
+    // Photon เรียกเมื่อเข้าห้องไม่สำเร็จ (ห้องเต็ม/ไม่มีห้อง); ถ้ากำลังกู้ห้องถือว่ากู้ไม่สำเร็จ
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
         roomRequestPending = false;
+        pendingRanked = false;
         if (reconnecting) { RecoveryFailed("The room expired or the slot is no longer available."); return; }
         Debug.LogError($"Join Room Failed: {returnCode} - {message}");
         
@@ -109,29 +139,37 @@ public partial class LobbyManager
         EnablePlayButtons(true);
     }
 
+    // Photon เรียกเมื่อสร้างห้องไม่สำเร็จ (เช่นเลขห้องซ้ำ) แล้วกลับไปหน้าสร้างห้องซึ่งจะสุ่มเลขใหม่
     public override void OnCreateRoomFailed(short returnCode, string message)
     {
         roomRequestPending = false;
+        pendingRanked = false;
         Debug.LogError($"Create Room Failed: {returnCode} - {message}");
         UpdateStatus("Failed to create room: " + message);
         EnablePlayButtons(true);
         ShowRoomPanel();
     }
 
+    // Photon เรียกเมื่อออกจากห้องแล้ว: ล้างสถานะห้องและกลับหน้าหลัก
     public override void OnLeftRoom()
     {
         previousRoom = null;
         roomRequestPending = false;
         isLeavingRoom = false;
         isStartingGame = false;
-        UpdateStatus("Left room successfully");
+        UpdateStatus(wasKicked ? "The host removed you from that room." : "Left room successfully");
+        wasKicked = false;
         ShowMainPanel();
         EnablePlayButtons(PhotonNetwork.InLobby);
     }
 
+    // Photon เรียกเมื่อ Quick Match (JoinRandomRoom) หาห้องว่างไม่เจอ: สร้างห้องใหม่เลขสุ่ม 6 หลักเอง
+    // ห้อง 2 คน, PlayerTtl/EmptyRoomTtl = 60000 ms (จองที่/เก็บห้องไว้ 60 วินาทีเมื่อหลุด), ส่ง MapIndex ให้เห็นในรายการห้อง
     public override void OnJoinRandomFailed(short returnCode, string message)
     {
         if (!roomRequestPending || !PhotonNetwork.IsConnectedAndReady) return;
+        // หาห้องแรงค์ไม่เจอ = สร้างห้องแรงค์ใหม่ (LobbyManager.Ranked.cs)
+        if (pendingRanked) { CreateRankedRoom(); return; }
         UpdateStatus("No room found. Creating a new one...");
         string roomId = Random.Range(100000, 999999).ToString();
 
@@ -140,6 +178,7 @@ public partial class LobbyManager
         roomProps.Add("MapIndex", selectedMapIndex);
         roomProps.Add("MapRevision", 0);
         roomProps.Add("Starting", false);
+        roomProps.Add(MatchRules.RankedKey, false); // ห้องปกติ (ไม่ใช่แรงค์)
 
         RoomOptions options = new RoomOptions 
         { 
@@ -149,11 +188,16 @@ public partial class LobbyManager
             IsVisible = true, 
             IsOpen = true,
             CustomRoomProperties = roomProps,
-            CustomRoomPropertiesForLobby = new string[] { "MapIndex" }
+            CustomRoomPropertiesForLobby = new string[] { "MapIndex", MatchRules.TeamsKey, MatchRules.RankedKey }
         };
         if (!PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default)) RoomRequestFailed();
     }
 
+    // Photon เรียกเมื่อหลุดการเชื่อมต่อ ขั้นตอน:
+    // 1) ปิดปุ่มและล้างรายการห้อง (ถ้าออกจากระบบอยู่ให้หยุดแค่นี้)
+    // 2) ถ้าสาเหตุแก้ด้วยการลองใหม่ไม่ได้ (Auth ผิด, CCU เต็ม, Region ผิด, ปิดแอป) ให้หยุดระบบเชื่อมต่ออัตโนมัติ
+    // 3) ถ้าหลุดขณะอยู่ในห้องรอโดยไม่ได้ตั้งใจ ตั้ง reconnecting ให้ Update พยายามกลับห้องเดิมภายใน 50 วินาที
+    // 4) กรณีอื่นกลับหน้าหลักแล้วให้ระบบเชื่อมต่อ Lobby ใหม่อัตโนมัติ
     public override void OnDisconnected(DisconnectCause cause)
     {
         roomRequestPending = false;
@@ -162,6 +206,9 @@ public partial class LobbyManager
         cachedRooms.Clear();
         RenderRoomList();
         if (loggingOut) return;
+        // ตั้งใจตัดเน็ตเพื่อเข้าโหมดเล่นคนเดียว
+        if (pendingSolo) { EnterOfflineSolo(); return; }
+        // 2) สาเหตุที่ลองใหม่ไม่ช่วย
         automaticRecoveryBlocked = cause == DisconnectCause.InvalidAuthentication
             || cause == DisconnectCause.CustomAuthenticationFailed || cause == DisconnectCause.MaxCcuReached
             || cause == DisconnectCause.InvalidRegion || cause == DisconnectCause.ApplicationQuit;
@@ -173,6 +220,7 @@ public partial class LobbyManager
             UpdateStatus("Connection cannot recover automatically: " + cause + ". Check account/server settings.");
             return;
         }
+        // 3) พยายามกลับห้องเดิม
         nextAutoReconnect = Time.unscaledTime + 2f;
         if (!isLeavingRoom && !isStartingGame && !string.IsNullOrEmpty(previousRoom)
             && cause != DisconnectCause.DisconnectByClientLogic)
@@ -183,6 +231,7 @@ public partial class LobbyManager
             UpdateWaitingRoomUI();
             return; // The update loop retries with backoff until the room-recovery deadline.
         }
+        // 4) กลับหน้าหลัก
         reconnecting = false;
         previousRoom = null;
         isLeavingRoom = false;
@@ -191,6 +240,7 @@ public partial class LobbyManager
         UpdateStatus("Connection lost. Reconnecting automatically...");
     }
 
+    // เลิกกู้ห้องเดิม: กลับหน้าหลัก แสดงเหตุผล และเข้า Lobby ถ้ายังเชื่อมต่ออยู่
     private void RecoveryFailed(string message)
     {
         reconnecting = false;
@@ -200,6 +250,7 @@ public partial class LobbyManager
         if (PhotonNetwork.IsConnectedAndReady) PhotonNetwork.JoinLobby();
     }
 
+    // Photon เรียกเมื่อรายการห้องใน Lobby เปลี่ยน (ส่งมาเฉพาะห้องที่เปลี่ยน): รวมเข้าแคชแล้ววาดรายการใหม่
     public override void OnRoomListUpdate(List<RoomInfo> roomList)
     {
         // อัปเดตรายการห้อง (สำหรับหน้า Room Panel)
@@ -212,6 +263,8 @@ public partial class LobbyManager
         RenderRoomList();
     }
 
+    // วาดรายการห้องในหน้าค้นหาห้อง: ลบแถวเดิม แล้วสร้างแถวใหม่จาก roomItemPrefab สำหรับห้องที่เปิดและมองเห็นได้
+    // เรียงตามชื่อห้อง แต่ละแถวแสดงรหัสห้อง จำนวนคน แม็พ และปุ่ม Join (กดได้เมื่อห้องยังไม่เต็ม)
     private void RenderRoomList()
     {
         if (roomListContent == null || roomItemPrefab == null) return;
@@ -247,11 +300,11 @@ public partial class LobbyManager
                 t.richText = false;
                 if (t.name == "RoomNameText") t.text = "Room: " + room.Name;
                 else if (t.name == "RoomPlayersText") t.text = room.PlayerCount + " / " + room.MaxPlayers;
-                else if (t.name == "RoomModeMapText") t.text = "1 VS 1 | " + mapNames[ReadMap(room)];
+                else if (t.name == "RoomModeMapText") t.text = (MatchRules.IsRanked(room) ? "RANKED 1V1" : MatchRules.ModeName(room.MaxPlayers, MatchRules.IsTeamRoom(room))) + " | " + mapNames[ReadMap(room)];
                 if (t.name == "RoomNameText" || t.name == "RoomModeMapText")
                 {
-                    t.rectTransform.anchoredPosition = new Vector2(-82, t.name == "RoomNameText" ? 15 : -15);
-                    t.rectTransform.sizeDelta = new Vector2(322, 28);
+                    t.rectTransform.anchoredPosition = new Vector2(-60, t.name == "RoomNameText" ? 15 : -15);
+                    t.rectTransform.sizeDelta = new Vector2(300, 28);
                     t.enableAutoSizing = true; t.fontSizeMin = 12; t.fontSizeMax = 17;
                     t.overflowMode = TextOverflowModes.Ellipsis;
                 }
@@ -275,6 +328,7 @@ public partial class LobbyManager
         if (emptyRoomsText != null) emptyRoomsText.gameObject.SetActive(visibleCount == 0);
     }
 
+    // เข้าห้องตามชื่อ/รหัส (จากปุ่ม Join ในรายการ หรือช่องค้นหา): ส่งยาน สกิล สียานเป็น property ก่อน แล้ว JoinRoom
     public void JoinRoomByName(string roomName)
     {
         if (string.IsNullOrWhiteSpace(roomName) || !BeginRoomRequest()) return;
@@ -285,6 +339,7 @@ public partial class LobbyManager
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
         props.Add("SkillType", equippedSkillIndex);
+        props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
         if (!PhotonNetwork.JoinRoom(roomName)) RoomRequestFailed();
@@ -294,6 +349,7 @@ public partial class LobbyManager
     //  BUTTON FUNCTIONS
     // ============================
 
+    // ปุ่ม QUICK MATCH: ส่ง loadout เป็น property แล้วสุ่มเข้าห้องที่ว่าง (ไม่เจอจะไป OnJoinRandomFailed เพื่อสร้างห้อง)
     public void OnPlayButtonClicked()
     {
         if (!BeginRoomRequest()) return;
@@ -304,16 +360,21 @@ public partial class LobbyManager
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
         props.Add("SkillType", equippedSkillIndex);
+        props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
-        if (!PhotonNetwork.JoinRandomRoom()) RoomRequestFailed();
+        // Quick Match เข้าเฉพาะห้องปกติ (ไม่เข้าห้องแรงค์)
+        if (!PhotonNetwork.JoinRandomRoom(new ExitGames.Client.Photon.Hashtable { [MatchRules.RankedKey] = false }, 0)) RoomRequestFailed();
     }
 
+    // ปุ่ม CREATE / JOIN ROOM ในหน้าหลัก: เปิดหน้าค้นหา/สร้างห้อง
     public void OnCreateRoomClicked()
     {
         ShowRoomPanel();
     }
 
+    // ปุ่มยืนยันสร้างห้อง: ใช้เลขห้องที่สุ่มไว้บนจอ ส่ง loadout แล้วสร้างห้องพร้อมแม็พที่เลือก
+    // ตั้งค่าห้องเหมือน OnJoinRandomFailed (2 คน, จองที่ 60 วินาที, MapRevision = 0, Starting = false)
     public void OnCreateRoomConfirm()
     {
         if (!BeginRoomRequest()) return;
@@ -324,6 +385,7 @@ public partial class LobbyManager
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
         props.Add("SkillType", equippedSkillIndex);
+        props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
         // ใส่ข้อมูลด่านลงไปในห้อง
@@ -331,6 +393,7 @@ public partial class LobbyManager
         roomProps.Add("MapIndex", selectedMapIndex);
         roomProps.Add("MapRevision", 0);
         roomProps.Add("Starting", false);
+        roomProps.Add(MatchRules.RankedKey, false); // ห้องปกติ (ไม่ใช่แรงค์)
 
         RoomOptions options = new RoomOptions 
         { 
@@ -340,12 +403,13 @@ public partial class LobbyManager
             IsVisible = true, 
             IsOpen = true,
             CustomRoomProperties = roomProps,
-            CustomRoomPropertiesForLobby = new string[] { "MapIndex" }
+            CustomRoomPropertiesForLobby = new string[] { "MapIndex", MatchRules.TeamsKey, MatchRules.RankedKey }
         };
         
         if (!PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default)) RoomRequestFailed();
     }
 
+    // ปุ่ม JOIN ในหน้าค้นหาห้อง: เข้าห้องตามรหัสที่พิมพ์ (ถ้าว่างแจ้งให้ใส่รหัสก่อน)
     public void OnSearchRoom()
     {
         if (roomSearchInput == null || string.IsNullOrWhiteSpace(roomSearchInput.text))

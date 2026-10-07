@@ -1,3 +1,8 @@
+// SceneSetupTool.cs - เครื่องมือ Unity Editor (อยู่ในโฟลเดอร์ Editor จึงไม่ถูก build เข้าเกม) ใช้สร้าง Scene และ Prefab ของเกมแบบอัตโนมัติ
+// สร้าง LoginScene / LobbyScene / SampleScene (ฉาก Gameplay), ตั้ง Build Settings, ตั้งรูปเป็น Sprite, สร้าง Prefab ยาน กระสุน สกิล Hazard และเอฟเฟกต์
+// ผูก reference ของ UI เข้ากับ LoginManager, LobbyManager, GameplayManager ให้อัตโนมัติ; ท้ายไฟล์มีคลาสทดสอบ MechCollisionValidation และ LobbyPreviewValidation
+// คำเตือน: SetupScenes() สร้าง Scene ใหม่แล้ว SaveScene ทับไฟล์ .unity เดิม และ SaveAsPrefabAsset ทับ Prefab เดิมใน Assets/Resources
+// ถ้าเปิดเมนู [MenuItem] (ตอนนี้ถูกคอมเมนต์ปิดไว้) แล้วกด งานที่จัดเองใน Scene จะหาย (ยกเว้น Map2_Visuals ที่พยายามเก็บไว้) ควร backup/commit ก่อนรันทุกครั้ง
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,9 +13,12 @@ using TMPro;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
+// คลาสเครื่องมือฝั่ง Editor (ไม่ใช่ MonoBehaviour ไม่ได้อยู่ใน Scene) รวมเมธอด static สำหรับสร้าง Scene, Prefab และ UI helper ทั้งหมด
 public class SceneSetupTool
 {
     // [MenuItem("Battlefield/Setup Initial Scenes")]
+    // เมธอดหลัก: สร้างทุกอย่างตามลำดับ Login -> Lobby -> SampleScene -> Build Settings -> ตั้ง Sprite -> Prefab ยาน/กระสุน/สกิล/Hazard/เอฟเฟกต์ แล้วเปิด LoginScene
+    // เรียกจากเมนู Battlefield/Setup Initial Scenes (ตอนนี้ MenuItem ถูกปิด) - ระวัง: เขียนทับ Scene และ Prefab เดิมทั้งหมด
     public static void SetupScenes()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
@@ -32,6 +40,7 @@ public class SceneSetupTool
     }
 
     // [MenuItem("Battlefield/Configure Images as Sprites")]
+    // วนทุก Texture ใน Assets/Resources/Images แล้วตั้ง import เป็น Sprite (Single) จุดหมุนอยู่กลางรูป แล้ว reimport ใหม่
     public static void ConfigureImagesAsSprites()
     {
         string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Resources/Images" });
@@ -55,6 +64,8 @@ public class SceneSetupTool
     }
 
     // [MenuItem("Battlefield/Build Ship Prefabs")]
+    // สร้างโฟลเดอร์ Assets/Resources/ShipPrefabs (ถ้ายังไม่มี) แล้วสร้าง Prefab ยาน 3 ลำ โดยแต่ละลำมีขนาด (scale) ต่างกัน
+    // อยู่ใต้ Resources จึงโหลดด้วย path เช่น "ShipPrefabs/Ship1" ได้
     public static void BuildShipPrefabs()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Resources/ShipPrefabs"))
@@ -69,6 +80,9 @@ public class SceneSetupTool
         Debug.Log("=== สร้าง Ship Prefabs สำหรับ Gameplay เรียบร้อย! ===");
     }
 
+    // สร้าง Prefab ยาน 1 ลำ: SpriteRenderer + Rigidbody2D (Kinematic, ไม่มีแรงโน้มถ่วง) + PolygonCollider2D + PhotonView/PhotonTransformView + PlayerController
+    // มีลูก FirePoint (จุดปล่อยกระสุน) และ ShieldVisual (วงโล่ ซ่อนไว้) ซึ่งปรับตำแหน่ง/ขนาดชดเชย shipScale; shipScale = localScale ของยาน ยิ่งมากยานยิ่งใหญ่
+    // PhotonView observe ทั้ง TransformView และ PlayerController เพื่อซิงก์ข้อมูลยานข้ามเครื่อง
     private static void CreateShipPrefab(string prefabName, string spritePath, float shipScale = 0.5f)
     {
         string path = $"Assets/Resources/ShipPrefabs/{prefabName}.prefab";
@@ -121,15 +135,18 @@ public class SceneSetupTool
         shieldObj.SetActive(false);
         go.GetComponent<PlayerController>().shieldVisual = shieldObj;
 
+        // บันทึกเป็นไฟล์ .prefab (ทับของเดิม) แล้วลบ GameObject ชั่วคราวทิ้ง
         PrefabUtility.SaveAsPrefabAsset(go, path);
         Object.DestroyImmediate(go);
     }
 
     // [MenuItem("Battlefield/Build Bullet Prefab")]
+    // สร้าง BulletPrefab.prefab: Sprite เลเซอร์ + Trail, Rigidbody2D (Continuous กันทะลุ), BoxCollider2D แบบ Trigger, PhotonView และ BulletController
     public static void BuildBulletPrefab()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets", "Resources");
 
+        // 1) ถ้ายังไม่มีรูป laser_bullet.png จะวาด Texture 4x16 พิกเซลสีฟ้าขึ้นเอง บันทึกเป็น PNG แล้วตั้งเป็น Sprite
         string texPath = "Assets/Resources/Images/laser_bullet.png";
         if (!System.IO.File.Exists(texPath))
         {
@@ -144,6 +161,7 @@ public class SceneSetupTool
             if (importer != null) { importer.textureType = TextureImporterType.Sprite; importer.spritePixelsPerUnit = 16; importer.SaveAndReimport(); }
         }
 
+        // 2) สร้าง GameObject กระสุนและใส่ component ต่าง ๆ
         string path = "Assets/Resources/BulletPrefab.prefab";
         GameObject go = new GameObject("BulletPrefab");
         
@@ -181,15 +199,19 @@ public class SceneSetupTool
         go.GetComponent<Photon.Pun.PhotonView>().ObservedComponents = new System.Collections.Generic.List<Component> { ptv };
 
         // Controller
+        // ค่ากระสุน: speed = ความเร็วกระสุน (15), lifeTime = อายุกระสุนก่อนหายไป (2 วินาที)
         var bc = go.AddComponent<BulletController>();
         bc.speed = 15f;
         bc.lifeTime = 2f;
 
+        // 3) บันทึกเป็น Prefab (ทับของเดิม) แล้วลบตัวชั่วคราว
         PrefabUtility.SaveAsPrefabAsset(go, path);
         Object.DestroyImmediate(go);
         Debug.Log("=== สร้าง Bullet Prefab สำหรับ Gameplay เรียบร้อย! ===");
     }
 
+    // สร้าง Prefab สกิลที่เป็นวัตถุ 3 แบบ (StunWave, NovaBlast, SeekerMissile) ใน Assets/Resources พร้อม SkillController และ PhotonView
+    // สกิล SHIELD ไม่อยู่ในรายการนี้ (ตัวยานมี ShieldVisual ไว้แสดงโล่อยู่แล้ว)
     private static void CreateSkillPrefabs()
     {
         string[] skills = { "Skill_StunWave", "Skill_NovaBlast", "Skill_SeekerMissile" };
@@ -198,11 +220,13 @@ public class SceneSetupTool
             string path = "Assets/Resources/" + skillName + ".prefab";
             GameObject go = new GameObject(skillName);
             
+            // 1) Sprite ไอคอน: แปลงชื่อสกิลเป็นชื่อไฟล์ icon_stun/icon_nova/icon_seeker ถ้าโหลดไม่ได้ใช้ icon_stun แทน
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = Resources.Load<Sprite>("Images/icon_" + skillName.Split('_')[1].Replace("Wave", "stun").Replace("Blast", "nova").Replace("Missile", "seeker").ToLower());
             if (sr.sprite == null) sr.sprite = Resources.Load<Sprite>("Images/icon_stun");
             sr.color = new Color(1, 1, 1, 0.8f);
 
+            // 2) Physics: Rigidbody2D ไม่มีแรงโน้มถ่วง + CircleCollider2D แบบ Trigger
             var rb = go.AddComponent<Rigidbody2D>();
             rb.gravityScale = 0;
             rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
@@ -210,6 +234,7 @@ public class SceneSetupTool
             var col = go.AddComponent<CircleCollider2D>();
             col.isTrigger = true;
 
+            // 3) Networking: ซิงก์ตำแหน่งและการหมุนผ่าน Photon
             go.AddComponent<Photon.Pun.PhotonView>();
             var ptv = go.AddComponent<Photon.Pun.PhotonTransformView>();
             ptv.m_SynchronizePosition = true;
@@ -218,8 +243,10 @@ public class SceneSetupTool
 
             var sc = go.AddComponent<SkillController>();
             
+            // 4) ตั้งค่าเฉพาะแต่ละสกิล: behavior, speed, lifeTime (วินาที), ขนาด และรัศมีชน
             if (skillName == "Skill_StunWave")
             {
+                // StunWave: คลื่นวิ่งไปข้างหน้า speed 15 อยู่ 2 วินาที รูปกว้างแบนสีฟ้า
                 sc.behavior = SkillController.SkillBehavior.StunWave;
                 sc.speed = 15f;
                 sc.lifeTime = 2f;
@@ -230,6 +257,7 @@ public class SceneSetupTool
             }
             else if (skillName == "Skill_NovaBlast")
             {
+                // NovaBlast: ไม่เคลื่อนที่ (speed 0) เป็นวงระเบิดใหญ่ หายใน 0.5 วินาที + ParticleSystem ระเบิด 30 อนุภาค
                 sc.behavior = SkillController.SkillBehavior.NovaBlast;
                 sc.speed = 0f;
                 sc.lifeTime = 0.5f;
@@ -261,6 +289,7 @@ public class SceneSetupTool
             }
             else if (skillName == "Skill_SeekerMissile")
             {
+                // SeekerMissile: จรวดติดตามเป้า speed 12 อยู่ 4 วินาที มี Trail เป็นควันสีเทา
                 sc.behavior = SkillController.SkillBehavior.SeekerMissile;
                 sc.speed = 12f;
                 sc.lifeTime = 4f;
@@ -278,17 +307,21 @@ public class SceneSetupTool
                 tr.colorGradient = gradient;
             }
 
+            // 5) บันทึกเป็น Prefab แล้วลบตัวชั่วคราว
             PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
         }
         Debug.Log("=== สร้าง Skill Prefabs เรียบร้อย! ===");
     }
 
+    // สร้าง Prefab อันตรายประจำแม็พ 5 แบบ (Lightning, SlowZone, Meteor, MoltenAsteroid, EnergyCore) และ Hazard_BlackPillar (เสาทึบ)
+    // แต่ละตัวมี WarningArea (วงแดงเตือน) + EffectVisual + Collider ที่เปิดเฉพาะช่วงเกิดผล; ในเกม Master Client เป็นคนสร้าง Hazard (ดู MapHazardManager)
     private static void CreateHazardPrefabs()
     {
         string[] hazards = { "Hazard_Lightning", "Hazard_SlowZone", "Hazard_Meteor", "Hazard_MoltenAsteroid", "Hazard_EnergyCore" };
         foreach (string h in hazards)
         {
+            // 1) สร้าง GameObject หลัก พร้อมลูก WarningArea และ EffectVisual
             string path = "Assets/Resources/" + h + ".prefab";
             GameObject go = new GameObject(h);
             
@@ -315,6 +348,7 @@ public class SceneSetupTool
             // Scale and Color based on type
             var hc = go.AddComponent<HazardController>();
             
+            // 2) ตั้งชนิด สี และขนาด (localScale) ตามประเภท Hazard
             if (h == "Hazard_Lightning")
             {
                 hc.type = HazardController.HazardType.Lightning;
@@ -351,6 +385,7 @@ public class SceneSetupTool
                 col.radius = 0.5f;
             }
 
+            // 3) ผูก reference ของ Sprite/Collider ให้ HazardController
             hc.warningArea = warnSr;
             hc.effectVisual = effSr;
             hc.hitCollider = col;
@@ -362,10 +397,12 @@ public class SceneSetupTool
             ptv.m_SynchronizeRotation = false;
             go.GetComponent<Photon.Pun.PhotonView>().ObservedComponents = new System.Collections.Generic.List<Component> { ptv };
 
+            // 4) บันทึกเป็น Prefab แล้วลบตัวชั่วคราว
             PrefabUtility.SaveAsPrefabAsset(go, path);
             Object.DestroyImmediate(go);
         }
 
+        // 5) เสาดำ: Collider ไม่ใช่ Trigger จึงชนทึบ ใช้เป็นที่กำบัง (Rigidbody2D แบบ Kinematic ไม่ขยับเอง)
         // Create Black Pillar separately
         string pillarPath = "Assets/Resources/Hazard_BlackPillar.prefab";
         GameObject pillarObj = new GameObject("Hazard_BlackPillar");
@@ -387,6 +424,8 @@ public class SceneSetupTool
         Object.DestroyImmediate(pillarObj);
     }
 
+    // สร้าง Prefab เอฟเฟกต์เสริมความมันส์: FloatingText (ข้อความลอย TextMeshPro ตัวหนาสีแดง)
+    // และ DeathExplosion (Particle ระเบิดสีส้ม 50 อนุภาค ทำลายตัวเองหลัง 2 วินาทีด้วย DestroyAfterSeconds)
     private static void CreateJuicePrefabs()
     {
         // 1. Floating Text
@@ -433,10 +472,13 @@ public class SceneSetupTool
     // ============================
     //  LOGIN SCENE
     // ============================
+    // สร้าง LoginScene ใหม่ (ทับของเดิม): กล้อง, FirebaseManager, AudioManager, LoginManager และ UI ชื่อเกม/สถานะ/ปุ่ม Login Google และ Guest
+    // ผูก reference และ onClick ของปุ่มเข้ากับ LoginManager แล้ว SaveScene ไปที่ Assets/Scenes/LoginScene.unity
     private static void BuildLoginScene()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+        // 1) กล้อง + Manager หลักของหน้า Login
         CreateCamera(new Color(0.02f, 0.02f, 0.08f));
 
         GameObject firebaseObj = new GameObject("FirebaseManager");
@@ -448,6 +490,7 @@ public class SceneSetupTool
         GameObject loginManagerObj = new GameObject("LoginManager");
         LoginManager loginManager = loginManagerObj.AddComponent<LoginManager>();
 
+        // 2) Canvas, EventSystem และ UI ทั้งหมด
         GameObject canvasObj = CreateCanvas();
         CreateEventSystem();
 
@@ -494,19 +537,25 @@ public class SceneSetupTool
         UnityEditor.Events.UnityEventTools.AddPersistentListener(btnGoogle.GetComponent<Button>().onClick, loginManager.LoginGoogle);
         UnityEditor.Events.UnityEventTools.AddPersistentListener(btnGuest.GetComponent<Button>().onClick, loginManager.LoginGuest);
 
+        // ปิดปุ่มไว้ตอนเริ่ม (กดไม่ได้จนกว่าสคริปต์จะเปิดให้)
         btnGoogle.GetComponent<Button>().interactable = false;
         btnGuest.GetComponent<Button>().interactable = false;
 
+        // 3) บันทึก Scene (เขียนทับไฟล์เดิม)
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/LoginScene.unity");
     }
 
     // ============================
     //  LOBBY SCENE
     // ============================
+    // สร้าง LobbyScene ใหม่ (ทับของเดิม): LobbyManager + Canvas และ Panel ทั้งหมดของหน้า Lobby
+    // Panel: Main, Inventory (เลือกยาน/สกิล), Room (สร้าง/ค้นหาห้อง), Settings (เสียง/Logout), WaitingRoom (ห้องรอ 2 ผู้เล่น), Tutorial
+    // ช่วงท้ายผูก reference และ onClick ทุกปุ่มเข้ากับเมธอดของ LobbyManager แล้ว SaveScene
     private static void BuildLobbyScene()
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
+        // 1) กล้อง + LobbyManager + Canvas + พื้นหลัง
         CreateCamera(new Color(0.02f, 0.04f, 0.1f));
 
         GameObject lobbyManagerObj = new GameObject("LobbyManager");
@@ -517,6 +566,7 @@ public class SceneSetupTool
 
         CreateBackground(canvasObj.transform, "Images/LobbyBG_HQ");
 
+        // 2) หน้าหลัก: แถบบน (ชื่อเกม/จำนวนชนะ/เหรียญ), ข้อมูลผู้เล่น, ปุ่มด้านซ้าย, แสดงยานตรงกลาง, ปุ่ม Play/Create Room ด้านขวา
         // =============================================
         //  MAIN PANEL
         // =============================================
@@ -608,6 +658,7 @@ public class SceneSetupTool
         SetAnchor(playersOnlineObj, new Vector2(1, 1), new Vector2(1, 1));
         playersOnlineObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(-180, -270);
 
+        // 3) หน้า Inventory (ซ่อนตอนเริ่ม): รายการยาน 3 ลำ + ราคา, รูป/สถิติยาน, ปุ่ม Equip, กล่องสกิล 4 แบบ + ปุ่ม Install
         // =============================================
         //  INVENTORY PANEL
         // =============================================
@@ -650,6 +701,7 @@ public class SceneSetupTool
         shipListOutline.effectColor = new Color(0.4f, 0.9f, 0.9f, 0.8f); // Cyan outline
         shipListOutline.effectDistance = new Vector2(2, -2);
 
+        // ปุ่มยาน 0 = Nebula Ghost, 1 = Comet Crusher, 2 = Stellar Striker; Price1/Price2 เป็นข้อความราคาตั้งต้น
         var btnShip0 = CreateTMPButton("Btn_Ship0", "Nebula\nGhost", shipListPanel.transform,
             new Vector2(0, 160), new Vector2(300, 100), new Color(0.1f, 0.6f, 0.3f), Color.white, 22);
         var btnShip1 = CreateTMPButton("Btn_Ship1", "Comet\nCrusher", shipListPanel.transform,
@@ -726,6 +778,7 @@ public class SceneSetupTool
         var btnInstallSkill = CreateTMPButton("Btn_InstallSkill", "Install", skillPanel.transform,
             new Vector2(140, -230), new Vector2(80, 40), new Color(0.1f, 0.6f, 0.3f), Color.white, 16);
 
+        // 4) หน้า Room (ซ่อนตอนเริ่ม): ซ้ายสร้างห้อง (เลขห้อง/โหมด/เลือกแม็พ), ขวาค้นหาห้องและรายการห้อง (ScrollView)
         // =============================================
         //  ROOM PANEL
         // =============================================
@@ -839,6 +892,7 @@ public class SceneSetupTool
         
         roomItem.SetActive(false); // ซ่อนไว้เป็นต้นแบบ
 
+        // 5) หน้า Settings: Slider เสียง Master/Music/SFX + ปุ่มปิด และปุ่ม Logout
         // =============================================
         //  SETTINGS PANEL
         // =============================================
@@ -893,6 +947,7 @@ public class SceneSetupTool
         // Logout
         var btnLogout = CreateTMPButton("Btn_Logout", "Logout", setOuter.transform, new Vector2(0, -210), new Vector2(200, 50), new Color(0.8f, 0.3f, 0.3f), Color.white, 20);
 
+        // 6) ห้องรอ: การ์ดผู้เล่น 1 (ซ้าย) / ผู้เล่น 2 (ขวา), แม็พตรงกลาง, ปุ่ม Leave/Ready/Start
         // =============================================
         //  WAITING ROOM PANEL
         // =============================================
@@ -976,6 +1031,7 @@ public class SceneSetupTool
         btnWaitStart.GetComponent<RectTransform>().anchoredPosition = new Vector2(300, 60);
         btnWaitStart.SetActive(false); // เฉพาะ Master Client เท่านั้น
 
+        // 7) หน้า How to Play
         // =============================================
         //  TUTORIAL PANEL
         // =============================================
@@ -994,6 +1050,7 @@ public class SceneSetupTool
 
         CreateTMPText("TutHeader", "HOW TO PLAY", tutContent.transform, new Vector2(0, 300), 48, new Color(0.4f, 0.8f, 1f), FontStyles.Bold);
 
+        // ข้อความสอนเล่น (Rich Text ของ TMP) อธิบายการควบคุม สกิล และ Hazard ของแต่ละแม็พ
         string tutorialString = "<color=#FFFF00>■ Controls (การควบคุม)</color>\n" +
             "Left Joystick : Move (เคลื่อนที่)\n" +
             "Right Button : Fire Laser & Use Skills (ยิงและใช้สกิล)\n\n" +
@@ -1017,6 +1074,7 @@ public class SceneSetupTool
         btnCloseTut.GetComponent<RectTransform>().anchoredPosition = new Vector2(-40, -40);
 
 
+        // 8) ผูก reference UI และ onClick ทั้งหมดเข้ากับ LobbyManager
         // =============================================
         //  WIRE UP UI REFERENCES
         // =============================================
@@ -1103,6 +1161,7 @@ public class SceneSetupTool
         UnityEditor.Events.UnityEventTools.AddPersistentListener(btnWaitCancel.GetComponent<Button>().onClick, lm.OnLeaveWaitingRoom);
         UnityEditor.Events.UnityEventTools.AddPersistentListener(btnWaitStart.GetComponent<Button>().onClick, lm.OnStartGameClicked);
 
+        // ปุ่มยานส่ง index 0-2 ให้ SelectShip และปุ่มสกิลส่ง index 0-3 (STUN, SHIELD, NOVA, SEEKER) ให้ SelectSkill
         // Ship selection
         UnityEditor.Events.UnityEventTools.AddIntPersistentListener(btnShip0.GetComponent<Button>().onClick, lm.SelectShip, 0);
         UnityEditor.Events.UnityEventTools.AddIntPersistentListener(btnShip1.GetComponent<Button>().onClick, lm.SelectShip, 1);
@@ -1119,6 +1178,7 @@ public class SceneSetupTool
         UnityEditor.Events.UnityEventTools.AddPersistentListener(btnNextMap.GetComponent<Button>().onClick, lm.NextMap);
         lm.createRoomMapNameText = mapNameText.GetComponent<TMP_Text>();
 
+        // 9) บันทึก Scene (เขียนทับ LobbyScene.unity เดิม)
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/LobbyScene.unity");
     }
 
@@ -1126,8 +1186,11 @@ public class SceneSetupTool
     // ============================
     //  SAMPLE SCENE (GAMEPLAY)
     // ============================
+    // สร้าง SampleScene (ฉาก Gameplay) ใหม่: กล้อง + Post-processing, GameplayManager + MapHazardManager, พื้นหลัง, ดาววิ่ง, HUD, จอย, ปุ่มยิง/สกิล, หน้าผลแมตช์
+    // ถ้ามี SampleScene เดิม จะสำรอง Map2_Visuals เป็น prefab ชั่วคราวแล้วนำกลับมาใส่ (ส่วนอื่นของ Scene เดิมถูกเขียนทับหมด)
     private static void BuildSampleScene()
     {
+        // [ก] เก็บ Map2_Visuals ที่ผู้ใช้จัดเองไว้ก่อน (ถ้ามี)
         string scenePath = "Assets/Scenes/SampleScene.unity";
         GameObject existingMap2Visuals = null;
         if (System.IO.File.Exists(scenePath))
@@ -1143,6 +1206,7 @@ public class SceneSetupTool
             }
         }
 
+        // [ข] สร้าง Scene ใหม่ + กล้อง + Post-processing + Manager + Canvas + พื้นหลัง/ดาว/ฉากแม็พ
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
         CreateCamera(new Color(0.05f, 0.05f, 0.15f));
@@ -1172,6 +1236,7 @@ public class SceneSetupTool
         starfieldObj.transform.rotation = Quaternion.Euler(90f, 0, 0); // ยิงดาวลงข้างล่าง
         ParticleSystem starPs = starfieldObj.AddComponent<ParticleSystem>();
         
+        // ค่าดาว: อายุ 8 วินาที, ความเร็ว 3, ขนาด 0.05, สูงสุด 500 ดวง, ปล่อย 30 ดวง/วินาที
         var starMain = starPs.main;
         starMain.duration = 10f;
         starMain.loop = true;
@@ -1206,6 +1271,7 @@ public class SceneSetupTool
             BuildMap2Visuals();
         }
 
+        // [ค] สร้าง HUD ใน Canvas (ข้อ 1-7 ด้านล่าง) และผูกเข้ากับ GameplayManager
         // 1. --- BOTTOM CENTER HUD (Player 1) ---
         var p1HUD = CreatePanel("Player1HUD", canvasObj.transform, Vector2.zero, new Vector2(350, 80), new Color(0, 0, 0, 0));
         SetAnchor(p1HUD, new Vector2(0.5f, 0), new Vector2(0.5f, 0));
@@ -1382,13 +1448,17 @@ public class SceneSetupTool
         gm.remoteResultStatus = p2ResStatus.GetComponent<TMP_Text>();
         gm.remoteResultCoins = p2ResCoins.GetComponent<TMP_Text>();
 
+        // [ง] บันทึก Scene (เขียนทับ SampleScene.unity เดิม)
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/SampleScene.unity");
     }
 
+    // สร้างฉากตกแต่งแม็พหุ่นยนต์ (Abandoned Mech) ชื่อ Map2_Visuals: กลุ่มอุกกาบาต/ป้อมปืนตามจุดสิ่งกีดขวาง + BoxCollider2D ให้ชนได้ และหินพื้นหลัง/แกนแดงตกแต่ง
+    // ใช้ Random.InitState(12345) ให้ผลสุ่มเหมือนเดิมทุกครั้ง; เรียกจาก BuildSampleScene เมื่อไม่มี Map2_Visuals เดิมให้กู้คืน
     private static void BuildMap2Visuals()
     {
         GameObject visualsContainer = new GameObject("Map2_Visuals");
         
+        // 1) โหลด Sprite แล้วคัดอุกกาบาตชิ้นที่ชื่อลงท้าย _9/_10/_11 ออก (ถ้าคัดแล้วไม่เหลือ ใช้ทั้งหมด)
         Sprite[] asteroidSprites = Resources.LoadAll<Sprite>("Images/Obs_Asteroids");
         Sprite[] turretSprites = Resources.LoadAll<Sprite>("Images/Obs_Turrets");
         Sprite[] coreSprites = Resources.LoadAll<Sprite>("Images/Obs_RedCores");
@@ -1406,6 +1476,7 @@ public class SceneSetupTool
             if (validAsteroids.Count == 0 && asteroidSprites != null) validAsteroids.AddRange(asteroidSprites);
         }
 
+        // 2) สิ่งกีดขวาง 7 จุด: ตำแหน่ง (pos), ขนาดพื้นที่ (scale) หน่วย world และชนิด large/medium/small
         var obstacles = new System.Collections.Generic.List<(Vector2 pos, Vector2 scale, string type)>();
         obstacles.Add((new Vector2(-18, 18), new Vector2(6, 2.5f), "large"));
         obstacles.Add((new Vector2(-19, 15), new Vector2(2.5f, 6), "large"));
@@ -1419,6 +1490,7 @@ public class SceneSetupTool
         // Seed so generated scene is deterministic every time the setup tool runs
         Random.InitState(12345);
 
+        // 3) วนสร้าง VisualGroup: จำนวนหิน = พื้นที่/3 (อย่างน้อย 1 ก้อน) สุ่มตำแหน่ง/ขนาด/มุม, กลุ่ม large มีป้อมปืนเพิ่ม 1 อัน
         foreach (var obs in obstacles)
         {
             GameObject group = new GameObject("VisualGroup_" + id);
@@ -1467,6 +1539,7 @@ public class SceneSetupTool
             id++;
         }
 
+        // 4) ของตกแต่งพื้นหลัง (ไม่มี Collider): หิน 40 ก้อนสีหม่น + แกนแดง 6 อัน
         if (validAsteroids.Count > 0)
         {
             GameObject bgDeco = new GameObject("BackgroundDecorations");
@@ -1504,6 +1577,7 @@ public class SceneSetupTool
         }
     }
 
+    // ตั้ง anchorMin/anchorMax ของ RectTransform (ใช้ยึด UI กับมุม/ขอบจอ)
     private static void SetAnchor(GameObject obj, Vector2 min, Vector2 max)
     {
         RectTransform rt = obj.GetComponent<RectTransform>();
@@ -1514,6 +1588,7 @@ public class SceneSetupTool
     // ============================
     //  BUILD SETTINGS
     // ============================
+    // ตั้ง Build Settings ให้มี 3 Scene ตามลำดับ: 0 = Login, 1 = Lobby, 2 = SampleScene (เขียนทับรายการเดิม)
     private static void SetupBuildSettings()
     {
         EditorBuildSettingsScene[] s = new EditorBuildSettingsScene[3];
@@ -1526,6 +1601,8 @@ public class SceneSetupTool
     // ============================
     //  UI HELPERS & POST-PROCESSING
     // ============================
+    // สร้าง Global Volume ของ URP พร้อม Profile: Bloom (เรืองแสง), Vignette (ขอบจอมืด), Chromatic Aberration (สีเหลื่อม)
+    // Profile สร้างในหน่วยความจำด้วย CreateInstance ไม่ได้บันทึกเป็น asset แยก
     private static void CreatePostProcessingVolume()
     {
         GameObject volumeObj = new GameObject("Global PostProcessing");
@@ -1568,6 +1645,7 @@ public class SceneSetupTool
 
         volume.profile = profile;
     }
+    // สร้าง Main Camera แบบ Orthographic (2D) สีพื้นหลังตาม bgColor วางที่ z = -10 พร้อม CameraShake และเปิด Post-processing ของ URP
     private static void CreateCamera(Color bgColor)
     {
         GameObject camObj = new GameObject("Main Camera");
@@ -1585,6 +1663,7 @@ public class SceneSetupTool
         camData.renderPostProcessing = true;
     }
 
+    // สร้าง Canvas แบบ Screen Space Overlay + CanvasScaler อ้างอิง 1920x1080 (match ความสูง) + GraphicRaycaster ให้กดปุ่มได้
     private static GameObject CreateCanvas()
     {
         GameObject obj = new GameObject("Canvas");
@@ -1598,6 +1677,7 @@ public class SceneSetupTool
         return obj;
     }
 
+    // สร้าง EventSystem (จำเป็นสำหรับรับการกด UI) ถ้ายังไม่มีใน Scene
     private static void CreateEventSystem()
     {
         if (Object.FindObjectOfType<EventSystem>() == null)
@@ -1608,6 +1688,7 @@ public class SceneSetupTool
         }
     }
 
+    // สร้างรูปพื้นหลังเต็มจอ (RawImage) จาก Texture ใน Resources
     private static void CreateBackground(Transform parent, string resourcePath)
     {
         GameObject obj = new GameObject("Background");
@@ -1621,6 +1702,7 @@ public class SceneSetupTool
         rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
     }
 
+    // สร้าง GameObject UI ที่มี Image (ใช้เป็นกล่อง/พื้นหลัง/ช่องรูป) ตามตำแหน่ง ขนาด และสีที่กำหนด แล้วคืนค่า GameObject
     private static GameObject CreatePanel(string name, Transform parent, Vector2 pos, Vector2 size, Color color)
     {
         GameObject obj = new GameObject(name);
@@ -1633,6 +1715,7 @@ public class SceneSetupTool
         return obj;
     }
 
+    // ใส่ Sprite จาก Resources ให้ Image ของ obj (ถ้าโหลดได้) แล้วตั้งสีขาวและรักษาสัดส่วนรูป
     private static void SetImageSprite(GameObject obj, string resourcePath)
     {
         Image img = obj.GetComponent<Image>();
@@ -1648,6 +1731,7 @@ public class SceneSetupTool
         }
     }
 
+    // สร้างข้อความ TextMeshProUGUI (กล่อง 500x60 จัดกลาง) ตามข้อความ ขนาดฟอนต์ สี และสไตล์ที่กำหนด
     private static GameObject CreateTMPText(string name, string content, Transform parent, Vector2 pos, int fontSize, Color color, FontStyles style)
     {
         GameObject obj = new GameObject(name);
@@ -1664,6 +1748,7 @@ public class SceneSetupTool
         return obj;
     }
 
+    // สร้างปุ่ม UI (Image + Button) พร้อมลูกชื่อ "Text" เป็น TextMeshProUGUI เต็มปุ่ม; onClick ผูกภายหลังด้วย UnityEventTools
     private static GameObject CreateTMPButton(string name, string text, Transform parent, Vector2 pos, Vector2 size, Color bgColor, Color textColor, int fontSize)
     {
         GameObject obj = new GameObject(name);
@@ -1689,6 +1774,7 @@ public class SceneSetupTool
         return obj;
     }
 
+    // สร้าง InputField แบบ UI เก่า (ไม่ใช่ TMP) ด้วย DefaultControls ขนาด 300x40 ตั้งข้อความ placeholder และสีตัวอักษร (ใช้เป็นช่องค้นหาเลขห้อง)
     private static GameObject CreateLegacyInputField(string name, string placeholder, Transform parent, Vector2 pos)
     {
         GameObject obj = DefaultControls.CreateInputField(new DefaultControls.Resources());
@@ -1722,6 +1808,7 @@ public class SceneSetupTool
         return obj;
     }
 
+    // สร้าง Slider เองทีละชิ้น (Background, Fill Area/Fill, Handle) ทิศซ้ายไปขวา ค่าเริ่มต้น 1 (เต็ม) - ใช้ปรับเสียงในหน้า Settings
     private static UnityEngine.UI.Slider CreateSlider(string name, Transform parent, Vector2 pos, Vector2 size)
     {
         GameObject sliderObj = new GameObject(name);
@@ -1730,6 +1817,7 @@ public class SceneSetupTool
         rt.anchoredPosition = pos;
         rt.sizeDelta = size;
 
+        // 1) แถบพื้นหลัง
         GameObject bgObj = new GameObject("Background");
         bgObj.transform.SetParent(sliderObj.transform, false);
         Image bgImg = bgObj.AddComponent<Image>();
@@ -1738,6 +1826,7 @@ public class SceneSetupTool
         bgRt.anchorMin = new Vector2(0, 0.25f); bgRt.anchorMax = new Vector2(1, 0.75f);
         bgRt.offsetMin = Vector2.zero; bgRt.offsetMax = Vector2.zero;
 
+        // 2) ส่วนเติมสี (Fill) แสดงค่าปัจจุบัน
         GameObject fillArea = new GameObject("Fill Area");
         fillArea.transform.SetParent(sliderObj.transform, false);
         RectTransform fillAreaRt = fillArea.AddComponent<RectTransform>();
@@ -1752,6 +1841,7 @@ public class SceneSetupTool
         fillRt.anchorMin = Vector2.zero; fillRt.anchorMax = Vector2.one;
         fillRt.offsetMin = Vector2.zero; fillRt.offsetMax = Vector2.zero;
 
+        // 3) ปุ่มจับสำหรับเลื่อน (Handle)
         GameObject handleArea = new GameObject("Handle Slide Area");
         handleArea.transform.SetParent(sliderObj.transform, false);
         RectTransform handleAreaRt = handleArea.AddComponent<RectTransform>();
@@ -1766,6 +1856,7 @@ public class SceneSetupTool
         handleRt.anchorMin = new Vector2(0, 0); handleRt.anchorMax = new Vector2(0, 1);
         handleRt.sizeDelta = new Vector2(20, 0);
 
+        // 4) ใส่ component Slider แล้วผูกชิ้นส่วนทั้งหมด
         UnityEngine.UI.Slider slider = sliderObj.AddComponent<UnityEngine.UI.Slider>();
         slider.fillRect = fillRt;
         slider.handleRect = handleRt;
@@ -1778,14 +1869,18 @@ public class SceneSetupTool
 }
 
 // Renders an isolated preview scene. It never saves over the user's open scenes.
+// คลาสทดสอบฝั่ง Editor: ตรวจว่าสิ่งกำบังใน Map2_Layout ของ SampleScene ชนทึบจริงกับยานทั้ง 3 แบบ
+// โดยจำลองฟิสิกส์ใน Preview Scene แยก ไม่แตะและไม่ save Scene ที่เปิดอยู่
 public static class MechCollisionValidation
 {
+    // รัน Validate() แล้วเรนเดอร์ภาพตัวอย่างด้วย MechThrusterPreview.Render() (คลาสนั้นอยู่ไฟล์อื่น)
     public static void ValidateAndRender()
     {
         Validate();
         MechThrusterPreview.Render();
     }
 
+    // เรียกอัตโนมัติเมื่อ Editor โหลด/คอมไพล์สคริปต์: ถ้ามีไฟล์ Library/MechValidation.request และไม่ได้กำลังเข้า Play Mode จะรัน Validate()
     [InitializeOnLoadMethod]
     private static void ScheduleRequestedValidation()
     {
@@ -1798,6 +1893,8 @@ public static class MechCollisionValidation
     }
 
     // [MenuItem("Battlefield/Mech/Validate Solid Cover")]
+    // ตรวจสิ่งกำบังแม็พหุ่นยนต์: เปิด SampleScene เป็น Preview, copy Map2_Layout ไป Preview Scene ใหม่ที่มีฟิสิกส์ 2D แยก
+    // แล้วลองดันยาน Ship1-3 เข้าหากำบัง ถ้าผิดเงื่อนไขจะ throw; เขียนผล PASS/FAIL ลง Library/MechCollisionValidation.txt (ไม่ save Scene)
     public static void Validate()
     {
         const string reportPath = "Library/MechCollisionValidation.txt";
@@ -1807,11 +1904,13 @@ public static class MechCollisionValidation
         Scene testScene = default;
         try
         {
+            // 1) สร้าง Preview Scene ใหม่ และยืนยันว่ามีฟิสิกส์ 2D ของตัวเอง (ไม่ใช่ของ Scene หลัก)
             testScene = EditorSceneManager.NewPreviewScene();
             var physics = testScene.GetPhysicsScene2D();
             if (!physics.IsValid() || physics == Physics2D.defaultPhysicsScene)
                 throw new System.Exception("Preview does not provide isolated 2D physics; aborting without simulating the open scene.");
 
+            // 2) หา Map2_Layout ใน SampleScene ที่บันทึกไว้ แล้ว copy เข้า testScene
             GameObject authored = null;
             foreach (var root in source.GetRootGameObjects())
                 if (root.name == "Map2_Layout") authored = root;
@@ -1819,6 +1918,7 @@ public static class MechCollisionValidation
             var layout = Object.Instantiate(authored);
             layout.name = "Map2_Layout";
             SceneManager.MoveGameObjectToScene(layout, testScene);
+            // 3) สร้าง GameplayManager ชั่วคราว (ปิดไว้, autoGenerateMap = false) แล้วเรียก ApplySelectedMapLayout(2) ผ่าน Reflection เพราะเป็นเมธอด private
             var managerObject = new GameObject("ValidationManager");
             SceneManager.MoveGameObjectToScene(managerObject, testScene);
             var manager = managerObject.AddComponent<GameplayManager>();
@@ -1827,6 +1927,7 @@ public static class MechCollisionValidation
             var apply = typeof(GameplayManager).GetMethod("ApplySelectedMapLayout",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             apply.Invoke(manager, new object[] { 2 });
+            // 4) ทุกสิ่งกำบังในกลุ่ม Rock/Turret/RedCore ต้องมี PolygonCollider2D ที่เปิดอยู่และไม่ใช่ Trigger; เก็บตัวแทนกลุ่มละ 1 ชิ้นไว้ทดสอบชน
             int count = 0;
             var representatives = new System.Collections.Generic.List<GameObject>();
             foreach (string groupName in new[] { "RockObstacles", "TurretObstacles", "RedCoreObstacles" })
@@ -1845,12 +1946,14 @@ public static class MechCollisionValidation
                 }
                 representatives.Add(group.GetChild(0).gameObject);
             }
+            // 5) เรียก PrepareMechCover ซ้ำ จำนวน collider ต้องเท่าเดิม (idempotent = เรียกกี่ครั้งผลก็เหมือนเดิม)
             GameplayManager.PrepareMechCover(layout.transform);
             int secondCount = layout.GetComponentsInChildren<PolygonCollider2D>().Length;
             if (secondCount != count) throw new System.Exception("Cover setup is not idempotent.");
             report.AppendLine("PASS: autoGenerateMap=false still prepares " + count + " authored solid colliders, idempotently.");
             layout.SetActive(false);
 
+            // 6) ทดสอบชน: วางยานแต่ละแบบทางซ้ายของกำบัง แล้ว MovePosition ไปทางขวาทีละ 0.12 หน่วย (Simulate 0.02 วินาที/สเต็ป) ต้องถูกกั้นไว้ไม่ทะลุ
             foreach (GameObject original in representatives)
             {
                 var cover = Object.Instantiate(original);
@@ -1894,6 +1997,7 @@ public static class MechCollisionValidation
                             + ", travel=" + travel + ", separation=" + separation.distance);
                     report.AppendLine("PASS: Ship" + shipIndex + " blocked by " + original.name
                         + " under sustained MovePosition (travel " + travel.ToString("F2") + ").");
+                    // ยานที่ไม่ใช่ของเครื่องเรา (false) ต้องกลับเป็น Kinematic เพราะตำแหน่งมาจากเครือข่าย
                     controller.ConfigureShipPhysics(false);
                     if (body.bodyType != RigidbodyType2D.Kinematic)
                         throw new System.Exception("Remote ship should remain network-controlled kinematic.");
@@ -1911,6 +2015,7 @@ public static class MechCollisionValidation
         }
         finally
         {
+            // ไม่ว่าผ่านหรือไม่: เขียนรายงานลงไฟล์ คืน Active Scene เดิม และปิด Preview Scene ทั้งหมด
             System.IO.File.WriteAllText(reportPath, report.ToString());
             if (previousScene.IsValid() && previousScene.isLoaded) SceneManager.SetActiveScene(previousScene);
             if (testScene.IsValid()) EditorSceneManager.ClosePreviewScene(testScene);
@@ -1919,8 +2024,11 @@ public static class MechCollisionValidation
     }
 }
 
+// คลาสทดสอบฝั่ง Editor: ตรวจเงื่อนไข Ready ของ LobbyManager และเรนเดอร์ภาพหน้าจอ Lobby หลายขนาดจอเป็น PNG ใน Library/LobbyValidation
+// ใช้ Preview Scene จึงไม่ save ทับ LobbyScene
 public static class LobbyPreviewValidation
 {
+    // เรียกอัตโนมัติเมื่อ Editor โหลดสคริปต์: ถ้ามีไฟล์ Library/LobbyValidation.request และไม่ได้เข้า Play Mode จะรัน ValidateAndRender()
     [InitializeOnLoadMethod]
     private static void ScheduleRequestedValidation()
     {
@@ -1933,6 +2041,8 @@ public static class LobbyPreviewValidation
     }
 
     // [MenuItem("Battlefield/Lobby/Validate and Render Preview")]
+    // เปิด LobbyScene เป็น Preview แล้วทดสอบ LobbyManager.ReadyPropertiesMatch 7 กรณี, เรียก BuildLobbyUI และตรวจ reference/รูปที่จำเป็น
+    // จากนั้นใส่ข้อมูลตัวอย่างในห้องรอแล้วเรนเดอร์ 5 หน้าจอ x 4 ความละเอียดเป็น PNG + report.txt; ถ้าเกิดข้อผิดพลาดจะเขียนลง report.txt
     public static void ValidateAndRender()
     {
         var preview = EditorSceneManager.OpenPreviewScene("Assets/Scenes/LobbyScene.unity");
@@ -1940,6 +2050,7 @@ public static class LobbyPreviewValidation
         System.IO.Directory.CreateDirectory(output);
         try
         {
+            // 1) ปิดกล้องเดิมใน Preview และหา LobbyManager
             LobbyManager manager = null;
             foreach (GameObject root in preview.GetRootGameObjects())
             {
@@ -1948,6 +2059,7 @@ public static class LobbyPreviewValidation
                 if (found != null) manager = found;
             }
             if (manager == null) throw new System.Exception("LobbyManager is missing from LobbyScene.");
+            // 2) ทดสอบเงื่อนไข Ready: ต้องผ่านเฉพาะเมื่อ IsReady = true, LoadoutLoaded = true และ ReadyMap/ReadyRevision ตรงกับค่าที่ส่งเข้าไป
             var ready = new ExitGames.Client.Photon.Hashtable {
                 ["IsReady"] = true, ["LoadoutLoaded"] = true, ["ReadyMap"] = 2, ["ReadyRevision"] = 3 };
             if (!LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Valid readiness was rejected.");
@@ -1961,6 +2073,7 @@ public static class LobbyPreviewValidation
             ready["IsReady"] = "true";
             if (LobbyManager.ReadyPropertiesMatch(ready, 2, 3)) throw new System.Exception("Malformed readiness was accepted.");
             if (LobbyManager.ReadyPropertiesMatch(null, 0, 0)) throw new System.Exception("Missing readiness was accepted.");
+            // 3) สร้าง UI ด้วย BuildLobbyUI (private เรียกผ่าน Reflection) แล้วตรวจปุ่ม/ช่องสำคัญ และ Sprite แผนที่/ยาน
             var build = typeof(LobbyManager).GetMethod("BuildLobbyUI", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             build.Invoke(manager, null);
             if (manager.waitReadyButton == null || manager.waitStartButton == null
@@ -1969,6 +2082,7 @@ public static class LobbyPreviewValidation
             foreach (var path in new[] { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech",
                 "Images/ship1", "Images/ship2", "Images/ship3" })
                 if (Resources.Load<Sprite>(path) == null) throw new System.Exception("Missing sprite: " + path);
+            // 4) ซ่อนทุก Panel และใส่ข้อมูลตัวอย่างลงห้องรอ
             manager.mainPanel.SetActive(false);
             manager.inventoryPanel.SetActive(false);
             manager.settingsPanel.SetActive(false);
@@ -1990,6 +2104,7 @@ public static class LobbyPreviewValidation
             manager.waitP2ShipImage.sprite = Resources.Load<Sprite>("Images/ship3");
             manager.waitP2ShipImage.color = Color.white;
             manager.waitP2ShipImage.preserveAspect = true;
+            // 5) สร้างกล้องที่เรนเดอร์เฉพาะ Preview Scene และเปลี่ยน Canvas เป็น World Space เพื่อถ่ายภาพได้
             var cameraObject = new GameObject("LobbyPreviewCamera", typeof(Camera));
             SceneManager.MoveGameObjectToScene(cameraObject, preview);
             Camera renderCamera = cameraObject.GetComponent<Camera>();
@@ -2009,6 +2124,7 @@ public static class LobbyPreviewValidation
             canvasRect.position = new Vector3(0, 0, 10);
             canvasRect.rotation = Quaternion.identity;
             canvasRect.localScale = Vector3.one;
+            // 6) วนทุกความละเอียด x 5 หน้าจอ (0 ห้องรอ, 1 รายการห้อง, 2 หน้าหลัก, 3 ยาน, 4 สกิล) ตรวจข้อความล้นกรอบ แล้วบันทึกเป็น PNG
             string report = "Readiness regression checks: 7 PASS\nLobby references and sprites: PASS\n";
             foreach (Vector2Int size in new[] { new Vector2Int(1280, 720), new Vector2Int(1920, 1080),
                 new Vector2Int(2340, 1080), new Vector2Int(1024, 768) })
@@ -2057,6 +2173,7 @@ public static class LobbyPreviewValidation
                     }
                 }
             }
+            // 7) เขียนรายงานสรุปลง report.txt
             System.IO.File.WriteAllText(output + "/report.txt", report + "Preview render completed. Network play requires two clients.\n");
             Debug.Log("Lobby preview validation completed: " + output);
         }

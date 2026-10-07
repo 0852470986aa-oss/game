@@ -1,11 +1,22 @@
+// ส่วนสกิลและสถานะผิดปกติของ PlayerController: กดใช้สกิล (STUN/SHIELD/NOVA/SEEKER), โล่, สตัน, ความช้า, โซนบึงพิษ/Energy Core
+// สกิลแบบยิง (STUN/NOVA/SEEKER) สร้างวัตถุ SkillController.cs ผ่าน PhotonNetwork.Instantiate ส่วนโล่ใช้ RPC
+// ค่าดาเมจ/เวลาของสกิลอยู่ใน BattleBalance.cs คูลดาวน์อยู่ใน BattleLoadoutCatalog.cs
 using UnityEngine;
 using Photon.Pun;
 
 // ส่วน Skills ของ PlayerController; partial คือคลาสเดิม ไม่ต้องเพิ่ม Component
 public partial class PlayerController
 {
+    // เรียกจาก Update เฉพาะเจ้าของยาน: ตรวจว่ากดปุ่มสกิล (ปุ่มบนจอ หรือ Space/E) และคูลดาวน์หมดแล้ว จึงเริ่มคูลดาวน์ใหม่และใช้สกิล
     private void HandleSkill()
     {
+        if (IsBot)
+        {
+            // บอทกดสกิลผ่าน BotController (ใช้ครั้งเดียวแล้วรีเซ็ต)
+            if (botSkill && currentCooldown <= 0) { currentCooldown = maxCooldown; UseSkill(); }
+            botSkill = false;
+            return;
+        }
         bool isSkillPressed = UIButton.IsPressed("Skill") || UIButton.IsPressed("skill") || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.E);
 
         // เช็คจาก GameplayManager โดยตรงเผื่อปุ่มไม่ได้ตั้งชื่อว่า Skill
@@ -21,16 +32,22 @@ public partial class PlayerController
         {
             currentCooldown = maxCooldown;
             UseSkill();
+            // นับการใช้สกิล (ภารกิจรายวัน)
+            Progression.SkillsThisMatch++;
         }
     }
 
+    // ใช้สกิลตาม skillType (รันเฉพาะเจ้าของ): STUN/NOVA/SEEKER = PhotonNetwork.Instantiate วัตถุสกิลพร้อมดาเมจให้ทุกเครื่องเห็น
+    // SHIELD = ส่ง RPC ActivateShieldRPC ไป RpcTarget.All (ทุกเครื่องรวมตัวเอง) เพื่อเปิดโล่ให้ทุกคนเห็น
     private void UseSkill()
     {
         Debug.Log("Used Skill: " + skillName);
+        // เฟส 7: BLINK / HEAL / CLOAK (PlayerController.Content.cs)
+        if (UseNewSkill()) return;
 
         if (skillType == 0) // STUN
         {
-            object[] data = new object[] { BattleBalance.StunDamage }; // ดาเมจน้อยลง
+            object[] data = new object[] { RemoteCatalog.SkillDamage(0, BattleBalance.StunDamage), CombatantId }; // [1] = ผู้ใช้สกิล (รองรับบอท)
             PhotonNetwork.Instantiate("Skill_StunWave", GetFirePosition(), transform.rotation, 0, data);
         }
         else if (skillType == 1) // SHIELD
@@ -39,16 +56,18 @@ public partial class PlayerController
         }
         else if (skillType == 2) // NOVA
         {
-            object[] data = new object[] { BattleBalance.NovaDamage };
+            object[] data = new object[] { RemoteCatalog.SkillDamage(2, BattleBalance.NovaDamage), CombatantId };
             PhotonNetwork.Instantiate("Skill_NovaBlast", GetFirePosition(), Quaternion.identity, 0, data);
         }
         else if (skillType == 3) // SEEKER
         {
-            object[] data = new object[] { BattleBalance.SeekerDamage };
+            object[] data = new object[] { RemoteCatalog.SkillDamage(3, BattleBalance.SeekerDamage), CombatantId };
             PhotonNetwork.Instantiate("Skill_SeekerMissile", GetFirePosition(), transform.rotation, 0, data);
         }
     }
 
+    // RPC เปิดโล่: เจ้าของยานส่งด้วย RpcTarget.All จึงรันทุกเครื่อง ทุกเครื่องตั้ง isShielded และสร้างภาพโล่ของตัวเอง
+    // โล่อยู่ BattleBalance.ShieldSeconds วินาที (ระหว่างนั้นวิ่งเร็วขึ้นตาม ShieldSpeedMultiplier) แล้ว Invoke DeactivateShield
     [PunRPC]
     public void ActivateShieldRPC()
     {
@@ -65,6 +84,7 @@ public partial class PlayerController
         Invoke("DeactivateShield", BattleBalance.ShieldSeconds);
     }
 
+    // ปิดโล่ (ถูก Invoke จาก ActivateShieldRPC จึงรันทุกเครื่อง): คืนความเร็ว และเล่นเอฟเฟกต์/เสียงโล่แตก
     private void DeactivateShield()
     {
         isShielded = false;
@@ -92,6 +112,8 @@ public partial class PlayerController
     // Stun Visual
     private GameObject stunVisual;
 
+    // RPC ทำให้ยานติดสตัน: ส่งด้วย RpcTarget.All จาก SkillController (คนยิงคลื่นสตัน) หรือ HazardController (สายฟ้า) จึงรันทุกเครื่อง
+    // ไม่มีผลถ้าตาย/กันตัว/มีโล่; สตัน BattleBalance.StunSeconds วินาที ระหว่างนั้น Update ของเจ้าของจะไม่รับ input (ขยับ/ยิงไม่ได้)
     [PunRPC]
     public void ApplyStunRPC()
     {
@@ -123,13 +145,16 @@ public partial class PlayerController
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Stun");
     }
 
+    // ถูก Invoke หลังหมดเวลาสตัน (ทุกเครื่อง): คืนสียานและซ่อนไอคอนสตัน
     private void RemoveStun()
     {
         isStunned = false;
-        if (spriteRenderer != null) spriteRenderer.color = Color.white;
+        if (spriteRenderer != null) spriteRenderer.color = paintTint;
         if (stunVisual != null) stunVisual.SetActive(false);
     }
 
+    // RPC ทำให้ช้า 0.35 วินาที (โดนซ้ำจะต่อเวลา) ไม่มีผลถ้ามีโล่; รันทุกเครื่องที่ได้รับ (HazardController ส่งด้วย RpcTarget.All)
+    // หมายเหตุ: ปัจจุบันบึงชะลอถูกจัดการผ่าน SetBattlefieldZone ในเครื่องเจ้าของยานเป็นหลัก
     [PunRPC]
     public void ApplySlowRPC()
     {
@@ -143,6 +168,7 @@ public partial class PlayerController
         Invoke("RemoveSlow", 0.35f);
     }
 
+    // RPC ยกเลิกสถานะช้าทันที (คู่กับ ApplySlowRPC) รันทุกเครื่องที่ได้รับ
     [PunRPC]
     public void RemoveSlowRPC()
     {
@@ -151,25 +177,33 @@ public partial class PlayerController
         UpdateEffectiveSpeed();
     }
 
+    // ถูก Invoke เมื่อครบเวลาช้า: คืนความเร็ว
     private void RemoveSlow()
     {
         isSlowed = false;
         UpdateEffectiveSpeed();
     }
 
+    // true = ติดสถานะช้าจาก ApplySlowRPC (แยกจากการอยู่ในบึง swampSources)
     private bool isSlowed;
 
+    // คำนวณ speed ใหม่จาก baseSpeed: คูณ ShieldSpeedMultiplier ถ้ามีโล่ และคูณ SlowSpeedMultiplier ถ้าช้า/อยู่ในบึง
     private void UpdateEffectiveSpeed()
     {
         if (baseSpeed <= 0f) return;
-        speed = baseSpeed * (isShielded ? BattleBalance.ShieldSpeedMultiplier : 1f) * ((isSlowed || swampSources.Count > 0) ? BattleBalance.SlowSpeedMultiplier : 1f);
+        speed = baseSpeed * (isShielded ? BattleBalance.ShieldSpeedMultiplier : 1f) * ((isSlowed || swampSources.Count > 0) ? BattleBalance.SlowSpeedMultiplier : 1f)
+            * PowerSpeedFactor; // ไอเท็ม BOOST ในแม็พ (เฟส 7)
     }
 
+    // swampSources = id ของโซนบึงที่ยานอยู่ข้างใน (ซ้อนกันได้หลายโซน), swampExposure = เวลาที่อยู่ในบึงต่อเนื่อง (วินาที)
+    // IsSwampPoisoned ให้ HUD ใช้แสดงไอคอนพิษ; coreSources = id ของ Energy Core ที่ยานอยู่ข้างใน
     private readonly System.Collections.Generic.HashSet<int> swampSources = new System.Collections.Generic.HashSet<int>();
     private float swampExposure;
     public bool IsSwampPoisoned => swampSources.Count > 0 && swampExposure > BattleBalance.PoisonDelay && !isDead;
     private readonly System.Collections.Generic.HashSet<int> coreSources = new System.Collections.Generic.HashSet<int>();
 
+    // เรียกตรง (ไม่ใช่ RPC) จาก HazardController เมื่อยานของเครื่องนี้ (IsMine) เข้า/ออกโซนบึงหรือ Energy Core
+    // core = true คือ Energy Core (เปิด/ปิดโหมด Overload), false คือบึง (อัปเดตความเร็ว) ; ตายแล้วไม่นับการเข้าโซน
     public void SetBattlefieldZone(int source, bool core, bool inside)
     {
         if (isDead && inside) return;
@@ -179,6 +213,8 @@ public partial class PlayerController
         else UpdateEffectiveSpeed();
     }
 
+    // เปิด/ปิดโหมด Energy Overload: ยิงเร็วขึ้น (fireCooldown หารด้วย CoreFireRateMultiplier) แต่ Update จะหักเลือดต่อเนื่อง
+    // มี [PunRPC] ให้ส่งผ่านเครือข่ายได้ แต่ในไฟล์นี้ถูกเรียกแบบเมธอดปกติจาก SetBattlefieldZone และ ResetLifeState
     [PunRPC]
     public void SetEnergyOverloadRPC(bool active)
     {

@@ -1,3 +1,7 @@
+// ไฟล์สกิลแบบวัตถุ: SkillController อยู่บน Prefab Skill_StunWave / Skill_NovaBlast / Skill_SeekerMissile ใน Resources
+// สร้างด้วย PhotonNetwork.Instantiate จาก PlayerController.UseSkill (เครื่องเจ้าของยาน) พร้อมดาเมจใน InstantiationData
+// เครื่องเจ้าของสกิล (IsMine = คนใช้สกิล) เป็นคนเคลื่อนที่/ตรวจชน/ส่ง RPC; เครื่องอื่นแสดงภาพตามเวลา PhotonNetwork.Time
+// มีคลาส SkillSheetVisual (ตัวเล่นภาพ spritesheet) ที่ PlayerController และไฟล์อื่นเรียกใช้ด้วย
 using UnityEngine;
 using Photon.Pun;
 using System.Collections;
@@ -7,8 +11,10 @@ using System.Collections.Generic;
 // Pure visual; keeps frame sizes proportional and ignores the gameplay object's nonuniform scale.
 public sealed class SkillSheetVisual : MonoBehaviour
 {
+    // แคช sprite ที่โหลดแล้ว (key = ชื่อชีต) กันโหลดซ้ำ
     private static readonly Dictionary<string, Sprite[]> sheets = new Dictionary<string, Sprite[]>();
     private static readonly Dictionary<string, Sprite[]> gridSheets = new Dictionary<string, Sprite[]>();
+    // โหลด sprite ทั้งหมดจาก Resources/Images/<name> แล้วเรียงตามตำแหน่ง x ในชีต (ซ้ายไปขวา = ลำดับเฟรม)
     public static Sprite[] Load(string name)
     {
         if (!sheets.TryGetValue(name, out var sprites))
@@ -48,6 +54,8 @@ public sealed class SkillSheetVisual : MonoBehaviour
         return sprites;
     }
 
+    // สร้าง GameObject แสดงแอนิเมชัน: follow = ตามวัตถุ (null = อยู่กับที่), size = ขนาด (หน่วยโลก), duration = อายุ (0 = ให้ผู้เรียกสั่ง SetFrame เอง)
+    // ใช้ PhotonNetwork.Time เป็นนาฬิกา ภาพจึงเล่นตรงกันทุกเครื่อง คืน null ถ้าไม่มีเฟรม
     public static SkillSheetVisual Create(Sprite[] frames, Transform follow, Vector3 position, float size,
         float duration = 0, bool upright = true, float rotationOffset = 0, bool bottom = false)
     {
@@ -79,6 +87,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
         return visual;
     }
 
+    // ข้อมูลภายในของแอนิเมชัน: เฟรม, เป้าที่ตาม, การจัดตำแหน่ง, renderer หลัก + renderer เฟรมก่อนหน้า (ไว้ผสมเฟรม), เวลาเริ่ม
     private Sprite[] frames;
     private Transform follow;
     private bool hadFollow, upright, bottom;
@@ -90,8 +99,10 @@ public sealed class SkillSheetVisual : MonoBehaviour
     private float scale, duration, rotationOffset;
     private double started;
     private int frame = -1;
+    // breakTime = วินาทีที่เริ่มเล่นช่วง "แตก" (ใช้กับโล่) -1 = ไม่ใช้; Break() กระโดดไปช่วงแตกทันที
     public float breakTime = -1;
     public void Break() { if (breakTime >= 0) started = PhotonNetwork.Time - breakTime; }
+    // เปลี่ยนเฟรมที่แสดง เก็บเฟรมเดิมไว้ใน previousRenderer เพื่อทำ crossfade
     public void SetFrame(int index)
     {
         index = Mathf.Clamp(index, 0, frames.Length - 1);
@@ -101,8 +112,10 @@ public sealed class SkillSheetVisual : MonoBehaviour
         frame = index;
         renderer2D.sprite = frames[frame];
     }
+    // ทุกเฟรมหลัง Update: คำนวณเฟรมจากอายุ, ขนาด/ความทึบ (ขยาย-จาง หรือเต้นเบาๆ) และวางภาพตามวัตถุที่ตาม
     private void LateUpdate()
     {
+        // 1) ถ้าวัตถุที่ตามถูกทำลายให้ลบตัวเอง ถ้าถูกปิดอยู่ให้ซ่อน
         if (hadFollow && follow == null) { Destroy(gameObject); return; }
         if (hadFollow && !follow.gameObject.activeInHierarchy)
         {
@@ -110,6 +123,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
             return;
         }
         renderer2D.enabled = true;
+        // 2) เลือกเฟรมจากอายุ (หมดอายุแล้วทำลายตัวเอง)
         float age = (float)(PhotonNetwork.Time - started);
         if (duration > 0)
         {
@@ -119,6 +133,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
                 : Mathf.FloorToInt(age / duration * frames.Length);
             SetFrame(index);
         }
+        // 3) หามุมและจุด pivot ของภาพ
         Quaternion rotation = !upright && follow != null ? follow.rotation * Quaternion.Euler(0, 0, rotationOffset) : Quaternion.identity;
         Bounds bounds = renderer2D.sprite.bounds;
         Vector3 pivot = bottom ? new Vector3(bounds.center.x, bounds.min.y, 0) : bounds.center;
@@ -126,6 +141,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
         float blendTime = duration > 0 && breakTime < 0 ? Mathf.Min(.09f, duration / frames.Length * .5f) : .1f;
         float blend = previousRenderer.sprite == null ? 1 : Mathf.SmoothStep(0, 1, (Time.time - frameChangedAt) / Mathf.Max(.01f, blendTime));
         float opacity = Mathf.SmoothStep(0, 1, age / .065f);
+        // 4) คำนวณขนาดและความทึบตามแบบของเอฟเฟกต์ (อยู่กับที่ / มี breakTime / ตามวัตถุ)
         float size = 1f;
         if (!hadFollow && duration > 0)
         {
@@ -144,6 +160,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
             }
         }
         else size = 1 + (bottom ? .014f : .022f) * Mathf.Sin(age * (bottom ? 12 : 20));
+        // 5) ใส่สี ผสมเฟรมก่อนหน้า และวางตำแหน่ง/หมุน/สเกลจริง
         float animatedScale = scale * size;
         renderer2D.color = new Color(1, 1, 1, opacity * blend);
         previousRenderer.enabled = previousRenderer.sprite != null && blend < 1;
@@ -160,34 +177,49 @@ public sealed class SkillSheetVisual : MonoBehaviour
     }
 }
 
+// คลาสวัตถุสกิลในเครือข่าย 1 ชิ้น: คลื่นสตัน (พุ่งหาเป้า), ระเบิดโนวา (รอ 1.5 วิแล้วระเบิดเป็นวง), มิสไซล์ติดตาม (เร่งความเร็วขึ้นเรื่อยๆ)
 public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCallback
 {
+    // ชนิดสกิล ตั้งไว้ใน Prefab แต่ละตัว
     public enum SkillBehavior { StunWave, NovaBlast, SeekerMissile }
     public SkillBehavior behavior;
+    // damage = ดาเมจต่อครั้ง (ถูกแทนด้วยค่าที่ส่งมาตอนสร้าง), speed = ความเร็ว (หน่วย/วินาที), lifeTime = อายุ (วินาที)
     public float damage = 10f;
     public float speed = 10f;
     public float lifeTime = 3f;
     public float skillParam2 = 0f;
+    // isDestroyed = กันคิดชนซ้ำหลังสั่งทำลาย, novaArmed = โนวาระเบิดไปแล้ว, impactPlayed = เล่นเอฟเฟกต์ชนไปแล้ว
     private bool isDestroyed, novaArmed, impactPlayed;
     private Transform target;
+    // ตัวคูณความเร็วมิสไซล์: เริ่ม 0.5 เท่า เพิ่ม 1.5 ต่อวินาที สูงสุด 2.5 เท่า (ดู Update)
     private float seekerSpeedMultiplier = .5f;
     private double started;
     private int missileColor;
     private SkillSheetVisual visual;
     private Sprite[] frames;
+    // ViewID ของยานที่โดนดาเมจไปแล้ว กันสกิลเดียวทำดาเมจยานเดิมซ้ำ
     private readonly HashSet<int> damagedPlayerViewIds = new HashSet<int>();
+    // ผู้ใช้สกิล (คน = ActorNumber, บอท = 1000+) ใช้กันสกิลโดนตัวเอง และส่งเป็นคนฆ่า
+    private int casterId = -1;
+    // โนวาระเบิดหลังสร้าง 1.5 วินาที รัศมี 3 หน่วยโลก
     private const float NovaDelay = 1.5f;
     private const float NovaRadius = 3f;
 
+    // Photon เรียกตอนวัตถุสกิลถูกสร้างบนแต่ละเครื่อง (ทุกเครื่อง): อ่านดาเมจ/เวลาเริ่ม เลือกสีมิสไซล์ตามยานของเจ้าของ และสร้างภาพ
+    // โนวาจะหยุดนิ่งและปิด Collider (ใช้ OverlapCircle แทน) ส่วนสกิลอื่นเครื่องเจ้าของจะหาเป้าหมายที่ใกล้สุด
     public void OnPhotonInstantiate(PhotonMessageInfo info)
     {
+        // 1) อ่านข้อมูลตอนสร้าง: ดาเมจ, เวลาเซิร์ฟเวอร์ที่สร้าง, สีมิสไซล์
         var data = photonView.InstantiationData;
         if (data != null && data.Length > 0 && data[0] is float value) damage = value;
+        // [1] = เลขผู้ใช้สกิล (บอทใช้เลข 1000+) ถ้าไม่มีใช้ ActorNumber ของคนสร้างแบบเดิม
+        casterId = data != null && data.Length > 1 && data[1] is int caster ? caster : photonView.CreatorActorNr;
         started = info.SentServerTime;
         if (photonView.Owner != null && photonView.Owner.CustomProperties.TryGetValue("ShipType", out object shipValue) && shipValue is int ship)
             missileColor = ship == 1 ? 1 : ship == 2 ? 0 : 2; // Ship1 purple, Ship2 blue, Ship3 orange.
         else missileColor = 2;
 
+        // 2) โหลด spritesheet ของสกิล แล้วซ่อนภาพ/อนุภาค/หางเดิมของ Prefab ใช้ SkillSheetVisual แทน
         if (behavior == SkillBehavior.NovaBlast) lifeTime = 2f;
         string sheet = behavior == SkillBehavior.NovaBlast ? "VFX/VFX_NovaBlast"
             : behavior == SkillBehavior.SeekerMissile ? "VFX_SeekerMissile" : "VFX_StunWave";
@@ -208,6 +240,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             if (behavior == SkillBehavior.SeekerMissile) visual.SetFrame(missileColor);
         }
 
+        // 3) ตั้งค่าตามชนิด: โนวาไม่เคลื่อนที่ / สตันและมิสไซล์ให้เจ้าของล็อกเป้า
         if (behavior == SkillBehavior.NovaBlast)
         {
             var body = GetComponent<Rigidbody2D>();
@@ -219,6 +252,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         UpdateVisual(0);
     }
 
+    // เลือกเฟรมภาพตามอายุ: โนวาแสดงช่วงชาร์จจนครบ NovaDelay แล้วเป็นช่วงระเบิด, คลื่นสตันไล่เฟรมตาม lifeTime
     private void UpdateVisual(float age)
     {
         if (visual == null || frames == null || frames.Length == 0) return;
@@ -237,18 +271,22 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             visual.SetFrame(Mathf.FloorToInt(Mathf.Clamp01(age / Mathf.Max(.01f, lifeTime)) * (frames.Length - 1)));
     }
 
+    // ทุกเฟรม: ทุกเครื่องอัปเดตภาพและจุดระเบิดโนวา; เฉพาะเครื่องเจ้าของสกิลจะนับอายุ หันหาเป้า เคลื่อนที่ และตรวจชน
     void Update()
     {
         if (isDestroyed) return;
+        // 1) ทุกเครื่อง: ภาพตามอายุ และโนวาระเบิดเมื่อครบเวลา
         float age = Mathf.Max(0, (float)(PhotonNetwork.Time - started));
         UpdateVisual(age);
         if (behavior == SkillBehavior.NovaBlast)
         {
             if (!novaArmed && age >= NovaDelay) DetonateNova();
         }
+        // 2) ต่อจากนี้เฉพาะเจ้าของ: หมดอายุแล้วทำลาย (โนวาไม่เคลื่อนที่)
         if (!photonView.IsMine) return;
         if (age >= lifeTime) { DestroySkill(); return; }
         if (behavior == SkillBehavior.NovaBlast) return;
+        // 3) หันหาเป้า (ถ้าเป้าตายแล้วเลิกตาม)
         Vector2 movementStart = transform.position;
         if (target != null && (target.GetComponent<PlayerController>() == null || target.GetComponent<PlayerController>().isDead))
             target = null;
@@ -258,11 +296,12 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
             transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.Euler(0, 0, angle), Time.deltaTime * 5f);
         }
+        // 4) มิสไซล์เร่งความเร็ว แล้วกวาดตรวจชนระหว่างจุดเดิมกับจุดใหม่ก่อนขยับ
         if (behavior == SkillBehavior.SeekerMissile)
             seekerSpeedMultiplier = Mathf.Min(seekerSpeedMultiplier + Time.deltaTime * 1.5f, 2.5f);
         float multiplier = behavior == SkillBehavior.SeekerMissile ? seekerSpeedMultiplier : 1f;
         Vector2 end = movementStart + (Vector2)transform.up * speed * multiplier * Time.deltaTime;
-        if (ProjectileSweep.FirstHit(transform, photonView.CreatorActorNr, movementStart, end, out var hit))
+        if (ProjectileSweep.FirstHit(transform, casterId, movementStart, end, out var hit))
         {
             transform.position = hit.centroid;
             OnTriggerEnter2D(hit.collider);
@@ -270,6 +309,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         else transform.position = end;
     }
 
+    // ระเบิดโนวา: ทุกเครื่องเล่นเสียง/ภาพ แต่เฉพาะเครื่องเจ้าของหายานศัตรูในรัศมี NovaRadius แล้วส่งดาเมจ
     private void DetonateNova()
     {
         novaArmed = true;
@@ -283,34 +323,39 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         foreach (var collider in Physics2D.OverlapCircleAll(transform.position, NovaRadius))
         {
             var player = collider.GetComponentInParent<PlayerController>();
-            if (player != null && player.photonView.OwnerActorNr != photonView.CreatorActorNr) DealDamage(player);
+            if (player != null && !MatchRules.IsAlly(player.CombatantId, casterId)) DealDamage(player);
         }
     }
 
+    // หาเป้า (เครื่องเจ้าของ): ยานศัตรูที่ยังไม่ตายและใกล้ที่สุด; คลื่นสตันล็อกได้ไม่เกินระยะ speed * lifeTime, มิสไซล์ไม่จำกัดระยะ
     private void FindNearestTarget()
     {
         // Preserve Seeker's existing lock behavior; Stun only acquires within its original travel budget.
         float nearest = behavior == SkillBehavior.StunWave ? speed * lifeTime : float.PositiveInfinity;
         foreach (var player in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
         {
-            if (player.isDead || player.photonView.OwnerActorNr == photonView.CreatorActorNr) continue;
+            if (player.isDead || MatchRules.IsAlly(player.CombatantId, casterId)) continue;
             float distance = Vector2.Distance(transform.position, player.transform.position);
             if (distance < nearest) { nearest = distance; target = player.transform; }
         }
     }
 
+    // ส่ง RPC "TakeDamage" ไป RpcTarget.All (เครื่องเจ้าของยานที่โดนเป็นคนหักเลือด) โดยยานแต่ละลำโดนได้ครั้งเดียวต่อสกิล
     private void DealDamage(PlayerController player)
     {
         if (!player.isDead && damagedPlayerViewIds.Add(player.photonView.ViewID))
-            player.photonView.RPC("TakeDamage", RpcTarget.All, damage, photonView.CreatorActorNr);
+            PlayerController.SendDamage(player, damage, casterId, true); // เฟส 9: ผ่าน Host ถ้าเปิด HostDamage
     }
 
+    // Unity เรียกเมื่อชนแบบไม่ใช่ Trigger: ส่งต่อให้ OnTriggerEnter2D
     void OnCollisionEnter2D(Collision2D collision) => OnTriggerEnter2D(collision.collider);
+    // ผลการชน (เฉพาะเครื่องเจ้าของ ไม่ใช้กับโนวา): ข้ามยานตัวเอง/ยานที่ตาย/Trigger ที่ไม่ใช่ยาน
+    // ทำลายสกิล ส่ง PlayImpactRPC ไปทุกเครื่อง ถ้าเป็นคลื่นสตันส่ง ApplyStunRPC (RpcTarget.All) แล้วส่งดาเมจ
     void OnTriggerEnter2D(Collider2D hit)
     {
         if (!photonView.IsMine || isDestroyed || behavior == SkillBehavior.NovaBlast) return;
         var player = hit.GetComponentInParent<PlayerController>();
-        if (player != null && (player.isDead || player.photonView.OwnerActorNr == photonView.CreatorActorNr)) return;
+        if (player != null && (player.isDead || MatchRules.IsAlly(player.CombatantId, casterId))) return;
         if (player == null && hit.isTrigger) return;
         // Lock before RPCs so trigger and swept collision cannot apply the same hit twice.
         DestroySkill();
@@ -320,6 +365,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         DealDamage(player);
     }
 
+    // RPC เอฟเฟกต์ระเบิดตอนสกิลชน: รันทุกเครื่อง ตรวจผู้ส่งว่าเป็นเจ้าของสกิล ซ่อนภาพสกิลแล้วเล่นภาพแรงกระแทก + เสียง (เล่นครั้งเดียว)
     [PunRPC]
     public void PlayImpactRPC(Vector3 position, PhotonMessageInfo info)
     {
@@ -348,6 +394,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Hit");
     }
 
+    // ทำลายสกิล (เฉพาะเจ้าของ ครั้งเดียว): ซ่อนภาพ ปิด Collider หยุดความเร็ว แล้วค่อยลบผ่านเครือข่าย
     private void DestroySkill()
     {
         if (!photonView.IsMine || isDestroyed) return;
@@ -360,11 +407,13 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         if (body != null) body.linearVelocity = Vector2.zero;
         StartCoroutine(NetworkDestroyRoutine());
     }
+    // รอ 0.1 วินาทีแล้ว PhotonNetwork.Destroy เพื่อลบออกจากทุกเครื่อง
     private IEnumerator NetworkDestroyRoutine()
     {
         yield return new WaitForSeconds(.1f);
         if (PhotonNetwork.InRoom && photonView.IsMine) PhotonNetwork.Destroy(gameObject);
     }
+    // Unity เรียกตอนถูกทำลาย: ลบ GameObject ภาพที่สร้างแยกไว้ด้วย
     private void OnDestroy()
     {
         if (visual != null) Destroy(visual.gameObject);

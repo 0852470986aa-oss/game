@@ -1,13 +1,35 @@
+// ส่วนภาพของ PlayerController (partial class เดียวกับ PlayerController.cs): ไฟไอพ่นแบบ spritesheet และระเบิดตอนโดนยิง/ตาย
+// โค้ดในไฟล์นี้เป็นภาพล้วน รันในทุกเครื่องแยกกัน (ไม่มี RPC/ไม่ส่งข้อมูลเครือข่าย) และไม่มีผลต่อการเล่น
+// ใช้รูปใน Resources/Images (VFX_ShipEffects, VFX_RedThruster_Higgsfield, VFX/VFX_GreenThruster, VFX/VFX_ShipExplosion, VFX/VFX_ShipImpact)
 using UnityEngine;
 using Photon.Pun;
 
 // ส่วน Visuals ของ PlayerController; partial คือคลาสเดิม ไม่ต้องเพิ่ม Component
 public partial class PlayerController
 {
+    // แคชเฟรมไฟไอพ่นแบบ static (โหลดครั้งเดียว ใช้ร่วมกันทุกยาน)
     private static Sprite[] redThrusterFrames;
     private static bool redThrusterLoaded;
     private static Sprite[] greenThrusterFrames;
+    // ไฟไอพ่น: เล่น 16 เฟรม/วินาที และผสมเฟรมถัดไปทับแบบค่อยๆ ขึ้น ให้ดูลื่นเหมือนมีเฟรมมากขึ้น
+    private const float ThrusterFps = 16f;
+    private SpriteRenderer[] sheetThrusterBlends;
 
+    // style 0 = แดง, 2 = เขียว; คืน null ถ้าไม่มีชีต
+    private static Sprite ThrusterFrameAt(int style, int frame, int engine)
+    {
+        if (style == 2)
+        {
+            if (greenThrusterFrames == null)
+                greenThrusterFrames = SkillSheetVisual.LoadGrid("VFX/VFX_GreenThruster", 4, 4, true);
+            return greenThrusterFrames == null || greenThrusterFrames.Length == 0 ? null
+                : greenThrusterFrames[(frame + engine * 3) % greenThrusterFrames.Length];
+        }
+        RedThrusterFrame(0, 0); // โหลดชีตครั้งแรก
+        return redThrusterFrames == null ? null : redThrusterFrames[(frame + engine * 3) % 16];
+    }
+
+    // คืนเฟรมไอพ่นสีเขียว (ยาน ship3) ตามเวลา 12 เฟรม/วินาที โหลดชีต 4x4 ครั้งแรกที่เรียก; engine ใช้เลื่อนเฟรมให้แต่ละหัวฉีดไม่ตรงกัน
     private static Sprite GreenThrusterFrame(float time, int engine)
     {
         if (greenThrusterFrames == null)
@@ -16,6 +38,7 @@ public partial class PlayerController
             : greenThrusterFrames[(Mathf.FloorToInt(time * 12f) + engine * 3) % greenThrusterFrames.Length];
     }
 
+    // คืนเฟรมไอพ่นสีแดง: ครั้งแรกตัดรูป VFX_RedThruster_Higgsfield เป็น 16 เฟรม (4x4) จุดหมุนอยู่ขอบบน (โคนไฟ)
     private static Sprite RedThrusterFrame(float time, int engine)
     {
         if (!redThrusterLoaded)
@@ -36,6 +59,7 @@ public partial class PlayerController
             : redThrusterFrames[(Mathf.FloorToInt(time * 12f) + engine * 3) % 16];
     }
 
+    // หา sprite จากชีต VFX_ShipEffects ที่ชื่อลงท้ายด้วย _id (โหลดครั้งแรกแล้วแคชไว้)
     private static Sprite ShipEffectSprite(int id)
     {
         if (shipEffectSprites == null) shipEffectSprites = Resources.LoadAll<Sprite>("Images/VFX_ShipEffects");
@@ -44,12 +68,22 @@ public partial class PlayerController
         return null;
     }
 
+    // Unity เรียกหลัง Update ทุกเฟรม (ทุกเครื่อง): อัปเดตเส้นเล็ง/วงกันตัว แล้ววาดไฟไอพ่นตามแรงขับของยาน
+    // ครั้งแรกจะสร้าง SpriteRenderer ไอพ่นตามชนิดยาน (ดูจากชื่อ sprite) ต่อจากนั้นอัปเดตเฟรม ขนาด ตำแหน่ง และสีทุกเฟรม
     private void LateUpdate()
+    {
+        LateUpdateVisuals();
+        // เฟส 7: ล่องหน (ซ่อนภาพจากศัตรู) — PlayerController.Content.cs
+        ApplyCloakVisibility();
+    }
+
+    private void LateUpdateVisuals()
     {
         UpdateAimGuide();
         if (spriteRenderer == null || spriteRenderer.sprite == null) return;
         float traveled = Vector3.Distance(transform.position, previousVfxPosition);
         previousVfxPosition = transform.position;
+        // 1) ครั้งแรก: เลือกสไตล์ไอพ่นจากชื่อภาพยาน (ship2 = 1, ship3 = 2 เขียว, อื่นๆ = 0 แดง) และเตรียม sprite เปลวไฟ
         if (sheetThrusters == null)
         {
             int style = spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
@@ -86,6 +120,7 @@ public partial class PlayerController
             sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
             exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
                 ? new Color(0.2f, 0.85f, 1f) : new Color(0.35f, 1f, 0.25f);
+            // 2) สร้างหัวฉีดแต่ละอัน: เปลวไฟ + แสงเรือง (glow) + เลเยอร์ผสมเฟรม แล้วปิด ParticleSystem เดิม
             for (int i = 0; i < sheetThrusters.Length; i++)
             {
                 var obj = new GameObject("ShipSheetThruster" + i);
@@ -103,9 +138,19 @@ public partial class PlayerController
                 glow.sortingLayerID = nozzle.sortingLayerID;
                 glow.sortingOrder = spriteRenderer.sortingOrder + 1;
                 sheetThrusterGlows[i] = glow;
+                // เฟรมถัดไป วางทับไอพ่นแล้วค่อยๆ ชัดขึ้น (ผสมเฟรม)
+                var blendObject = new GameObject("ShipSheetThrusterBlend" + i);
+                blendObject.transform.SetParent(obj.transform, false);
+                var blend = blendObject.AddComponent<SpriteRenderer>();
+                blend.sortingLayerID = nozzle.sortingLayerID;
+                blend.sortingOrder = nozzle.sortingOrder + 1;
+                blend.enabled = false;
+                if (sheetThrusterBlends == null) sheetThrusterBlends = new SpriteRenderer[exhaustAnchors.Length];
+                sheetThrusterBlends[i] = blend;
             }
             if (thrusterEffect != null) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
+        // 3) คำนวณแรงขับที่จะแสดง: ยานของเราใช้ input จากจอย, ยานคนอื่นใช้ระยะที่ขยับจริงในเฟรมนี้ (เพราะไม่มี input ของอีกฝ่าย)
         Bounds hull = spriteRenderer.sprite.bounds;
         float actualThrust = Mathf.Clamp01(traveled / Mathf.Max(0.001f, Time.deltaTime * speed));
         // Smooth fixed-step motion, while keeping the engine visibly burning when pushing against cover.
@@ -113,20 +158,26 @@ public partial class PlayerController
         displayedThrust = Mathf.MoveTowards(displayedThrust, Mathf.Clamp01(requestedThrust), Time.deltaTime * 5f);
         float pulse = 1f + 0.025f * Mathf.Sin(Time.time * 19f);
         float length = hull.size.y * Mathf.Lerp(0.12f, 0.21f, displayedThrust) * pulse;
+        // 4) อัปเดตทุกหัวฉีด: เฟรมแอนิเมชัน, เปิด/ปิดตามสถานะตาย, ขนาดตามแรงขับ, ตำแหน่งตามจุดยึดบนภาพยาน, สี และแสงเรือง
         for (int i = 0; i < sheetThrusters.Length; i++)
         {
             var nozzle = sheetThrusters[i];
-            if (exhaustStyle == 0)
+            var blendLayer = sheetThrusterBlends != null && i < sheetThrusterBlends.Length ? sheetThrusterBlends[i] : null;
+            float blendAmount = 0f;
+            if (exhaustStyle == 0 || exhaustStyle == 2)
             {
-                var animated = RedThrusterFrame(Time.time, i);
+                float framePosition = Time.time * ThrusterFps;
+                int frame = Mathf.FloorToInt(framePosition);
+                blendAmount = framePosition - frame;
+                var animated = ThrusterFrameAt(exhaustStyle, frame, i);
                 if (animated != null) nozzle.sprite = animated;
-            }
-            else if (exhaustStyle == 2)
-            {
-                var animated = GreenThrusterFrame(Time.time, i);
-                if (animated != null) nozzle.sprite = animated;
+                if (blendLayer != null) blendLayer.sprite = ThrusterFrameAt(exhaustStyle, frame + 1, i);
             }
             nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled;
+            if (blendLayer != null)
+            {
+                blendLayer.enabled = nozzle.enabled && blendLayer.sprite != null && (exhaustStyle == 0 || exhaustStyle == 2);
+            }
             float engineSize = exhaustStyle == 2 ? 1.3f : exhaustStyle == 1 && i >= 2 ? .75f : 1f;
             float scale = length * engineSize / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
             float width = hull.size.x * (exhaustStyle == 2 ? Mathf.Lerp(.10f, .14f, displayedThrust)
@@ -141,6 +192,15 @@ public partial class PlayerController
             Color flameTint = exhaustStyle == 2 ? new Color(0.68f, 1f, 0.42f) : Color.white;
             flameTint.a = Mathf.Lerp(0.85f, 1f, displayedThrust);
             nozzle.color = flameTint;
+            if (blendLayer != null && blendLayer.enabled)
+            {
+                // ขนาดตามเฟรมของตัวเอง (เฟรมในชีตอาจตัดขอบไม่เท่ากัน) ทิศและจุดยึดเดียวกับไอพ่น
+                Vector3 nozzleScale = nozzle.transform.localScale;
+                Vector2 baseSize = nozzle.sprite.bounds.size, nextSize = blendLayer.sprite.bounds.size;
+                blendLayer.transform.localScale = new Vector3(baseSize.x / Mathf.Max(.01f, nextSize.x),
+                    baseSize.y / Mathf.Max(.01f, nextSize.y), 1f);
+                blendLayer.color = new Color(flameTint.r, flameTint.g, flameTint.b, flameTint.a * Mathf.SmoothStep(0, 1, blendAmount));
+            }
             var glow = sheetThrusterGlows[i];
             glow.sprite = nozzle.sprite;
             glow.enabled = nozzle.enabled;
@@ -153,6 +213,8 @@ public partial class PlayerController
         if (thrusterEffect != null && thrusterEffect.isPlaying) thrusterEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
     }
 
+    // เล่นระเบิดแบบ spritesheet ที่ตำแหน่งยาน: death = true ระเบิดใหญ่ตอนตาย, false = ประกายเล็กตอนโดนยิง (เว้นอย่างน้อย 0.07 วินาที)
+    // เรียกจาก PlayHitEffectsRPC/OnPlayerDiedRPC (ทุกเครื่อง) คืน false ถ้าไม่มีชีต เพื่อให้ผู้เรียกใช้ Prefab สำรองแทน
     private bool PlaySheetBurst(bool death)
     {
         Sprite[] frames = SkillSheetVisual.LoadGrid(death ? "VFX/VFX_ShipExplosion" : "VFX/VFX_ShipImpact");
@@ -161,6 +223,8 @@ public partial class PlayerController
         lastSheetImpact = Time.time;
         float size = Mathf.Max(spriteRenderer.bounds.size.x, spriteRenderer.bounds.size.y) * (death ? 1.8f : 0.65f);
         SkillSheetVisual.Create(frames, null, transform.position, size, death ? 0.65f : 0.24f);
+        // แสงวาบขยายออกตอนระเบิด (อยู่ใต้ภาพระเบิด)
+        if (death) PrismFx.Burst(transform.position, new Color(1f, .62f, .28f), size * 1.5f, 10);
         return true;
     }
 }

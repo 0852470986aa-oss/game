@@ -1,15 +1,20 @@
+// ป้อมปืนอัตโนมัติในแม็พหุ่นยนต์ (index 2) GameplayManager.Maps.cs ใส่ component นี้ให้วัตถุในกลุ่ม TurretObstacles ตอนจัดแม็พ
+// เป็น MonoBehaviour ธรรมดา (ไม่มี PhotonView): ทุกเครื่องหมุนหัวปืนเองในเครื่อง แต่ยิงจริงเฉพาะ Master Client
+// กระสุนสร้างด้วย PhotonNetwork.InstantiateRoomObject (BulletController) จึงเป็นของห้อง ไม่มีผู้เล่นคนไหนได้แต้มฆ่า
 using UnityEngine;
 using Photon.Pun;
 
 // ป้อมปืนของฉาก: หมุนหัวปืนหาเป้าหมายและให้ผู้เล่น Master เป็นผู้สร้างกระสุนในเครือข่าย
 public class AutoTurret : MonoBehaviour
 {
+    // detectionRadius = ระยะมองเห็นเป้า (หน่วยโลก), fireRate = วินาทีระหว่างนัด (ต่ำสุด 0.3), damage = ดาเมจต่อนัด (ค่าจาก BattleBalance)
     public float detectionRadius = 24f;
     public float fireRate = BattleBalance.TurretShotInterval;
     public float damage = BattleBalance.TurretDamage;
     public string bulletPrefabName = "BulletPrefab";
     public Transform firePoint;
 
+    // ค่าคงที่ภาพ: path ของชีตรูปป้อมปืนใน Resources, ขนาดรูปต้นฉบับ และขนาดที่ต้องการให้แสดงในฉาก (หน่วยโลก)
     private const string RotationSheetResource = "Images/MechTurret_RotationSheet";
     private const float TurretArtWidth = 1.78f;
     private const float TurretArtHeight = 1.88f;
@@ -19,19 +24,24 @@ public class AutoTurret : MonoBehaviour
     private static Sprite cachedHeadSprite;
     private static bool attemptedSpriteLoad;
 
+    // สถานะตอนรัน: เวลาที่ยิง/สแกนได้ครั้งถัดไป, ยานเป้าหมาย และ transform ของหัวปืนที่หมุนได้
     private float nextFireTime;
     private float nextScan;
     private PlayerController target;
     private Transform turretHead;
 
+    // Unity เรียกครั้งแรก: แยกภาพป้อมเป็นฐาน (นิ่ง) + หัวปืน (หมุน)
     void Start()
     {
         SetupSplitTurretVisual();
     }
 
+    // ทุกเฟรม (ทุกเครื่อง ระหว่างแมตช์): หาเป้าที่ใกล้ที่สุดในระยะที่มองเห็นได้ หมุนหัวปืนเข้าหา
+    // ถ้าเล็งตรงแล้ว (คลาดไม่เกิน 8 องศา) และพ้นคูลดาวน์ เฉพาะ Master Client จะสร้างกระสุนในเครือข่าย
     void Update()
     {
         if (!PhotonNetwork.InRoom || GameplayManager.Instance == null || !GameplayManager.Instance.MatchInputAllowed) return;
+        // 1) ทุก 0.2 วินาที สแกนยานที่ยังไม่ตาย อยู่ในระยะ และไม่มีสิ่งกีดขวางบัง
         if (Time.time >= nextScan)
         {
             nextScan = Time.time + .2f;
@@ -46,6 +56,7 @@ public class AutoTurret : MonoBehaviour
         }
         if (target == null || target.isDead) return;
 
+        // 2) หมุนหัวปืน (หรือทั้งตัวถ้าไม่มีหัวแยก) เข้าหาเป้า 120 องศา/วินาที
         Vector2 direction = target.transform.position - transform.position;
         float bearing = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
         Quaternion bulletAim = Quaternion.Euler(0, 0, bearing - 90f);
@@ -59,6 +70,7 @@ public class AutoTurret : MonoBehaviour
         bool linedUp = turretHead != null
             ? Quaternion.Angle(turretHead.rotation, headAim) <= 8f
             : Quaternion.Angle(transform.rotation, bulletAim) <= 8f;
+        // 3) ยิงเฉพาะ Master Client: InstantiationData = { ดาเมจ, true = กระสุนของฉาก (Shooter -1), true = กระสุนป้อมปืน }
         if (!PhotonNetwork.IsMasterClient || Time.time < nextFireTime || !linedUp || !ClearSight(target)) return;
 
         nextFireTime = Time.time + Mathf.Max(.3f, fireRate);
@@ -67,6 +79,7 @@ public class AutoTurret : MonoBehaviour
             new object[] { damage, true, true });
     }
 
+    // โหลดภาพฐาน/หัวปืนแล้วสร้างเป็นลูก 2 ชิ้น ซ่อนภาพเดิม และสร้างจุด MuzzlePoint ที่ปลายกระบอกเป็น firePoint
     void SetupSplitTurretVisual()
     {
         if (!LoadTurretSprites()) return;
@@ -98,6 +111,7 @@ public class AutoTurret : MonoBehaviour
         if (warningGlow != null) warningGlow.gameObject.SetActive(false);
     }
 
+    // สร้าง GameObject ลูกที่มี SpriteRenderer ตามตำแหน่ง/สเกล/ลำดับการวาดที่กำหนด
     GameObject CreatePart(string partName, Sprite sprite, Vector2 localPosition, float visualScale,
         int sortingLayer, int sortingOrder)
     {
@@ -113,6 +127,7 @@ public class AutoTurret : MonoBehaviour
         return part;
     }
 
+    // ตัดรูปฐานและหัวปืนจากชีต 4x4 (ใช้ช่องซ้ายบน) ครั้งเดียวแล้วแคชไว้แบบ static ใช้ร่วมทุกป้อม คืน false ถ้าไม่มีรูป
     static bool LoadTurretSprites()
     {
         if (attemptedSpriteLoad) return cachedBaseSprite != null && cachedHeadSprite != null;
@@ -128,6 +143,7 @@ public class AutoTurret : MonoBehaviour
         // Use the top-left frame: the lower circular platform and upper gun are cropped separately.
         const int cellX = 0;
         const int cellYFromTop = 0;
+        // 1) หาขอบของช่องซ้ายบนในหน่วยพิกเซล
         int cellLeft = Mathf.RoundToInt(cellX * sheet.width / 4f);
         int cellRight = Mathf.RoundToInt((cellX + 1) * sheet.width / 4f);
         int cellTop = sheet.height - Mathf.RoundToInt(cellYFromTop * sheet.height / 4f);
@@ -135,6 +151,7 @@ public class AutoTurret : MonoBehaviour
         int cellWidth = cellRight - cellLeft;
         int cellHeight = cellTop - cellBottom;
 
+        // 2) แบ่งช่องเป็นส่วนฐาน (ล่าง) และหัวปืน (บน) ตามสัดส่วนของภาพ
         int cropLeft = cellLeft + Mathf.RoundToInt(cellWidth * .18f);
         int cropRight = cellLeft + Mathf.RoundToInt(cellWidth * .68f);
         int baseTopFromImageTop = Mathf.RoundToInt(cellHeight * .53f);
@@ -144,6 +161,7 @@ public class AutoTurret : MonoBehaviour
         int headBottom = cellTop - headBottomFromImageTop;
         int headTop = cellTop;
 
+        // 3) ตั้งจุดหมุน (pivot) ให้อยู่ที่แกนหมุนของป้อม
         float axisX = cellLeft + cellWidth * .423f;
         float baseCenterY = cellBottom + cellHeight * .24f;
         float axisY = cellTop - cellHeight * .58f;
@@ -154,6 +172,7 @@ public class AutoTurret : MonoBehaviour
         Vector2 headPivot = new Vector2((axisX - cropLeft) / headRect.width,
             (axisY - headBottom) / headRect.height);
 
+        // 4) สร้าง Sprite จริง
         cachedBaseSprite = Sprite.Create(sheet, baseRect, basePivot, 100f, 0, SpriteMeshType.FullRect);
         cachedBaseSprite.name = "MechTurret_Base_Runtime";
         cachedHeadSprite = Sprite.Create(sheet, headRect, headPivot, 100f, 0, SpriteMeshType.FullRect);
@@ -161,12 +180,14 @@ public class AutoTurret : MonoBehaviour
         return cachedBaseSprite != null && cachedHeadSprite != null;
     }
 
+    // ระยะจากกลางป้อมถึงปากกระบอก (ใช้เมื่อไม่มี firePoint) = ขนาด Collider + 0.5
     float MuzzleDistance()
     {
         var shape = GetComponent<Collider2D>();
         return shape != null ? shape.bounds.extents.magnitude + .5f : 2.5f;
     }
 
+    // ตรวจแนวเล็งด้วย Raycast: ไม่มีของแข็งบังระหว่างป้อมกับยาน (ข้าม Trigger, ยาน, กระสุน/สกิล) และยานต้องอยู่ไกลกว่าปากกระบอก
     bool ClearSight(PlayerController player)
     {
         Vector2 delta = player.transform.position - transform.position;

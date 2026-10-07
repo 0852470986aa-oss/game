@@ -30,7 +30,7 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project\Assets\Scri
 | `Assets/Resources/` | Prefab/ภาพ/เสียงที่โค้ดโหลดด้วย `Resources.Load` หรือ Photon สร้างผ่านชื่อ Prefab |
 | `Assets/Resources/Images/` | ภาพ UI ยาน ฉาก และเอฟเฟกต์ |
 | `Assets/Editor/` | เครื่องมือสำหรับ Unity Editor เท่านั้น ไม่ใช่ระบบที่รันในเกม |
-| `Docs/` | คู่มือโค้ด แผนแบ่งอ่านเตรียมสอบ แผนงาน และบันทึกการตรวจสอบ/ทดสอบ |
+| `Docs.คู่มือ/` | คู่มือโค้ด แผนแบ่งอ่านเตรียมสอบ แผนงาน และบันทึกการตรวจสอบ/ทดสอบ |
 | `ProjectSettings/` | การตั้งค่าของโปรเจกต์ Unity และแพลตฟอร์ม |
 
 Scene หลัก:
@@ -57,6 +57,12 @@ Scene หลัก:
 | กระสุน การชน และความเสียหายจากกระสุน | `Assets/Scripts/BulletController.cs` | `ProjectileSweep`, `FixedUpdate`, `OnTriggerEnter2D` |
 | การทำงาน/ภาพ/ระเบิดของ Nova, Stun, Seeker | `Assets/Scripts/SkillController.cs` | `OnPhotonInstantiate`, `Update`, `DetonateNova`, `DealDamage`; ในไฟล์เดียวกันมี `SkillSheetVisual` สำหรับภาพสกิล |
 | ป้อมปืนแม็พหุ่นยนต์ | `Assets/Scripts/AutoTurret.cs` | `detectionRadius`, `fireRate`, `damage`, `ClearSight`, การเล็งและจุดยิง |
+| สียาน (ภาพยานเดิมคูณสี) และอีโมตระหว่างแข่ง | `Assets/Scripts/PlayerController.Cosmetics.cs` | `ApplyPaint`, `Emotes`, `TrySendEmote`, `ShowEmoteRPC`; ไม่มีผลต่อค่าพลัง |
+| รายการสียาน 6 สี และการเก็บค่า | `Assets/Scripts/BattleLoadoutCatalog.cs` | คลาส `ShipPaint` (`Names`, `Colors`, `Local`, `For`); เก็บใน PlayerPrefs และส่งผ่าน Photon property `ShipSkin` |
+| วาร์ปเมื่อแตะแท่นวาร์ป | `Assets/Scripts/PlayerController.Warp.cs` | `TryWarp` (เจ้าของยานเท่านั้น), `WarpRPC`, `WarpCooldown = 3` วินาที |
+| แจ้งยิงโดน / ลูกศรทิศที่โดนยิง | `Assets/Scripts/PlayerController.Health.cs` → `Assets/Scripts/Managers/GameplayManager.cs` | `ConfirmHitToShooter` แล้วเรียก `ShowIncomingDamage`, ข้อความ HIT (`CreateHitConfirmation`) |
+| ตัวเลขดาเมจลอย | `Assets/Scripts/FloatingText.cs` | การลอย/จาง/ขยายของตัวเลข |
+| กระสุนเด้งเมื่อชนคริสตัล | `Assets/Scripts/BulletController.cs` | `bouncesLeft`, `BounceRPC`, `ApplyBounce`; คนยิงคำนวณแล้วส่งให้เครื่องอื่น |
 
 ### แม็พและอันตราย
 
@@ -64,6 +70,10 @@ Scene หลัก:
 |---|---|---|
 | เลือก Layout, ขอบสนาม, จุดเกิดปลอดภัย | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | `GetCurrentMapIndex`, `GetArenaMin/Max`, `TryFindSafeSpawn` |
 | ตำแหน่งเสาปริซึม/หินและสิ่งกำบัง | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | `DecoratePrism`, `PrepareMechCover` |
+| คริสตัลสะท้อนกระสุน (แม็พปริซึม) | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `Assets/Scripts/PrismReflector.cs` | กลุ่ม `Crystal_*` ได้ Component `PrismReflector` (`MaxBounces = 2`) |
+| แท่นวาร์ป 4 แท่น (2 คู่) | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `Assets/Scripts/WarpPad.cs` | `AddWarpPads`, `CreateWarpPad`; คู่ A ฟ้า (-40,-30)↔(40,30), คู่ B ชมพู (40,-30)↔(-40,30) |
+| ภาพบรรยากาศแม็พปริซึม (ภาพล้วน ไม่มีตัวชน) | `Assets/Scripts/PrismArenaVisuals.cs` | พื้นหลังเดิมวางแถวพื้น (`GroundFraction`), ละอองแสง หมอก เศษคริสตัลหมุน แสงเรือง; มีคลาส `PrismFx` สำหรับเอฟเฟกต์แสงวาบ |
+| แสงวาบสั้น ๆ (ตอนเด้ง/วาร์ป) | `Assets/Scripts/PrismBurst.cs` | `Begin` ขยายแล้วจางหาย |
 | แมงกะพรุน แกนกลาง ภาพฉาก และเอฟเฟกต์ดูด | `Assets/Scripts/Managers/MapHazardManager.cs` | `JellyArenaVisuals`, `MapHazardManager`, `Start`, ฟังก์ชันสร้าง/สุ่ม Hazard |
 | หินลาวา อุกกาบาต สายฟ้า บึง และการชน | `Assets/Scripts/Managers/HazardController.cs` | `MoltenContactSurface`, `HazardController`, `HazardRoutine`, `OnTriggerEnter2D` |
 | ค่าเสียหายและช่วงเวลาของอันตราย | `Assets/Scripts/BattleBalance.cs` | ปรับค่ากลางร่วม; พฤติกรรม/ภาพให้แก้ในไฟล์ Hazard ที่เกี่ยวข้องด้วย |
@@ -76,6 +86,8 @@ Scene หลัก:
 | ต้องการแก้ | ไฟล์จากโฟลเดอร์หลัก | จุดเริ่มอ่าน/หน้าที่ |
 |---|---|---|
 | หน้าล็อกอินและปุ่ม Google/Guest | `Assets/Scripts/Managers/LoginManager.cs` | `LoginGoogle`, `LoginGuest`, callback สำเร็จ/ผิดพลาด |
+| ออกจากระบบ (ปุ่ม LOG OUT ในหน้าตั้งค่าของ Lobby) | `Assets/Scripts/Managers/LobbyManager.cs`, `Assets/Scripts/Managers/FirebaseManager.cs` | `OnLogoutButtonClicked` → `FirebaseManager.Logout` (ออก Google + Firebase) แล้วกลับ LoginScene |
+| ปุ่มเลือกสียาน (PAINT) ในหน้าคลัง | `Assets/Scripts/Managers/LobbyManager.Views.cs` | `BuildPaintPicker`, `SelectPaint`, `RefreshPaintSwatches`; ส่งค่าไปห้องใน `LobbyManager.Rooms.cs` |
 | อ่าน/เขียนโปรไฟล์ เหรียญ ยาน และผลแข่ง | `Assets/Scripts/Managers/FirebaseManager.cs` | `GetCoinBalance`, `PurchaseShip`, `AddCoins`, `RecordMatchResult` |
 | จุดเริ่มและสถานะหลักของ Lobby | `Assets/Scripts/Managers/LobbyManager.cs` | `Start`, เปลี่ยนหน้า, Ready/เริ่มเกม และการกู้การเชื่อมต่อ |
 | สร้างหน้าหลัก/คลัง/แสดงเหรียญและยาน | `Assets/Scripts/Managers/LobbyManager.Views.cs` | `BuildLobbyUI`, `BuildHomeScreen`, `BuildHangarScreen`, `BuildMapCards` |
@@ -96,6 +108,8 @@ Scene หลัก:
 | จอยสติ๊กเคลื่อนที่ | `Assets/Scripts/UIJoystick.cs` | `OnDrag`, `OnPointerDown`, `OnPointerUp` |
 | วงปุ่ม/วงคูลดาวน์ | `Assets/Scripts/ControlRingGraphic.cs` | `SetRing`, `OnPopulateMesh` |
 | ย่อ/หมุนเรดาร์ | `Assets/Scripts/RadarMinimap.cs` | สคริปต์เรดาร์ที่ใช้กับหน้า Gameplay |
+| ปุ่มอีโมตบน HUD และฟองข้อความเหนือยาน | `Assets/Scripts/Managers/GameplayManager.HUD.cs` | `BuildEmoteControls`, `WireEmoteControls`, `ShowEmote`, `CreateEmoteBubble` |
+| แก้ HUD/หน้าผล/หน้าตั้งค่า/ของในแม็พ ในหน้า Edit | `Assets/Scripts/EditableTemplate.cs`, `Assets/Scripts/EditableLayout.cs` + เมนู `Editable/...` ใน GameplayManager | วิธีใช้อยู่ `Docs.คู่มือ/EDITABLE_UI_TH.md` |
 
 ### ภาพ เสียง กล้อง และเครื่องมือ Editor
 
@@ -118,14 +132,47 @@ Scene หลัก:
 5. กระสุน สกิล และ Hazard ตรวจการชน แล้วอัปเดต HP/สถานะผ่าน PlayerController กับ Photon RPC
 6. เมื่อจบเกม `GameplayManager` แสดงผลและใช้ Firebase บันทึกผล ก่อนออกหรือกลับห้องเดิม
 
+## ค่าตัวเลขและกติกาปัจจุบัน (ตรวจจากโค้ด 7 ต.ค. 2026)
+
+| ยาน | HP | ความเร็ว | ยิงทุก (วินาที) | ดาเมจ/นัด | สกิลเริ่มต้น | ราคา |
+|---|---|---|---|---|---|---|
+| Nebula Ghost | 90 | 8.4 | 0.20 | 6 | STUN | ฟรี |
+| Comet Crusher | 150 | 5.6 | 0.44 | 12 | SHIELD | 2800 |
+| Stellar Striker | 115 | 7.0 | 0.28 | 8 | NOVA | 3089 |
+
+| สกิล | ผล | คูลดาวน์ |
+|---|---|---|
+| STUN | ดาเมจ 8, ติดสตั้น 1 วินาที | 12 วินาที |
+| SHIELD | อมตะ 2 วินาที, เร็วขึ้น x1.2 | 16 วินาที |
+| NOVA | ระเบิดดาเมจ 30 (ดีเลย์ 1.5 วินาที) | 12 วินาที |
+| SEEKER | ขีปนาวุธติดตาม ดาเมจ 22 | 11 วินาที |
+
+กติกา (`GameplayManager.cs`): ใครได้ 3 Kill ก่อนชนะ (`targetKills = 3`), แมตช์ 3 นาที (`matchDuration = 180`) หมดเวลาแล้วคะแนนเท่ากัน = DRAW, ยานถูกทำลายแล้วเกิดใหม่ภายใน 3 วินาที, ผู้เล่นหลุดกลางเกม = ยกเลิกแมตช์และกลับห้องรอ
+
+ค่าในตารางมาจาก `BattleLoadoutCatalog.cs` และ `BattleBalance.cs` ถ้าแก้ค่าในโค้ด ให้แก้ตารางนี้และเล่มรายงานให้ตรงกันด้วย
+
+## สิ่งที่เพิ่มเมื่อ 6 ต.ค. 2026
+
+| ระบบ | ผู้เล่นเห็นอะไร | ไฟล์หลัก |
+|---|---|---|
+| ออกจากระบบ | Lobby → ปุ่มตั้งค่า → LOG OUT → กลับหน้า Login | `LobbyManager.cs`, `FirebaseManager.cs` (`Logout`), `BattleSettingsPanel.cs` |
+| สียาน | หน้าคลังมีแถบ PAINT 6 สี ใช้กับทุกยาน คู่แข่งเห็นสีเดียวกัน | `ShipPaint` ใน `BattleLoadoutCatalog.cs`, `LobbyManager.Views.cs`, `PlayerController.Cosmetics.cs` |
+| อีโมต | ปุ่มบน HUD เลือก GG / NICE SHOT! / OOPS! / HELLO! ขึ้นฟองเหนือยาน (คูลดาวน์ 2.5 วินาที) | `PlayerController.Cosmetics.cs`, `GameplayManager.HUD.cs` |
+| แจ้งยิงโดน/โดนยิง | ข้อความ HIT เมื่อยิงโดน, ลูกศรบอกทิศเมื่อโดนยิง, ตัวเลขดาเมจลอย | `PlayerController.Health.cs`, `GameplayManager.cs`, `FloatingText.cs` |
+| แม็พปริซึมใหม่ | สนามเล็กลง, คริสตัลสะท้อนกระสุนได้ 2 ครั้ง, แท่นวาร์ป 2 คู่ (คูลดาวน์ 3 วินาที), ของขยับในฉาก | `GameplayManager.Maps.cs`, `PrismReflector.cs`, `WarpPad.cs`, `PlayerController.Warp.cs`, `BulletController.cs`, `PrismArenaVisuals.cs`, `PrismBurst.cs` |
+| ภาพลื่นขึ้น | ไอพ่น กล้อง ตัวเลขลอย ขยับนุ่มขึ้นโดยไม่เพิ่มภาพใหม่ | `PlayerController.Visuals.cs`, `CameraFollow.cs`, `FloatingText.cs` |
+| แก้ในหน้า Edit | กดเมนูแล้ว HUD/หน้าผล/ของในแม็พ มาอยู่ใน Scene ให้ลากแก้ได้ | `EditableTemplate.cs`, `EditableLayout.cs`, ดู `EDITABLE_UI_TH.md` |
+
+ไฟล์ก่อนแก้สำรองไว้ในโฟลเดอร์ `Backup-before-*-20261006` ข้าง ๆ โปรเจกต์ ทุกชุด compile ผ่านแล้ว แต่ต้องทดสอบเล่นจริงใน Unity/มือถือ สองเครื่อง (โดยเฉพาะวาร์ป กระสุนเด้ง อีโมต และสียานที่ต้องส่งผ่าน Photon)
+
 ## วิธีแบ่งงานกับเพื่อนให้ไม่ชนกัน
 
 ตัวอย่างการแบ่งที่ชัดเจน:
 
 | ผู้รับผิดชอบ | ไฟล์หลักที่รับได้ | ขอบเขต |
 |---|---|---|
-| คนที่ดูแล Gameplay/แม็พ | `PlayerController*.cs`, `SkillController.cs`, `BulletController.cs`, `AutoTurret.cs`, `BattleBalance.cs`, `Managers/GameplayManager.Maps.cs`, `Managers/MapHazardManager.cs`, `Managers/HazardController.cs` | การเล่น ยาน สกิล กระสุน และแม็พ |
-| คนที่ดูแลเมนู/บัญชี/เสียง | `Managers/LoginManager.cs`, `Managers/LobbyManager*.cs`, `Managers/FirebaseManager.cs`, `BattleSettingsPanel.cs`, `Managers/AudioManager.cs`, `PolishSprites.cs` | ล็อกอิน Lobby คลัง การตั้งค่า เหรียญ และเสียง |
+| คนที่ดูแล Gameplay/แม็พ | `PlayerController*.cs`, `SkillController.cs`, `BulletController.cs`, `AutoTurret.cs`, `BattleBalance.cs`, `Managers/GameplayManager.Maps.cs`, `Managers/MapHazardManager.cs`, `Managers/HazardController.cs`, `PrismReflector.cs`, `WarpPad.cs`, `PrismArenaVisuals.cs`, `PrismBurst.cs` | การเล่น ยาน สกิล กระสุน แม็พ วาร์ป และคริสตัลสะท้อน |
+| คนที่ดูแลเมนู/บัญชี/เสียง | `Managers/LoginManager.cs`, `Managers/LobbyManager*.cs`, `Managers/FirebaseManager.cs`, `BattleSettingsPanel.cs`, `Managers/AudioManager.cs`, `PolishSprites.cs`, `Managers/GameplayManager.HUD.cs` (อีโมต), `FloatingText.cs`, `EditableTemplate.cs` | ล็อกอิน/ออกจากระบบ Lobby คลัง สียาน อีโมต HUD การตั้งค่า เหรียญ และเสียง |
 | คนที่ทดสอบ | ไม่จำเป็นต้องแก้โค้ด | ทดสอบสองเครื่อง/มือถือ ทำรายการขั้นตอนและส่งภาพ/อาการที่พบ |
 
 ก่อนเริ่มตกลงกันว่าใครแก้ไฟล์เชื่อมระบบ เช่น `Managers/GameplayManager.cs`, `PlayerController.cs`, `BattleLoadoutCatalog.cs` และ `Managers/GameplayManager.HUD.cs` เพราะหลายระบบอ่าน/เรียกใช้ร่วมกัน หากทำคนละเครื่องให้ส่งไฟล์/ใช้ Git branch แล้วรวมทีละชุด อย่าให้สองคนส่งทับไฟล์เดียวกัน
@@ -141,6 +188,9 @@ Scene หลัก:
 - “ปรับเวลาคูลดาวน์สกิล” → `BattleLoadoutCatalog.cs` ส่วนชื่อ/คำอธิบายสกิล; ดาเมจและระยะสถานะอยู่ `BattleBalance.cs`; พฤติกรรมอยู่ `PlayerController.Skills.cs`/`SkillController.cs`
 - “เพิ่ม/ลดบึงบนแผนที่ปริซึม” → การสุ่ม/ตำแหน่งที่ `Managers/MapHazardManager.cs`; การทำงานเมื่อชน/อยู่ในเขตที่ `Managers/HazardController.cs`
 - “ย้ายหินหรือเสา” → `Managers/GameplayManager.Maps.cs`; หากเป็นตำแหน่งที่สร้างไว้ใน Editor ให้ตรวจ `Assets/Editor/MapLayoutSetup.cs` ด้วย
+- “ให้กระสุนเด้งคริสตัลได้ 3 ครั้ง” → `PrismReflector.MaxBounces` ใน `Assets/Scripts/PrismReflector.cs`
+- “ย้ายแท่นวาร์ป/เปลี่ยนคูลดาวน์วาร์ป” → ตำแหน่งที่ `AddWarpPads` ใน `Managers/GameplayManager.Maps.cs`; คูลดาวน์ `WarpCooldown` ใน `PlayerController.Warp.cs`
+- “เพิ่มสียาน/ข้อความอีโมต” → `ShipPaint.Names/Colors` ใน `BattleLoadoutCatalog.cs` และ `Emotes` ใน `PlayerController.Cosmetics.cs` (เพิ่มต่อท้ายเท่านั้น ห้ามสลับลำดับ)
 - “แก้ปุ่มบนหน้าเล่น” → UI ถูกสร้าง/จัดตำแหน่งใน `Managers/GameplayManager.HUD.cs`; การรับ pointer/ลากของปุ่มยิงอยู่ `UIButton.cs`
 - “เหรียญไม่ตรงกับฐานข้อมูล” → การอ่าน/เขียนยอดอยู่ `Managers/FirebaseManager.cs`; การแสดงผลอยู่ `LobbyManager.Views.cs` หรือ `GameplayManager.HUD.cs`
 
@@ -156,9 +206,10 @@ Scene หลัก:
 
 ## คู่มือและสถานะการทดสอบ
 
-- คู่มือแผนที่โค้ดฉบับนี้: `Docs/CODE_GUIDE_TH.md`
-- แผนงานเก่า: `Docs/GAME_POLISH_PLAN.md` (ลงวันที่ 24 ก.ย. 2026; เป็น backlog ณ เวลานั้น ไม่ใช่สถานะปัจจุบัน)
-- บันทึกการตรวจ Lobby: `Docs/Lobby-validation.md` (ลงวันที่ 5 ก.ย. 2026; รายการทดสอบในเอกสารอาจเก่ากว่าการทดสอบรอบล่าสุด)
-- เจ้าของโปรเจกต์แจ้งเมื่อ 3 ต.ค. 2026 ว่าทดสอบเกมทั้งหมดแล้วและผ่าน; การแก้คู่มือครั้งนี้ไม่ได้รันทดสอบซ้ำ
+- คู่มือแผนที่โค้ดฉบับนี้: `Docs.คู่มือ/CODE_GUIDE_TH.md`
+- แผนงานเก่า: `Docs.คู่มือ/GAME_POLISH_PLAN.md` (ลงวันที่ 24 ก.ย. 2026; เป็น backlog ณ เวลานั้น ไม่ใช่สถานะปัจจุบัน)
+- บันทึกการตรวจ Lobby: `Docs.คู่มือ/Lobby-validation.md` (ลงวันที่ 5 ก.ย. 2026; รายการทดสอบในเอกสารอาจเก่ากว่าการทดสอบรอบล่าสุด)
+- วิธีแก้ HUD/แม็พในหน้า Edit: `Docs.คู่มือ/EDITABLE_UI_TH.md`
+- เจ้าของโปรเจกต์แจ้งเมื่อ 3 ต.ค. 2026 ว่าทดสอบเกมทั้งหมดแล้วและผ่าน; ระบบที่เพิ่มเมื่อ 6 ต.ค. 2026 ตรวจ compile แล้ว ต้องทดสอบเล่นจริงอีกรอบ
 
 ก่อนส่งงาน/หลังแก้โค้ด ให้เปิด Unity รอ compile แล้วตรวจ Console ว่าไม่มี error หรือ Missing Script จากนั้นทดลองส่วนที่แก้จริง หากเปลี่ยน Photon/Firebase/UI ให้ทดสอบสองเครื่องและมือถือเมื่อเกี่ยวข้อง การ compile ผ่านเพียงอย่างเดียวไม่ยืนยันว่าการเล่นจริงถูกต้อง

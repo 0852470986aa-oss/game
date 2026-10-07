@@ -1,14 +1,24 @@
+// ไฟล์ MapLayoutSetup.cs — เครื่องมือ Unity Editor (ไม่ได้รันในเกม / ไม่ถูก build ลงมือถือ)
+// ใช้จัดเลย์เอาต์แม็พใน Scene เกมเพลย์ (Assets/Scenes/SampleScene.unity): ตั้งภาพพื้นหลัง 3 แม็พ,
+// วางสิ่งกีดขวางแม็พ 1 (ปริซึม) และแม็พ 2 (หุ่นยนต์) แล้วเซฟ Scene, และเรนเดอร์ภาพพรีวิวไว้ตรวจงาน
+// เมนู [MenuItem] ส่วนใหญ่ถูกคอมเมนต์ปิดไว้ เรียกใช้ DecoratePrism ของ GameplayManager และอ่านฟิลด์ของ PlayerController
+// มีคลาส MechThrusterPreview (เรนเดอร์ภาพไอพ่นยาน 3 ลำ) อยู่ท้ายไฟล์
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
+// หน้าต่าง/ชุดเมธอด static ของ Editor สำหรับสร้างเลย์เอาต์แม็พลงใน Scene
 public class MapLayoutSetup : EditorWindow
 {
+    // path ของ Scene เกมเพลย์ที่เครื่องมือนี้จะเปิดและแก้ไข
     private const string GameplayScenePath = "Assets/Scenes/SampleScene.unity";
+    // ความสูงของภาพพื้นหลังแม็พในโลก (หน่วย Unity) ใช้คำนวณสเกลภาพพื้นหลัง
     private const float TargetBackgroundHeight = 75f;
 
+    // Unity เรียกทุกครั้งที่ Editor โหลด/คอมไพล์สคริปต์เสร็จ: ถ้ามีไฟล์ Library/PrismPreview.request
+    // และไม่ได้อยู่ใน Play Mode จะสั่ง RenderPrismPreview() หลังจาก Editor ว่าง (delayCall)
     [InitializeOnLoadMethod]
     private static void QueuePrismPreview()
     {
@@ -18,6 +28,9 @@ public class MapLayoutSetup : EditorWindow
         };
     }
 
+    // เปิด SampleScene เป็น Preview Scene (ไม่กระทบ Scene ที่เปิดอยู่) แล้วทดสอบการตกแต่งแม็พปริซึม
+    // ตรวจว่าไม่มี Collider เพิ่ม และเรียกซ้ำแล้วไม่สร้างซ้ำ จากนั้นเรนเดอร์ภาพ 1400x840 ไปที่ Library/PrismPreview.png
+    // ผลตรวจ (PASS หรือข้อความ error) เขียนไว้ที่ Library/PrismPreview.txt
     // [MenuItem("Battlefield/Preview Prism Atmosphere")]
     public static void RenderPrismPreview()
     {
@@ -27,6 +40,7 @@ public class MapLayoutSetup : EditorWindow
         RenderTexture previous = RenderTexture.active;
         try
         {
+            // 1) เปิดเฉพาะ Map1_Layout แล้วเรียก DecoratePrism สองรอบเพื่อตรวจว่าไม่สร้างของซ้ำ
             GameObject layout = null;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -42,6 +56,7 @@ public class MapLayoutSetup : EditorWindow
             int count = decor.childCount;
             GameplayManager.DecoratePrism(layout.transform);
             if (decor.childCount != count) throw new System.Exception("Decoration duplicated.");
+            // 2) สร้างกล้อง orthographic ชั่วคราวใน Preview Scene แล้วเรนเดอร์ลง RenderTexture
             var go = new GameObject("PrismPreviewCamera", typeof(Camera));
             SceneManager.MoveGameObjectToScene(go, scene);
             Camera camera = go.GetComponent<Camera>();
@@ -56,6 +71,7 @@ public class MapLayoutSetup : EditorWindow
             target = new RenderTexture(1400, 840, 24);
             target.Create(); camera.targetTexture = target;
             camera.Render();
+            // 3) อ่านพิกเซลจาก RenderTexture แล้วบันทึกเป็นไฟล์ PNG และไฟล์ผลตรวจ
             pixels = new Texture2D(1400, 840, TextureFormat.RGB24, false);
             RenderTexture.active = target;
             pixels.ReadPixels(new Rect(0, 0, 1400, 840), 0, 0); pixels.Apply();
@@ -63,6 +79,7 @@ public class MapLayoutSetup : EditorWindow
             System.IO.File.WriteAllText("Library/PrismPreview.txt", "PASS: " + count + " decorative elements, no added colliders, duplicate generation prevented.");
         }
         catch (System.Exception error) { System.IO.File.WriteAllText("Library/PrismPreview.txt", error.ToString()); Debug.LogException(error); }
+        // คืนค่า RenderTexture เดิม ทำลายของชั่วคราว และปิด Preview Scene เสมอ (แม้เกิด error)
         finally
         {
             RenderTexture.active = previous;
@@ -72,6 +89,8 @@ public class MapLayoutSetup : EditorWindow
         }
     }
 
+    // ตกแต่งบรรยากาศแม็พปริซึม (Map1_Layout) ใน Scene ที่เปิดอยู่ ถ้ามี PrismAtmosphere อยู่แล้วจะไม่ทำซ้ำ
+    // บันทึก Undo ไว้ และ mark Scene ว่ามีการแก้ไข (ต้องกดเซฟเอง)
     // [MenuItem("Battlefield/Decorate Prism Atmosphere")]
     public static void DecoratePrismAtmosphere()
     {
@@ -84,12 +103,14 @@ public class MapLayoutSetup : EditorWindow
         EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
     }
 
+    // ข้อมูลการวางสิ่งกีดขวาง 1 ชิ้น: ตำแหน่ง (x, y), ขนาดที่ต้องการ (กว้าง, สูง หน่วย Unity), มุมหมุน (องศา)
     private struct RockPlacement
     {
         public Vector2 position;
         public Vector2 collisionSize;
         public float rotation;
 
+        // Constructor: รับ x, y, กว้าง, สูง, มุม
         public RockPlacement(float x, float y, float width, float height, float angle)
         {
             position = new Vector2(x, y);
@@ -98,6 +119,7 @@ public class MapLayoutSetup : EditorWindow
         }
     }
 
+    // ดึงเลขท้ายชื่อ Sprite (เช่น "Obs_Pillars_14" -> 14) ถ้าไม่มีเลขคืน 0
     private static int SpriteNumber(Sprite sprite)
     {
         if (sprite == null) return 0;
@@ -105,6 +127,7 @@ public class MapLayoutSetup : EditorWindow
         return underscore >= 0 && int.TryParse(sprite.name.Substring(underscore + 1), out int value) ? value : 0;
     }
 
+    // หา GameObject ระดับบนสุด (root) ใน Scene ที่เปิดอยู่ตามชื่อ คืน null ถ้าไม่เจอ
     private static GameObject FindSceneRoot(string objectName)
     {
         foreach (GameObject root in SceneManager.GetActiveScene().GetRootGameObjects())
@@ -114,6 +137,7 @@ public class MapLayoutSetup : EditorWindow
         return null;
     }
 
+    // โหลด Sprite ย่อยทั้งหมดจากไฟล์ภาพ (Sprite Sheet) แล้วเก็บใน Dictionary โดยใช้เลขท้ายชื่อเป็น key
     private static Dictionary<int, Sprite> LoadNumberedSprites(string assetPath)
     {
         Dictionary<int, Sprite> sprites = new Dictionary<int, Sprite>();
@@ -128,6 +152,7 @@ public class MapLayoutSetup : EditorWindow
         return sprites;
     }
 
+    // สร้าง GameObject เปล่าเป็นกลุ่มย่อยใต้ parent ไว้จัดหมวดสิ่งกีดขวาง
     private static Transform CreateMap1Group(Transform parent, string name)
     {
         GameObject group = new GameObject(name);
@@ -135,6 +160,8 @@ public class MapLayoutSetup : EditorWindow
         return group.transform;
     }
 
+    // สร้างสิ่งกีดขวาง 1 ชิ้นของแม็พ 1: วางตำแหน่ง/มุมตาม placement, ปรับสเกลให้ภาพครอบขนาด collisionSize
+    // และใส่ภาพไว้ในลูกชื่อ "Artwork" ที่เลื่อนให้กึ่งกลางภาพตรงกับจุดหมุน (ภาพอย่างเดียว ไม่มี Collider)
     private static void CreateMap1Obstacle(Transform parent, string name, RockPlacement placement,
         Sprite sprite, int sortingOrder)
     {
@@ -166,6 +193,8 @@ public class MapLayoutSetup : EditorWindow
         renderer.sortingOrder = sortingOrder;
     }
 
+    // ตั้งค่าพื้นฐานของ 3 แม็พ: ลบ BackgroundMap เก่า, สร้าง/ใช้ Map0_Layout..Map2_Layout
+    // ใส่ภาพพื้นหลังสูง TargetBackgroundHeight หน่วย และเปิดไว้เฉพาะแม็พ 2 (ที่เหลือปิด)
     // [MenuItem("Battlefield/Setup Map Layouts")]
     public static void SetupMaps()
     {
@@ -238,9 +267,12 @@ public class MapLayoutSetup : EditorWindow
         Debug.Log("?? ???????????????????????????????????! ???????????????????????????????!");
     }
 
+    // สร้างสิ่งกีดขวางแม็พ 1 (ปริซึม) ใหม่ทั้งหมดใต้ Map1_Layout/Map1Obstacles แล้วเซฟ Scene
+    // ประกอบด้วย เสาโอเบลิสก์กลาง 1, คริสตัล 8, โดม 4, แผงพลังงาน 12 (วางสมมาตรรอบจุดกลาง)
     // [MenuItem("Battlefield/Setup Map 1 Prism Obstacles")]
     public static void SetupMap1Obstacles()
     {
+        // 1) เปิด SampleScene ถ้ายังไม่ได้เปิดอยู่ และหา Map1_Layout
         Scene scene = SceneManager.GetActiveScene();
         if (scene.path != GameplayScenePath)
         {
@@ -254,6 +286,7 @@ public class MapLayoutSetup : EditorWindow
             return;
         }
 
+        // 2) โหลด Sprite คริสตัล/เสา และตรวจว่ามีเลขที่ต้องใช้ครบ ถ้าขาดจะยกเลิกโดยไม่แก้ Scene
         Dictionary<int, Sprite> crystals = LoadNumberedSprites("Assets/Resources/Images/Obs_Crystals.png");
         Dictionary<int, Sprite> pillars = LoadNumberedSprites("Assets/Resources/Images/Obs_Pillars.png");
         int[] requiredCrystals = { 0, 2, 3, 4 };
@@ -275,6 +308,7 @@ public class MapLayoutSetup : EditorWindow
             }
         }
 
+        // 3) ลบกลุ่ม Map1Obstacles เดิม แล้วสร้างใหม่
         // This method intentionally replaces only the generated Map1 obstacle artwork.
         Transform oldContainer = mapLayout.transform.Find("Map1Obstacles");
         if (oldContainer != null)
@@ -289,6 +323,7 @@ public class MapLayoutSetup : EditorWindow
         CreateMap1Obstacle(obeliskGroup, "CentralObelisk", new RockPlacement(0f, 0f, 5.5f, 8f, 0f),
             pillars[14], 2);
 
+        // 4) คริสตัล 8 ชิ้น: (x, y, กว้าง, สูง, มุม) และเลข Sprite ที่ใช้ตามลำดับ
         Transform crystalGroup = CreateMap1Group(container.transform, "CrystalObstacles");
         RockPlacement[] crystalPlacements =
         {
@@ -308,6 +343,7 @@ public class MapLayoutSetup : EditorWindow
                 crystalPlacements[i], crystals[crystalSpriteNumbers[i]], 1);
         }
 
+        // 5) โดม 4 มุมแม็พ สลับใช้ Sprite เสาเลข 12 และ 13
         Transform domeGroup = CreateMap1Group(container.transform, "DomeObstacles");
         RockPlacement[] domePlacements =
         {
@@ -322,6 +358,7 @@ public class MapLayoutSetup : EditorWindow
                 domePlacements[i], pillars[i % 2 == 0 ? 12 : 13], 1);
         }
 
+        // 6) แผงพลังงาน/กำแพง 12 ชิ้น และเลข Sprite เสาที่ใช้ตามลำดับ
         Transform barrierGroup = CreateMap1Group(container.transform, "EnergyBarriers");
         RockPlacement[] barrierPlacements =
         {
@@ -345,14 +382,19 @@ public class MapLayoutSetup : EditorWindow
                 barrierPlacements[i], pillars[barrierSpriteNumbers[i]], 0);
         }
 
+        // 7) mark ว่าแก้แล้วและเซฟ Scene
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         Debug.Log("Map1 composition created: 1 central obelisk, 8 crystal covers, 4 domes and 12 energy barriers.");
     }
 
+    // สร้างองค์ประกอบแม็พ 2 (หุ่นยนต์) ใหม่ทั้งหมดใต้ Map2_Layout แล้วเซฟ Scene:
+    // หินกีดขวาง 12 ก้อน (RockObstacles), เศษหินประดับ 24 ก้อน, ป้อมปืน 2, แกนแดง 6
+    // กลุ่ม RockObstacles จะถูก GameplayManager.Maps.cs ใส่ MoltenContactSurface (ชนแล้วโดนดาเมจลาวา) ตอนรันเกม
     // [MenuItem("Battlefield/Setup Map 2 Full Arena Obstacles")]
     public static void SetupMap2RockObstacles()
     {
+        // 1) เปิด SampleScene ถ้ายังไม่ได้เปิดอยู่ และหา Map2_Layout
         Scene scene = SceneManager.GetActiveScene();
         if (scene.path != GameplayScenePath)
         {
@@ -366,6 +408,7 @@ public class MapLayoutSetup : EditorWindow
             return;
         }
 
+        // 2) ลบกลุ่มเดิมทั้งหมด (RockObstacles, TurretObstacles, RedCoreObstacles, RockDecorations) แล้วสร้างกลุ่มหินใหม่
         Transform oldContainer = mapLayout.transform.Find("RockObstacles");
         if (oldContainer != null)
         {
@@ -393,6 +436,7 @@ public class MapLayoutSetup : EditorWindow
             DestroyImmediate(oldDecorationContainer.gameObject);
         }
 
+        // 3) โหลด Sprite อุกกาบาต ยกเว้นเลข 9–11 (เป็นเฟรมระเบิดที่ HazardController ใช้) แล้วเรียงตามเลข
         Object[] loadedAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Resources/Images/Obs_Asteroids.png");
         List<Sprite> sprites = new List<Sprite>();
         foreach (Object asset in loadedAssets)
@@ -412,6 +456,7 @@ public class MapLayoutSetup : EditorWindow
         }
         sprites.Sort((left, right) => SpriteNumber(left).CompareTo(SpriteNumber(right)));
 
+        // 4) ตำแหน่ง/ขนาด/มุมของหินกีดขวาง 12 ก้อน (วางเป็นคู่สมมาตร)
         RockPlacement[] rocks =
         {
             new RockPlacement(-14f, 10f, 9f, 7f, -18f),
@@ -428,6 +473,7 @@ public class MapLayoutSetup : EditorWindow
             new RockPlacement(36f, -6f, 10f, 8f, 168f)
         };
 
+        // สร้างหินแต่ละก้อน: ปรับสเกลให้พอดีกรอบ collisionSize และเพิ่มขอบเรืองแสงสีลาวา (LavaRim) ขยาย 1.1 เท่าไว้ด้านหลัง
         for (int i = 0; i < rocks.Length; i++)
         {
             RockPlacement placement = rocks[i];
@@ -460,6 +506,7 @@ public class MapLayoutSetup : EditorWindow
         // Small visual-only debris fills the full composition without making flight frustrating.
         GameObject decorationContainer = new GameObject("RockDecorations");
         decorationContainer.transform.SetParent(mapLayout.transform, false);
+        // 5) เศษหินประดับ 24 ก้อน (ภาพอย่างเดียว ไม่มีผลต่อการบิน)
         RockPlacement[] decorations =
         {
             new RockPlacement(-27f, 23f, 3.8f, 3f, 18f),
@@ -488,6 +535,7 @@ public class MapLayoutSetup : EditorWindow
             new RockPlacement(25f, -26f, 3.5f, 2.8f, 28f)
         };
 
+        // สร้างเศษหินแต่ละก้อน: ขยายใหญ่ขึ้น 1.45 เท่า วางชั้นหลัง และทำให้จางเพื่อให้ดูอยู่ลึก
         for (int i = 0; i < decorations.Length; i++)
         {
             RockPlacement placement = decorations[i];
@@ -509,6 +557,7 @@ public class MapLayoutSetup : EditorWindow
             renderer.color = new Color(0.72f, 0.78f, 0.9f, depthAlpha);
         }
 
+        // 6) ป้อมปืน 2 ตัวที่มุมบน พร้อมแสงเรืองสีแดง (ถ้าไม่มี Sprite จะเตือนแล้วข้าม)
         Object[] loadedTurretAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Resources/Images/Obs_Turrets.png");
         List<Sprite> turretSprites = new List<Sprite>();
         foreach (Object asset in loadedTurretAssets)
@@ -561,6 +610,7 @@ public class MapLayoutSetup : EditorWindow
             Debug.LogWarning("No turret sprites were found at Assets/Resources/Images/Obs_Turrets.png");
         }
 
+        // 7) แกนสีแดง 6 ชิ้น (ไม่ใช้ Sprite เลข 8–11) พร้อมวงเรืองแสงรอบ
         Object[] loadedCoreAssets = AssetDatabase.LoadAllAssetsAtPath("Assets/Resources/Images/Obs_RedCores.png");
         List<Sprite> coreSprites = new List<Sprite>();
         foreach (Object asset in loadedCoreAssets)
@@ -614,15 +664,20 @@ public class MapLayoutSetup : EditorWindow
             }
         }
 
+        // 8) mark ว่าแก้แล้ว เซฟ Scene และพิมพ์สรุปจำนวนที่สร้าง
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene);
         Debug.Log("Map2 full composition created: " + rocks.Length + " obstacle rocks, " + decorations.Length + " debris rocks, 2 turrets and 6 red cores.");
     }
 }
 
+// คลาส Editor สำหรับเรนเดอร์ภาพไอพ่นของยาน 3 ลำตอนเร่งเต็มที่ ไว้ตรวจงานภาพ (ไม่เริ่มเกม/ไม่ต่อ Photon)
 // Render-only inspection: never starts gameplay, saves the active scene, or joins Photon.
 public static class MechThrusterPreview
 {
+    // สร้าง Preview Scene แยก, วางยาน Ship1..Ship3 แบบปิดคอมโพเนนต์ทั้งหมด แล้วใช้ Reflection
+    // ตั้งค่าฟิลด์ private ของ PlayerController ให้แสดงไอพ่นเต็มกำลัง จากนั้นเรนเดอร์ 2000x1000 ไปที่ Library/MechValidation/thrusters.png
+    // ต้องไม่อยู่ใน Play Mode ไม่งั้นจะ throw error
     // [MenuItem("Battlefield/Mech/Render Thrusters")]
     public static void Render()
     {
@@ -636,6 +691,7 @@ public static class MechThrusterPreview
         const string output = "Library/MechValidation/thrusters.png";
         try
         {
+            // 1) สร้าง container ที่ปิดไว้ แล้วโหลดยานทั้ง 3 ลำมาไว้ข้างใน (ปิดทุก Behaviour/ฟิสิกส์/Particle/Renderer)
             var container = new GameObject("DisabledGameplayPreview");
             container.SetActive(false);
             SceneManager.MoveGameObjectToScene(container, preview);
@@ -661,6 +717,7 @@ public static class MechThrusterPreview
                 var controller = ship.GetComponent<PlayerController>();
                 if (hull == null || hull.sprite == null || controller == null)
                     throw new System.Exception("Missing hull/controller on Ship" + i);
+                // เปิดเฉพาะตัวยาน และใช้ Reflection ตั้ง spriteRenderer, movementInput = ขึ้น, displayedThrust = 1 (เร่งเต็มที่)
                 hull.enabled = true;
                 hull.color = Color.white;
                 type.GetField("spriteRenderer", flags).SetValue(controller, hull);
@@ -672,6 +729,7 @@ public static class MechThrusterPreview
                 hulls.Add(hull);
             }
 
+            // 2) จัดเรียงยานเป็นแถวแนวนอน เรียก LateUpdate ของ PlayerController ให้สร้างภาพไอพ่น แล้วคำนวณกรอบรวมของภาพ
             float spacing = Mathf.Max(largestWidth * 1.1f, largestHeight * .74f);
             container.SetActive(true);
             Bounds frame = new Bounds(Vector3.zero, Vector3.zero);
@@ -690,6 +748,7 @@ public static class MechThrusterPreview
                 }
             }
 
+            // 3) สร้างกล้อง orthographic อัตราส่วน 2:1 ครอบกรอบภาพ แล้วเรนเดอร์และบันทึกเป็น PNG
             var cameraObject = new GameObject("IsolatedThrusterCamera", typeof(Camera));
             SceneManager.MoveGameObjectToScene(cameraObject, preview);
             Camera camera = cameraObject.GetComponent<Camera>();
@@ -716,6 +775,7 @@ public static class MechThrusterPreview
         }
         finally
         {
+            // คืนค่า RenderTexture เดิม ทำลายของชั่วคราว และปิด Preview Scene เสมอ
             RenderTexture.active = previous;
             if (pixels != null) Object.DestroyImmediate(pixels);
             if (target != null) { target.Release(); Object.DestroyImmediate(target); }
