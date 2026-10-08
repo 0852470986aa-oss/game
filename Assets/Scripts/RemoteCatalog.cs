@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using UnityEngine;
 
+// คลาส static โหลดค่ายาน/สกิลที่แอดมินตั้งใน Firebase มาเขียนทับค่าในโค้ด (บีบค่าให้อยู่ในช่วงปลอดภัย)
 public static class RemoteCatalog
 {
     // ดาเมจสกิลที่แอดมินตั้ง (key = index สกิล 0..)
@@ -82,6 +83,7 @@ public static class RemoteCatalog
         }
     }
 
+    // อ่านค่าตัวเลขของ key จากข้อมูล Firebase (รับได้ทั้งตัวเลขและข้อความ) คืน false ถ้าไม่มีค่า แปลงไม่ได้ หรือเป็น NaN/Infinity
     private static bool TryNumber(IDictionary<string, object> data, string key, out double number)
     {
         number = 0;

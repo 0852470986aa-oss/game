@@ -4,9 +4,12 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 
+// ส่วนความก้าวหน้าของ GameplayManager: ส่งผลแมตช์ไปคิด XP/ภารกิจ/Achievement และแสดงผลในหน้าสรุป
 public partial class GameplayManager
 {
     private bool progressReported;
+    // แรงค์ที่เพิ่งขึ้นในแมตช์นี้ (-1 = ไม่ได้ขึ้น) ใช้แสดงฉากฉลอง
+    private int rankUpTier = -1;
 
     // เริ่มแมตช์ใหม่: รีเซ็ตตัวนับสกิล (เรียกจาก Start)
     private void ResetMatchProgress()
@@ -58,7 +61,7 @@ public partial class GameplayManager
         int before = Ranked.Mmr;
         int delta = Ranked.RecordMatch(won, draw, opponent);
         string line = "RANKED " + (delta >= 0 ? "+" : "") + delta + " MMR  (" + Ranked.Mmr + " " + Ranked.TierName(Ranked.Mmr) + ")";
-        if (Ranked.TierOf(Ranked.Mmr) > Ranked.TierOf(before)) line += "  RANK UP!";
+        if (Ranked.TierOf(Ranked.Mmr) > Ranked.TierOf(before)) { line += "  RANK UP!"; rankUpTier = Ranked.TierOf(Ranked.Mmr); }
         else if (Ranked.TierOf(Ranked.Mmr) < Ranked.TierOf(before)) line += "  rank down";
         return line;
     }
@@ -81,5 +84,25 @@ public partial class GameplayManager
         var label = BattleLabel("ProgressLine", resultSurface, text, 0, -228, 1180, 24, 18);
         label.richText = true;
         label.color = new Color(.8f, .9f, 1f);
+        QueueCelebrations(gain);
+    }
+
+    // ฉากฉลองเต็มจอ (CelebrationOverlay.cs): เลเวลอัป → แรงค์อัป → Achievement ใหม่ แสดงต่อกันทีละอัน
+    private void QueueCelebrations(ProgressGain gain)
+    {
+        var canvas = resultSurface != null ? resultSurface.GetComponentInParent<Canvas>()?.rootCanvas.transform : null;
+        if (canvas == null) return;
+        var font = matchTimerText != null ? matchTimerText.font : null;
+        if (gain != null && gain.levelsGained > 0)
+            CelebrationOverlay.Show(canvas, font, "LEVEL UP!", "LV " + gain.newLevel, "+" + gain.levelCoins + " ASTRONIUM", UiIcon.Load("star"), new Color(1f, .85f, .35f));
+        if (rankUpTier >= 0)
+        {
+            var sprite = Resources.Load<Sprite>("Images/Ranks/rank_" + Ranked.TierNames[rankUpTier].ToLowerInvariant());
+            CelebrationOverlay.Show(canvas, font, "RANK UP!", Ranked.TierNames[rankUpTier], "MMR " + Ranked.Mmr, sprite != null ? sprite : UiIcon.Load("rank"), Ranked.TierColors[rankUpTier]);
+            rankUpTier = -1;
+        }
+        if (gain != null)
+            foreach (var name in gain.newAchievements)
+                CelebrationOverlay.Show(canvas, font, "ACHIEVEMENT UNLOCKED", name, "", UiIcon.Load("trophy"), new Color(.48f, 1f, .7f));
     }
 }

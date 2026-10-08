@@ -6,6 +6,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// ส่วนระบบยิงแบบเบาของ PlayerController (partial): สร้างกระสุนในเครื่องตัวเองแล้วส่ง RPC ให้เครื่องอื่นสร้างสำเนา
 public partial class PlayerController
 {
     // เรียกจาก Shoot() บนเครื่องเจ้าของยาน

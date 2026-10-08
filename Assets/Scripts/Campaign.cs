@@ -14,6 +14,7 @@ public class CampaignStageDef
     public int reward;          // เหรียญเมื่อผ่านครั้งแรก
 }
 
+// รายการด่าน Campaign และตัวช่วยเลือกด่านถัดไปจากความคืบหน้าใน Progression
 public static class Campaign
 {
     public static readonly CampaignStageDef[] Stages =
@@ -31,6 +32,7 @@ public static class Campaign
     };
 
     public static int Count => Stages.Length;
+    // คืนข้อมูลด่าน stage (นับจาก 1) บีบให้อยู่ในช่วงด่านที่มี
     public static CampaignStageDef Get(int stage) => Stages[UnityEngine.Mathf.Clamp(stage, 1, Stages.Length) - 1];
     // ด่านที่ผ่านแล้วสูงสุด (0 = ยังไม่ผ่านเลย)
     public static int Cleared => Progression.Data != null ? Progression.Data.campaignStage : 0;

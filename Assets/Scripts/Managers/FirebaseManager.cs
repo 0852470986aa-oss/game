@@ -397,6 +397,8 @@ public class FirebaseManager : MonoBehaviour
         EnsureCatalogEntries(dbReference.Child("skills"), BuildSkillCatalog());
     }
 
+    // วนทุกรายการใน catalog (ยาน/สกิล) แล้วสร้างกิ่งย่อยของแต่ละรายการถ้ายังไม่มี
+    // ผ่าน EnsureCatalogBranch (Transaction) จึงไม่เขียนทับค่าที่แอดมินแก้ไว้
     private static void EnsureCatalogEntries(DatabaseReference reference, Dictionary<string, object> entries)
     {
         foreach (var entry in entries) EnsureCatalogBranch(reference.Child(entry.Key), entry.Value as Dictionary<string, object>);
@@ -905,6 +907,8 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // บันทึก JSON ความก้าวหน้าลง users/{uid}/progress_json พร้อมอัปเดต level และ xp ในคำสั่งเดียว
+    // ไม่ทำอะไรถ้ายังไม่ล็อกอินหรือ json ว่าง
     public void SaveProgressJson(string json, int level, int xp)
     {
         if (user == null || dbReference == null || string.IsNullOrEmpty(json)) return;
@@ -927,6 +931,7 @@ public class FirebaseManager : MonoBehaviour
         });
     }
 
+    // เขียนข้อความ JSON ลง users/{uid}/{key} (เช่น economy_json) ทับค่าเดิม; ไม่ทำอะไรถ้ายังไม่ล็อกอิน
     public void SaveUserJson(string key, string json)
     {
         if (user == null || dbReference == null || string.IsNullOrEmpty(key) || json == null) return;
@@ -964,31 +969,74 @@ public class FirebaseManager : MonoBehaviour
             { "mmr", mmr },
             { "rank_json", json }
         });
+        PublishLeaderboard(mmr);
+    }
+
+    // ===== ตารางอันดับรวมทั้งเซิร์ฟเวอร์ =====
+    // เก็บที่ leaderboard/{uid} = { name, mmr, level, at } (ข้อมูลเล็ก ๆ แยกจาก users ทุกคนที่ล็อกอินอ่านได้ เห็นตารางเดียวกันทุกเครื่อง)
+    // เขียนทุกครั้งที่ MMR เปลี่ยน (SaveRank) และตอนโหลดแรงค์หลังล็อกอิน (คนที่เล่นก่อนมีตารางนี้จะถูกเพิ่มเข้าไปเอง)
+    // แนะนำใส่ใน Firebase Rules: "leaderboard": { ".indexOn": ["mmr"] } ให้ query เร็ว (ไม่ใส่ก็ทำงานได้แต่โหลดช้าเมื่อคนเยอะ)
+    public void PublishLeaderboard(int mmr)
+    {
+        if (user == null || dbReference == null || !FeatureFlags.Leaderboard) return;
+        dbReference.Child("leaderboard").Child(user.UserId).SetValueAsync(new Dictionary<string, object>
+        {
+            { "name", GetUsername() }, { "mmr", mmr }, { "level", Progression.Level }, { "at", ServerValue.Timestamp }
+        });
     }
 
     // ตารางอันดับ: ผู้เล่นที่ mmr สูงสุด count คน (เรียงมาก -> น้อย)
-    // แนะนำเพิ่มใน Firebase Rules: "users": { ".indexOn": ["mmr"] } เพื่อให้ query เร็ว (ไม่ใส่ก็ทำงานได้)
+    // อ่านพร้อมกัน 2 ที่ แล้วรวม (คนเดียวกันใช้ค่าที่ MMR สูงกว่า): leaderboard/ (ใหม่) + users/ (เดิม ผู้เล่นที่ยังใช้เกมรุ่นเก่ายังเขียนที่นี่)
+    // LastLeaderboardError = ข้อความผิดพลาดล่าสุด (ทั้งสองที่อ่านไม่ได้) ให้หน้าจอบอกผู้เล่นแทนคำว่า "ยังไม่มีผู้เล่น"
+    public string LastLeaderboardError { get; private set; }
+    // อ่านตารางอันดับ count คน แล้วส่งรายการที่เรียงแล้วให้ onResult (อ่านไม่ได้ทั้งคู่ = รายการว่าง + LastLeaderboardError)
     public void GetLeaderboard(int count, Action<List<LeaderboardEntry>> onResult)
     {
-        if (dbReference == null) { onResult?.Invoke(new List<LeaderboardEntry>()); return; }
-        dbReference.Child("users").OrderByChild("mmr").LimitToLast(count).GetValueAsync().ContinueWithOnMainThread(task =>
+        if (dbReference == null) { LastLeaderboardError = "Database not ready"; onResult?.Invoke(new List<LeaderboardEntry>()); return; }
+        var byUid = new Dictionary<string, LeaderboardEntry>();
+        int pending = 2, failed = 0;
+        string error = null;
+        // อ่านผลของที่เก็บหนึ่ง (nameKey = ชื่อ field ของชื่อผู้เล่นในที่นั้น)
+        Action<System.Threading.Tasks.Task<DataSnapshot>, string, string> Collect = (task, nameKey, source) =>
         {
-            var list = new List<LeaderboardEntry>();
-            if (!task.IsFaulted && !task.IsCanceled && task.Result != null)
+            if (task.IsFaulted || task.IsCanceled || task.Result == null)
+            {
+                failed++;
+                error = task.Exception != null ? task.Exception.GetBaseException().Message : "canceled";
+                Debug.LogWarning("[Leaderboard] Could not read " + source + ": " + error);
+            }
+            else
                 foreach (var child in task.Result.Children)
                 {
                     if (child.Child("mmr").Value == null) continue;
-                    list.Add(new LeaderboardEntry
+                    int mmr = ReadInt(child.Child("mmr").Value, 0);
+                    if (byUid.TryGetValue(child.Key, out var known) && known.mmr >= mmr) continue;
+                    byUid[child.Key] = new LeaderboardEntry
                     {
                         uid = child.Key,
-                        name = child.Child("username").Value?.ToString() ?? "PILOT",
-                        mmr = ReadInt(child.Child("mmr").Value, 0),
+                        name = child.Child(nameKey).Value?.ToString() ?? (known != null ? known.name : "PILOT"),
+                        mmr = mmr,
                         level = ReadInt(child.Child("level").Value, 1)
-                    });
+                    };
                 }
-            list.Sort((a, b) => b.mmr.CompareTo(a.mmr));
-            onResult?.Invoke(list);
-        });
+            if (--pending > 0) return;
+            LastLeaderboardError = failed == 2 ? error : null;
+            Debug.Log("[Leaderboard] Loaded " + byUid.Count + " pilots" + (failed > 0 ? " (" + failed + " source failed)" : ""));
+            onResult?.Invoke(SortedTop(byUid, count));
+        };
+        dbReference.Child("leaderboard").OrderByChild("mmr").LimitToLast(count).GetValueAsync()
+            .ContinueWithOnMainThread(task => Collect(task, "name", "leaderboard"));
+        dbReference.Child("users").OrderByChild("mmr").LimitToLast(count).GetValueAsync()
+            .ContinueWithOnMainThread(task => Collect(task, "username", "users"));
+    }
+
+    // เรียง MMR มาก -> น้อย แล้วตัดเหลือ count คน
+    private static List<LeaderboardEntry> SortedTop(Dictionary<string, LeaderboardEntry> byUid, int count)
+    {
+        var list = new List<LeaderboardEntry>(byUid.Values);
+        list.Sort((a, b) => b.mmr.CompareTo(a.mmr));
+        if (list.Count > count) list.RemoveRange(count, list.Count - count);
+        return list;
     }
 
     // บันทึกกรณีเสมอ: อัปเดตคะแนนสูงสุด และ Master Client เขียนประวัติผล "Draw" (ไม่มีเหรียญรางวัล)

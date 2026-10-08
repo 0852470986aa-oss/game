@@ -27,7 +27,7 @@ public partial class GameplayManager
             return;
         }
 
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = FindFirstObjectByType<Canvas>();
         if (canvas != null) CreateKillMessage(canvas.transform, "KillMessage", true);
     }
 

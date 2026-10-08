@@ -5,6 +5,7 @@ using UnityEngine;
 using Photon.Pun;
 using TMPro;
 
+// ส่วนบอทของ GameplayManager: Master สร้างยานบอทตามค่าห้อง และระบบบทสอนเล่น
 public partial class GameplayManager
 {
     private bool botsSpawned;

@@ -116,6 +116,7 @@ public static class BattleLoadoutCatalog
     }
     // มีรูปของตัวเองหรือยัง (ยังไม่มี = ย้อมสีประจำยานให้แยกออก)
     public static bool HasOwnArt(int ship) => UnityEngine.Resources.Load<UnityEngine.Sprite>(Ships[ValidShip(ship)].spritePath) != null;
+    // สีย้อมยาน: มีรูปของตัวเองแล้ว = ขาว (ไม่ย้อม) ยังไม่มี = ใช้สี tint ประจำยาน
     public static UnityEngine.Color ShipTint(int ship) => HasOwnArt(ship) ? UnityEngine.Color.white : Ships[ValidShip(ship)].tint;
 
     // สกิล index 0 STUN, 1 SHIELD, 2 NOVA, 3 SEEKER (ตรงกับ skillType ใน PlayerController) ค่าท้ายคือคูลดาวน์ (วินาที)
@@ -132,6 +133,7 @@ public static class BattleLoadoutCatalog
     // ตรวจ index ที่รับมา (เช่นจาก Firebase/Photon) ถ้าเกินช่วงคืน 0 กันเกม error
     // ปิด FeatureFlags.NewShips / NewSkills = ยาน/สกิลเฟส 7 ใช้ไม่ได้ (กลับเป็นยาน/สกิลแรก)
     public static int ValidShip(int index) => index >= 0 && index < Ships.Length && (index < 3 || FeatureFlags.NewShips) ? index : 0;
+    // ตรวจ index สกิล: เกินช่วง หรือเป็นสกิลเฟส 7 ตอนปิด FeatureFlags.NewSkills = คืน 0
     public static int ValidSkill(int index) => index >= 0 && index < Skills.Length && (index < 4 || FeatureFlags.NewSkills) ? index : 0;
 }
 

@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
+// ส่วนตั้งค่า HUD ของ GameplayManager: ปรับขนาด/ฝั่งปุ่มตาม GameSettings, ตัวนับ FPS และปุ่มย้อนกลับ
 public partial class GameplayManager
 {
     // ค่าตำแหน่ง/ขนาดเดิมของปุ่มแต่ละอัน (จำไว้ครั้งแรก เพื่อปรับซ้ำได้ไม่สะสม)
@@ -22,6 +23,7 @@ public partial class GameplayManager
     private void HandleBattleBackKey()
     {
         if (!LobbyManager.BackKeyPressed()) return;
+        if (CelebrationOverlay.HandleBack()) return; // ปิดฉากฉลองก่อน
         if (BattleSettingsPanel.HandleBack()) return;
         if (emoteMenu != null && emoteMenu.activeSelf) { emoteMenu.SetActive(false); return; }
         if (resultShown) { LeaveRoom(); return; }
@@ -46,8 +48,12 @@ public partial class GameplayManager
         if (skillButton != null) LayoutControl(skillButton.transform as RectTransform, scale, mirror);
         var emoteButton = battleHud.Find("EmoteButton") as RectTransform;
         var emoteList = battleHud.Find("EmoteMenu") as RectTransform;
-        LayoutControl(emoteButton, 1f, mirror);
-        LayoutControl(emoteList, 1f, mirror);
+        // แถวปุ่มมุมขวาบนจัดเองใน PlaceTopRightButtons (ไม่สลับฝั่งตามโหมดมือซ้าย)
+        if (!FeatureFlags.TidyBattleButtons)
+        {
+            LayoutControl(emoteButton, 1f, mirror);
+            LayoutControl(emoteList, 1f, mirror);
+        }
         if (emoteButton != null) emoteButton.gameObject.SetActive(GameSettings.Emotes);
         if (!GameSettings.Emotes && emoteList != null) emoteList.gameObject.SetActive(false);
     }

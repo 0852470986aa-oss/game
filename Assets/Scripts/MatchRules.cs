@@ -5,7 +5,8 @@ using System.Collections.Generic;
 using Photon.Pun;
 using Photon.Realtime;
 
-public static class MatchRules
+// ตัวช่วยอ่านกติกาห้อง/โหมด/ทีม และนับคะแนนจาก Photon Custom Properties (static ทั้งคลาส)
+public static partial class MatchRules
 {
     public const string KillTargetKey = "KillTarget";
     public const string MatchSecondsKey = "MatchSeconds";
@@ -20,7 +21,9 @@ public static class MatchRules
 
     // อ่านค่าจากห้อง (ไม่มีค่า หรือปิด FeatureFlags.RoomSettings = ใช้ค่าเริ่มต้นแบบเดิม)
     public static int KillTarget(RoomInfo room) => ReadInt(room, KillTargetKey, DefaultKillTarget, 1, 99);
+    // เวลาแมตช์ (วินาที) จำกัดช่วง 30-3600
     public static int MatchSeconds(RoomInfo room) => ReadInt(room, MatchSecondsKey, DefaultMatchSeconds, 30, 3600);
+    // เปิดอันตรายในแม็พไหม (ค่าเริ่มต้น = เปิด ถ้าไม่มีค่า หรือปิด FeatureFlags.RoomSettings)
     public static bool Hazards(RoomInfo room)
     {
         if (!FeatureFlags.RoomSettings || room == null) return true;
@@ -34,8 +37,10 @@ public static class MatchRules
         return options[(index + 1) % options.Length];
     }
 
+    // แปลงวินาทีเป็นข้อความ นาที:วินาที เช่น 185 -> "3:05"
     public static string FormatTime(int seconds) => (seconds / 60) + ":" + (seconds % 60).ToString("00");
 
+    // อ่านค่า int จาก Room Property key แล้วบีบให้อยู่ในช่วง min-max (ไม่มีค่า/ปิดฟีเจอร์ = fallback)
     private static int ReadInt(RoomInfo room, string key, int fallback, int min, int max)
     {
         if (!FeatureFlags.RoomSettings || room == null) return fallback;
@@ -74,14 +79,19 @@ public static class MatchRules
     public const string BotKillPrefix = "BK";
     public static readonly string[] DifficultyNames = { "TRAINING", "EASY", "NORMAL", "HARD" };
 
+    // จำนวนบอทในห้อง (0 ถึง MaxCombatants-1) ปิด FeatureFlags.Bots = 0
     public static int BotCount(RoomInfo room)
         => FeatureFlags.Bots && room != null && room.CustomProperties.TryGetValue(BotCountKey, out object v) && v is int n ? UnityEngine.Mathf.Clamp(n, 0, MaxCombatants - 1) : 0;
+    // ความยากบอทในห้อง 0-3 (ไม่มีค่า = 2 กลาง)
     public static int BotDifficulty(RoomInfo room)
         => room != null && room.CustomProperties.TryGetValue(BotDifficultyKey, out object v) && v is int n ? UnityEngine.Mathf.Clamp(n, 0, 3) : 2;
+    // ห้องเปิดเติมบอทแทนที่ว่างไหม (ไม่ใช้ในห้องแรงค์)
     public static bool BotFill(RoomInfo room)
         => FeatureFlags.Bots && !IsRanked(room) && room != null && room.CustomProperties.TryGetValue(BotFillKey, out object v) && v is bool on && on;
+    // ห้องนี้เป็นแมตช์เล่นคนเดียว (Room Property "Solo") ไหม
     public static bool IsSolo(RoomInfo room)
         => room != null && room.CustomProperties.TryGetValue(SoloKey, out object v) && v is bool on && on;
+    // ห้องนี้เป็นแมตช์สอนเล่น (Room Property "Tutorial") ไหม
     public static bool IsTutorial(RoomInfo room)
         => room != null && room.CustomProperties.TryGetValue(TutorialKey, out object v) && v is bool on && on;
     // แมตช์ที่มีบอทเป็นคู่แข่ง (ได้รางวัลน้อยลง กันปั๊มเหรียญ)
@@ -129,6 +139,7 @@ public static class MatchRules
     public static bool IsFreeForAll(RoomInfo room) => FeatureFlags.MultiPlayer && TotalCombatants(room) > 2;
     // ชื่อโหมดสำหรับแสดงบนจอ
     public static string ModeName(int maxPlayers) => maxPlayers <= 2 ? "1 VS 1" : "FFA " + maxPlayers + "P";
+    // ชื่อโหมดแบบรองรับทีม: เปิดทีมและ 4 ลำขึ้นไป = "TEAM 2v2" ฯลฯ ไม่งั้นใช้ชื่อแบบเดิม
     public static string ModeName(int maxPlayers, bool teams)
         => teams && maxPlayers >= 4 ? "TEAM " + maxPlayers / 2 + "v" + maxPlayers / 2 : ModeName(maxPlayers);
 
@@ -143,11 +154,13 @@ public static class MatchRules
     // จำนวนครั้งที่ตาย (คน = Player Property "Deaths", บอท = Room Property "BD{id}")
     public static int Deaths(Player player)
         => player != null && player.CustomProperties.TryGetValue("Deaths", out object value) && value is int deaths ? deaths : 0;
+    // จำนวนครั้งที่บอทตาย (Room Property "BD{id}")
     public static int BotDeaths(int botId)
     {
         var room = PhotonNetwork.CurrentRoom;
         return room != null && room.CustomProperties.TryGetValue(BotDeathPrefix + botId, out object v) && v is int n ? n : 0;
     }
+    // บวกจำนวนตายให้บอท (เรียกบน Master เท่านั้น)
     public static void AddBotDeath(int botId)
     {
         if (!PhotonNetwork.IsMasterClient || PhotonNetwork.CurrentRoom == null) return;
@@ -172,6 +185,7 @@ public static class MatchRules
     // โหมดที่ไม่ได้นับ Kill (ยึดจุด/เก็บดาว/Battle Royale) ใส่ฟังก์ชันคะแนนแทนที่นี่ — ตารางคะแนน/หน้าผลจะเรียงตามคะแนนนี้
     public static System.Func<Standing, int> ScoreOverride;
 
+    // สร้างตารางคะแนน: คนจริงจาก PlayerList + บอทจาก PlayerController ในฉาก แล้วเรียงด้วย CompareStanding
     public static List<Standing> AllStandings()
     {
         var list = new List<Standing>();
@@ -192,6 +206,7 @@ public static class MatchRules
         return list;
     }
 
+    // ตัวเปรียบเทียบสำหรับเรียงตาราง: คะแนนโหมดมากก่อน > Kill มากก่อน > ตายน้อยก่อน > ชื่อ
     public static int CompareStanding(Standing a, Standing b)
     {
         if (a.score != b.score) return b.score.CompareTo(a.score);
@@ -210,6 +225,9 @@ public static class MatchRules
             object value = i < botCount ? (object)0 : null;
             props[BotKillPrefix + id] = value;
             props[BotDeathPrefix + id] = value;
+            props[BotDamagePrefix + id] = value; // เงื่อนไขชนะ: ดาเมจรวม / ค่าหัวของบอท
+            props[BotBountyPrefix + id] = value;
+            props[MatchStats.BotPrefix + id] = null; // สถิติหลังแมตช์ของบอท (ล้างทิ้ง)
         }
         return props;
     }
@@ -217,6 +235,7 @@ public static class MatchRules
     // ===== ตีบวก/ไอเท็มในแมตช์ (เฟส 5) =====
     // Host ปิดได้ในห้องรอ (ปุ่ม UPGRADES) = ทุกคนใช้ค่าพลังพื้นฐานเท่ากัน
     public const string UpgradesKey = "Upgrades";
+    // ห้องนี้ใช้ค่าตีบวก/ไอเท็มได้ไหม (ห้องแรงค์ = ไม่ได้, ไม่มีค่า = ได้)
     public static bool UpgradesAllowed(RoomInfo room)
         => !IsRanked(room) && (room == null || !room.CustomProperties.TryGetValue(UpgradesKey, out object v) || !(v is bool on) || on);
 
@@ -227,11 +246,13 @@ public static class MatchRules
     public const string ModeScorePrefix = "MS";
     public const int ModeDeathmatch = 0, ModeKoth = 1, ModeStars = 2, ModeSurvival = 3, ModeRoyale = 4, ModeCampaign = 5;
     public static readonly string[] ModeTitles = { "DEATHMATCH", "KING OF THE HILL", "STAR HUNT", "SURVIVAL", "BATTLE ROYALE", "CAMPAIGN" };
+    // โหมดเกมของห้อง (ปิด FeatureFlags.GameModes / ห้องแรงค์ / ไม่มีค่า = Deathmatch)
     public static int GameMode(RoomInfo room)
     {
         if (!FeatureFlags.GameModes || room == null || IsRanked(room)) return ModeDeathmatch;
         return room.CustomProperties.TryGetValue(GameModeKey, out object v) && v is int mode ? UnityEngine.Mathf.Clamp(mode, 0, ModeTitles.Length - 1) : ModeDeathmatch;
     }
+    // ด่าน Campaign ที่ห้องนี้เล่นอยู่ (ไม่มีค่า = ด่าน 1)
     public static int CampaignStage(RoomInfo room)
         => room != null && room.CustomProperties.TryGetValue(CampaignStageKey, out object v) && v is int stage ? stage : 1;
     // โหมดร่วมมือ: คนจริงทุกคนเป็นทีมเดียวกัน (ทีม 0) สู้บอท (ทีม 1)
@@ -253,6 +274,7 @@ public static class MatchRules
 
     // ===== ไอเท็มเกิดในแม็พ (เฟส 7) =====
     public const string PowerUpsKey = "PowerUps";
+    // ห้องนี้มีไอเท็มเกิดในแม็พไหม (ปิดในโหมดสอนเล่น, ไม่มีค่า = เปิด)
     public static bool PowerUpsEnabled(RoomInfo room)
         => FeatureFlags.PowerUps && room != null && !IsTutorial(room)
            && (!room.CustomProperties.TryGetValue(PowerUpsKey, out object v) || !(v is bool on) || on);
@@ -262,6 +284,7 @@ public static class MatchRules
     public const string RankedKey = "Ranked";
     public const int RankedKills = 5;
     public const int RankedSeconds = 300;
+    // ห้องนี้เป็นห้องแรงค์ไหม (Room Property "Ranked" = true และเปิด FeatureFlags.Ranked)
     public static bool IsRanked(RoomInfo room)
         => FeatureFlags.Ranked && room != null && room.CustomProperties.TryGetValue(RankedKey, out object v) && v is bool on && on;
 

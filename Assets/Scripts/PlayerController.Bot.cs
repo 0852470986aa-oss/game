@@ -5,6 +5,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// ส่วนตัวตนยานของ PlayerController (partial): แยกคน/บอท อ่านข้อมูลบอทตอน Photon สร้างยาน และเก็บคำสั่งจาก BotController
 public partial class PlayerController : IPunInstantiateMagicCallback
 {
     // เลขประจำตัวบอทเริ่มที่ 1000 (ไม่ชนกับ ActorNumber ของคนจริงที่เป็นเลขน้อย ๆ)

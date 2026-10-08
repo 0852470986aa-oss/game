@@ -103,7 +103,7 @@ Scene หลัก:
 | HUD, หลอดเลือด, ปุ่มบนจอ และหน้าสรุป | `Assets/Scripts/Managers/GameplayManager.HUD.cs` | `StyleBattleHUD`, `BuildBattleControls`, `BuildResultUI` |
 | สถานะสกิล/ติด Stun/แจ้งกำจัด | `Assets/Scripts/Managers/GameplayManager.StatusUI.cs` | `ShowKillMessage`, `UpdateCombatStatuses`, `UpdateSkillUI` |
 | ผลแข่งและกลับห้องเดิม | `Assets/Scripts/Managers/GameplayManager.Results.cs` | `ShowResultScreen` และขั้นตอนกลับ/เล่นซ้ำ |
-| แผงตั้งค่าในเกม/ความไวเล็ง/ยืนยันออก | `Assets/Scripts/BattleSettingsPanel.cs` | `Show`, `Build`, `Row`, `Confirm`; การตั้งค่าบันทึกผ่าน PlayerPrefs |
+| แผงตั้งค่าในเกม/ความไวเล็ง/ยืนยันออก | `Assets/Scripts/BattleSettingsPanel.cs` (+ `BattleSettingsPanel.Unified.cs` จัดเป็นหน้าเดียว) | `Show`, `Build`, `Row`, `Confirm`, `BuildOptionRows`; การตั้งค่าบันทึกผ่าน PlayerPrefs / `GameSettings.cs` |
 | ปุ่มยิงแบบกด/ลาก | `Assets/Scripts/UIButton.cs` | `OnPointerDown`, `OnDrag`, `OnPointerUp`, `AimDirection` |
 | จอยสติ๊กเคลื่อนที่ | `Assets/Scripts/UIJoystick.cs` | `OnDrag`, `OnPointerDown`, `OnPointerUp` |
 | วงปุ่ม/วงคูลดาวน์ | `Assets/Scripts/ControlRingGraphic.cs` | `SetRing`, `OnPopulateMesh` |
@@ -164,6 +164,26 @@ Scene หลัก:
 | แก้ในหน้า Edit | กดเมนูแล้ว HUD/หน้าผล/ของในแม็พ มาอยู่ใน Scene ให้ลากแก้ได้ | `EditableTemplate.cs`, `EditableLayout.cs`, ดู `EDITABLE_UI_TH.md` |
 
 ไฟล์ก่อนแก้สำรองไว้ในโฟลเดอร์ `Backup-before-*-20261006` ข้าง ๆ โปรเจกต์ ทุกชุด compile ผ่านแล้ว แต่ต้องทดสอบเล่นจริงใน Unity/มือถือ สองเครื่อง (โดยเฉพาะวาร์ป กระสุนเด้ง อีโมต และสียานที่ต้องส่งผ่าน Photon)
+
+## สิ่งที่เพิ่มเมื่อ 7–8 ต.ค. 2026 (หน้าตา UI / ภาษาไทย)
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ |
+|---|---|---|
+| คำแปลภาษาไทย / แปลข้อความที่มีตัวเลข | `Assets/Scripts/Lang.cs` | `Table` (คู่คำ), `Patterns` (รูปแบบมีตัวเลข), `Translate`, คลาส `LangTranslator` (แปลตอน TextMeshPro วาด) |
+| คำอธิบายสกิลในโรงเก็บยาน | `Assets/Scripts/SkillInfo.cs` | `Describe` (ข้อความไทย/อังกฤษ), `Stats` (คูลดาวน์/ดาเมจ/ระยะเวลา) เรียกจาก `LobbyManager.Inventory.cs` `UpdateSkillDisplay` |
+| หน้าตั้งค่าแบบหน้าเดียวเลื่อนได้ | `Assets/Scripts/BattleSettingsPanel.Unified.cs` | `UnifiedLayout` (ลำดับแถว/หมวด), `BuildUnified`, `ScrollToSection` |
+| หน้าเลือกวิธีเล่นแบบการ์ด + หน้าเตรียมพร้อมรบ | `Assets/Scripts/Managers/LobbyManager.NewLayout.cs` | `ApplyModeCardLayout`, `SelectModeCategory`, `LayoutPrepRoom`, `LayoutRosterSlotsPrep` |
+| สี/ตำแหน่งที่บังคับทับ UI ใน Scene, แท็บโรงเก็บยาน, ปุ่ม RANKED หน้าหลัก | `Assets/Scripts/Managers/LobbyManager.Polish.cs` | `SolidOverlay`, `StyleTab`, `OpenHangarWorkshop`, `ApplyHomeRankedLayout`, `LayoutRosterSlots` |
+| ปุ่มย้อนกลับ Android / Esc | `Assets/Scripts/Managers/LobbyManager.Back.cs`, `GameplayManager.Settings.cs` | `HandleBackKey`, `HandleBattleBackKey` |
+| ข้อความเป้าหมายบน HUD ตามโหมด / ปุ่ม "ด่านถัดไป" | `Assets/Scripts/Managers/GameplayManager.Modes.cs` | `ApplyModeHudText`, `ModeObjective`, `ApplySoloRematchLabel`, `CampaignReplayStage` |
+
+| อนิเมชันเปิดกล่องเสบียง | `Assets/Scripts/Managers/LobbyManager.CrateReveal.cs` | `PlayCrateReveal`, `CrateRevealRoutine` (ผลกล่องจาก `Economy.LastCrateCoins/LastCrateItem`) |
+| เงื่อนไขชนะ (คิลมากสุด/คะแนนสุทธิ/ดาเมจ/ค่าหัว) | `Assets/Scripts/MatchRules.WinRules.cs`, `Assets/Scripts/Managers/GameplayManager.WinRules.cs` | `WinRule`, `RuleScore`, `TeamPoints`, `RecordDamage`, `AwardBounty`, `EndMatchAfterSync`; ปุ่มอยู่ `LobbyManager.RoomSettings.cs` |
+| ไอคอนหน้าปุ่ม | `Assets/Scripts/UiIcon.cs`, `Assets/Scripts/Managers/LobbyManager.Icons.cs` | `UiIcon.OnButton`, `UiIcon.Attach`, `ApplyLobbyIcons` (รูป `Resources/Images/UI/icon_*.png`) |
+| สถิติหลังแมตช์ + ป้ายเกียรติยศ | `Assets/Scripts/MatchStats.cs`, `Assets/Scripts/Managers/GameplayManager.Stats.cs` | `Shot`, `Hit`, `Took`, `Flush`, `Read`; `EnsureStatsButton`, `BuildStatsPanel`, `AddBadge` |
+| ฉากฉลองเลเวลอัป/แรงค์อัป/Achievement | `Assets/Scripts/CelebrationOverlay.cs` | `Show` (เข้าคิว), เรียกจาก `GameplayManager.Progress.cs` `QueueCelebrations` |
+
+สวิตช์ใน `FeatureFlags.cs`: `UnifiedSettings`, `NewLobbyLayout`, `CrateAnimation`, `WinRules`, `UiIcons`, `PostMatchStats`, `Celebrations` (ปิด = กลับแบบเดิม) รายละเอียดและเช็คลิสต์ทดสอบอยู่ `PHASE_LOG_TH.md` หัวข้อ "ปรับ UI และภาษาไทย"
 
 ## วิธีแบ่งงานกับเพื่อนให้ไม่ชนกัน
 

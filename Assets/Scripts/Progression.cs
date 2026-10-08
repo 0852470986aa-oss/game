@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+// ความคืบหน้าของภารกิจหนึ่งข้อ (id ตรงกับ MissionDef.id) และรับรางวัลแล้วหรือยัง
 [Serializable]
 public class MissionState
 {
@@ -17,6 +18,7 @@ public class MissionState
     public bool claimed;
 }
 
+// ประวัติแมตช์หนึ่งรายการ (เก็บ 15 แมตช์ล่าสุดใน PlayerProgress.history แสดงในหน้าโปรไฟล์)
 [Serializable]
 public class MatchRecord
 {
@@ -31,6 +33,7 @@ public class MatchRecord
     public bool online;
 }
 
+// ข้อมูลความก้าวหน้าทั้งหมดของผู้เล่น (เลเวล/สถิติ/ภารกิจ/ล็อกอิน/Achievement/ประวัติ) แปลงเป็น JSON ทั้งก้อน
 [Serializable]
 public class PlayerProgress
 {
@@ -73,6 +76,7 @@ public class ProgressGain
     public int missionsReady;
 }
 
+// ตัวจัดการระบบความก้าวหน้า แบบ static: โหลด/บันทึก PlayerProgress และคิด XP ภารกิจ รางวัล
 public static class Progression
 {
     // ===== ข้อมูลตั้งต้น (แก้ตัวเลขได้ที่นี่) =====
@@ -89,11 +93,13 @@ public static class Progression
     // รางวัลล็อกอินวันที่ 1-7 (วันที่ 7 ได้มากสุด แล้ววนใหม่)
     public static readonly int[] LoginCoins = { 30, 40, 50, 60, 80, 100, 200 };
 
+    // นิยามภารกิจ: ข้อความ เป้าหมาย รางวัลเหรียญ/XP และฟังก์ชัน count ที่บอกว่าแมตช์หนึ่งนับได้กี่หน่วย
     public class MissionDef
     {
         public string id, text;
         public int goal, coins, xp;
         public Func<MatchReport, int> count;
+        // สร้างนิยามภารกิจ (ใช้ใน DailyPool / WeeklyPool)
         public MissionDef(string id, string text, int goal, int coins, int xp, Func<MatchReport, int> count)
         { this.id = id; this.text = text; this.goal = goal; this.coins = coins; this.xp = xp; this.count = count; }
     }
@@ -119,10 +125,12 @@ public static class Progression
         new MissionDef("W_WIN10", "Win 10 matches this week", 10, 400, 350, r => r.won ? 1 : 0),
     };
 
+    // นิยาม Achievement: ชื่อ คำอธิบาย ฉายาที่ได้ และเงื่อนไข unlocked (เช็กจาก PlayerProgress + ผลแมตช์)
     public class AchievementDef
     {
         public string id, name, text, title;
         public Func<PlayerProgress, MatchReport, bool> unlocked;
+        // สร้างนิยาม Achievement (ใช้ในรายการ Achievements)
         public AchievementDef(string id, string name, string text, string title, Func<PlayerProgress, MatchReport, bool> unlocked)
         { this.id = id; this.name = name; this.text = text; this.title = title; this.unlocked = unlocked; }
     }
@@ -183,6 +191,7 @@ public static class Progression
         if (Data == null || loadedFor != Uid) LoadLocal();
     }
 
+    // อ่านข้อมูลจาก PlayerPrefs ของบัญชีปัจจุบัน (ไม่มี = เริ่มใหม่) แล้ว Normalize
     private static void LoadLocal()
     {
         loadedFor = Uid;
@@ -190,6 +199,7 @@ public static class Progression
         Normalize();
     }
 
+    // แปลง JSON เป็น PlayerProgress (ว่าง/เสีย = null)
     private static PlayerProgress Parse(string json)
     {
         if (string.IsNullOrEmpty(json)) return null;
@@ -208,6 +218,7 @@ public static class Progression
         RollPeriods();
     }
 
+    // บันทึก: ประทับเวลา savedAt เขียนลง PlayerPrefs และ Firebase (ส่งเลเวล/totalXp ไปด้วย) แล้วยิง Changed
     public static void Save()
     {
         if (Data == null) return;
@@ -218,6 +229,20 @@ public static class Progression
         if (FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn())
             FirebaseManager.Instance.SaveProgressJson(json, Data.level, Data.totalXp);
         Changed?.Invoke();
+    }
+
+    // ทดสอบเท่านั้น (เมนู Test/ บน LobbyManager ใน Editor): ตั้งเลเวลตรง ๆ XP ในเลเวลเริ่มที่ 0 ไม่ให้เหรียญรางวัลเลเวล
+    // totalXp ปรับให้เท่ากับ XP รวมที่ต้องใช้ถึงเลเวลนั้น แล้วบันทึกลงเครื่อง + Firebase ตามปกติ
+    public static void SetLevelForTesting(int level)
+    {
+        EnsureLoaded();
+        if (Data == null) return;
+        Data.level = Mathf.Clamp(level, 1, MaxLevel);
+        Data.xp = 0;
+        int total = 0;
+        for (int l = 1; l < Data.level; l++) total += XpToNext(l);
+        Data.totalXp = total;
+        Save();
     }
 
     // ===== ช่วงเวลา (วัน / สัปดาห์) =====
@@ -233,6 +258,7 @@ public static class Progression
     }
     public static TimeSpan UntilTomorrow => DateTime.Today.AddDays(1) - DateTime.Now;
 
+    // ขึ้นวันใหม่ = สุ่มภารกิจรายวัน 3 ข้อใหม่ (seed ตามวันที่) / ขึ้นสัปดาห์ใหม่ = รีเซ็ตภารกิจรายสัปดาห์
     private static void RollPeriods()
     {
         if (Data.dailyId != TodayId || Data.daily.Count != 3)
@@ -257,6 +283,7 @@ public static class Progression
         }
     }
 
+    // หานิยามภารกิจจาก id ทั้งรายวันและรายสัปดาห์ (ไม่พบ = null)
     public static MissionDef FindMission(string id)
     {
         foreach (var def in DailyPool) if (def.id == id) return def;
@@ -358,6 +385,7 @@ public static class Progression
         return gain;
     }
 
+    // เช็ก Achievement ที่ยังไม่ปลด ถ้าผ่านเงื่อนไขให้ปลดล็อก แล้วคืนรายชื่อที่เพิ่งปลด
     private static List<string> CheckAchievements(MatchReport r)
     {
         var unlocked = new List<string>();
@@ -401,6 +429,8 @@ public static class Progression
         }
     }
 
+    // รับรางวัลล็อกอินวันนี้: ต่อเนื่องจากเมื่อวานนับวันต่อ ไม่งั้นเริ่มวันที่ 1 แล้วเพิ่มเหรียญ
+    // คืน false ถ้ารับไปแล้ววันนี้
     public static bool ClaimLogin(out int coins)
     {
         coins = 0;
@@ -425,6 +455,7 @@ public static class Progression
         return titles;
     }
 
+    // เปลี่ยนฉายาที่โชว์เป็นอันถัดไปในรายการที่ปลดล็อกแล้ว (วนกลับอันแรก) แล้วบันทึก
     public static void CycleTitle()
     {
         if (Data == null) return;

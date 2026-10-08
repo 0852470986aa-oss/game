@@ -5,7 +5,9 @@
 //   friend_requests/{toUid}/{fromUid} = { name, at }
 //   presence/{uid}                 = { name, online, room, last, level }   (online=false อัตโนมัติเมื่อหลุด ผ่าน OnDisconnect)
 //   invites/{toUid}/{fromUid}      = { name, room, at }  (ชวนเข้าห้อง หมดอายุ 3 นาที)
-//   chat/global/{id}, chat/guild_{gid}/{id} = { uid, name, tag, text, at }   (อ่านแค่ 30 ข้อความล่าสุด)
+//   chat/global/{id}, chat/guild_{gid}/{id}, chat/dm_{uidA}_{uidB}/{id} = { uid, name, tag, text, at }
+//                                  (เก็บแค่ 50 ข้อความล่าสุด / แชทรวมหายเองหลัง 2 นาที / dm_ = แชทส่วนตัวกับเพื่อน)
+//   dm_notify/{toUid}/{fromUid}    = { name, at }   (มีข้อความส่วนตัวใหม่ที่ยังไม่อ่าน)
 //   guilds/{gid}                   = { name, tag, owner, members/{uid} = ชื่อ }
 //   guild_tags/{TAG}               = gid ,  users/{uid}/guild = gid
 // หน้าจออยู่ใน LobbyManager.Social.cs / ปิดได้ด้วย FeatureFlags.Social / Chat / Guilds
@@ -15,12 +17,18 @@ using UnityEngine;
 using Firebase.Database;
 using Firebase.Extensions;
 
+// คลาส static กลางของระบบสังคม: เก็บรายชื่อเพื่อน/คำขอ/คำชวน/แชท/กิลด์ไว้ในหน่วยความจำ และยิงอีเวนต์ Changed / ChatChanged ให้หน้าจอวาดใหม่
 public static class Social
 {
+    // ข้อมูลเพื่อน 1 คน: uid, ชื่อ, ห้องที่อยู่ ('' = ล็อบบี้), ออนไลน์ไหม, เวลาออนไลน์ล่าสุด (ms) และเลเวล
     public class Friend { public string uid, name, room = ""; public bool online; public long last; public int level; }
+    // คำขอเป็นเพื่อนที่ส่งมาหาเรา (uid และชื่อของผู้ส่ง)
     public class Request { public string uid, name; }
+    // คำชวนเข้าห้องจากเพื่อน: uid/ชื่อผู้ชวน, ชื่อห้อง Photon และเวลาที่ชวน (ใช้เช็กหมดอายุ 3 นาที)
     public class Invite { public string uid, name, room; public long at; }
+    // ข้อความแชท 1 บรรทัด: uid/ชื่อผู้ส่ง, ป้ายกิลด์ (tag), ข้อความ และเวลาที่ส่ง
     public class ChatLine { public string uid, name, tag, text; public long at; }
+    // ข้อมูลกิลด์ที่เราอยู่: id, ชื่อ, ป้าย TAG, uid หัวหน้า และรายชื่อสมาชิก (uid -> ชื่อ)
     public class GuildInfo { public string id, name, tag, owner; public Dictionary<string, string> members = new Dictionary<string, string>(); }
 
     public const int GuildCost = 500;
@@ -77,6 +85,9 @@ public static class Social
         db.Child("friend_requests").Child(uid).ValueChanged += (s, e) => { if (e.Snapshot != null) ReadRequests(e.Snapshot); };
         db.Child("invites").Child(uid).ValueChanged += (s, e) => { if (e.Snapshot != null) ReadInvites(e.Snapshot); };
         db.Child("users").Child(uid).Child("guild").ValueChanged += (s, e) => { if (e.Snapshot != null) WatchGuild(e.Snapshot.Value as string); };
+        if (FeatureFlags.FriendChat) db.Child("dm_notify").Child(uid).ValueChanged += (s, e) => { if (e.Snapshot != null) ReadDmNotify(e.Snapshot); };
+        // เวลา server ต่างจากเครื่องเท่าไร (ใช้นับอายุข้อความแชทรวมให้ตรงกันทุกเครื่อง)
+        db.Root.Child(".info").Child("serverTimeOffset").ValueChanged += (s, e) => { if (e.Snapshot != null) { serverOffset = ToLong(e.Snapshot.Value); serverOffsetKnown = true; } };
         SetChatChannel("global");
     }
 
@@ -91,6 +102,7 @@ public static class Social
         });
     }
 
+    // แจ้งหน้าจอว่าข้อมูลสังคม (เพื่อน/คำขอ/คำชวน/กิลด์) เปลี่ยน ผ่านอีเวนต์ Changed
     private static void Notify() => Changed?.Invoke();
 
     // ===== เพื่อน =====
@@ -130,6 +142,7 @@ public static class Social
         }
     }
 
+    // แปลงค่าจาก Firebase (long/double/string) เป็น long อย่างปลอดภัย ถ้าเป็น null หรือแปลงไม่ได้คืน 0
     private static long ToLong(object value)
     {
         if (value == null) return 0;
@@ -154,6 +167,7 @@ public static class Social
         });
     }
 
+    // อ่านคำขอเป็นเพื่อนทั้งหมดจาก friend_requests/{uid} ใหม่ทุกครั้งที่ข้อมูลเปลี่ยน แล้วแจ้งหน้าจอ
     private static void ReadRequests(DataSnapshot snapshot)
     {
         Requests.Clear();
@@ -162,6 +176,7 @@ public static class Social
         Notify();
     }
 
+    // รับคำขอเป็นเพื่อน: เขียนชื่อลง friends ของทั้งสองฝั่ง แล้วลบคำขอนั้นทิ้ง
     public static void Accept(Request request)
     {
         if (!Ready || request == null) return;
@@ -170,12 +185,14 @@ public static class Social
         Db.Child("friend_requests").Child(Uid).Child(request.uid).RemoveValueAsync();
     }
 
+    // ปฏิเสธคำขอเป็นเพื่อน: ลบคำขอออกจาก friend_requests ของเราเท่านั้น
     public static void Decline(Request request)
     {
         if (!Ready || request == null) return;
         Db.Child("friend_requests").Child(Uid).Child(request.uid).RemoveValueAsync();
     }
 
+    // ลบเพื่อน: ลบออกจาก friends ของทั้งเราและของเพื่อน (เลิกเป็นเพื่อนทั้งสองฝั่ง)
     public static void RemoveFriend(Friend friend)
     {
         if (!Ready || friend == null) return;
@@ -187,9 +204,11 @@ public static class Social
     public static void SendInvite(Friend friend, string room)
     {
         if (!Ready || friend == null || string.IsNullOrEmpty(room)) return;
+        if (FeatureFlags.RankedNoInvite && LobbyManager.IsRankedRoomName(room)) return; // ห้องแรงค์ชวนไม่ได้
         Db.Child("invites").Child(friend.uid).Child(Uid).SetValueAsync(new Dictionary<string, object> { { "name", MyName }, { "room", room }, { "at", Now } });
     }
 
+    // อ่านคำชวนเข้าห้องจาก invites/{uid} ทุกครั้งที่ข้อมูลเปลี่ยน คำชวนที่เก่ากว่า 3 นาทีจะถูกลบทิ้ง
     private static void ReadInvites(DataSnapshot snapshot)
     {
         Invites.Clear();
@@ -203,6 +222,7 @@ public static class Social
         Notify();
     }
 
+    // ลบคำชวนออกจากรายการและจาก Firebase (เรียกตอนกด JOIN หรือ IGNORE ในกล่องคำชวน)
     public static void ClearInvite(Invite invite)
     {
         if (!Ready || invite == null) return;
@@ -212,27 +232,88 @@ public static class Social
     }
 
     // ===== แชท =====
+    // ทุกช่อง (รวม / กิลด์ / ส่วนตัว) เก็บแค่ ChatKeep ข้อความล่าสุด ข้อความเก่ากว่านั้นคนส่งลบทิ้งจากฐานข้อมูล
+    // แชทรวม: ข้อความหายเองหลัง GlobalChatLifeMs (2 นาที) — ห้องคุยสาธารณะไม่ค้างข้อความเก่า (แชทกิลด์/ส่วนตัวไม่หาย)
+    // ปิด FeatureFlags.ChatLimits = เก็บ 30 ข้อความแบบเดิม ไม่หมดอายุ
+    public const int ChatKeep = 50;
+    public const long GlobalChatLifeMs = 120000;
+    public static bool ChatExpires => FeatureFlags.ChatLimits && ChatChannel == "global";
+    private static string oldestChatKey; // key ข้อความเก่าสุดที่เก็บ (ใช้ลบที่เก่ากว่านี้)
+    private static long serverOffset;    // เวลา server - เวลาเครื่อง (ms) ใช้นับอายุข้อความให้ตรงกันทุกเครื่อง
+    private static bool serverOffsetKnown; // ได้ค่า offset จาก server แล้ว (ก่อนหน้านั้นแค่ซ่อน ไม่ลบจากฐานข้อมูล กันนาฬิกาเครื่องเพี้ยนลบข้อความคนอื่น)
+    private static long ServerNow => Now + serverOffset;
+    // เวลา server (ms) ให้ระบบอื่นใช้ เช่นร้านค้ารายวัน (ยังไม่ได้ offset = เวลาเครื่อง)
+    public static long ServerTimeMs => ServerNow;
+
+    // ชื่อเพื่อนที่กำลังคุยส่วนตัวด้วย (ช่อง dm_...) / คนที่ส่งข้อความส่วนตัวมาแต่เรายังไม่ได้เปิดอ่าน (uid -> ชื่อ)
+    public static string DmFriendName { get; private set; } = "";
+    public static readonly Dictionary<string, string> UnreadDms = new Dictionary<string, string>();
+    public static bool IsDmChannel => ChatChannel.StartsWith("dm_");
+
+    // ชื่อช่องแชทส่วนตัวของ 2 คน (เรียง uid ให้ทั้งสองฝั่งได้ชื่อเดียวกัน)
+    public static string DmChannel(string a, string b) => string.CompareOrdinal(a, b) < 0 ? "dm_" + a + "_" + b : "dm_" + b + "_" + a;
+
+    // เปลี่ยนช่องแชท (global / guild_{gid} / dm_{uid}_{uid}) แล้วเริ่มฟังข้อความล่าสุดของช่องนั้น
     public static void SetChatChannel(string channel)
     {
         if (!Ready) return;
         if (chatQuery != null) chatQuery.ValueChanged -= OnChat;
         ChatChannel = channel;
+        if (!channel.StartsWith("dm_")) DmFriendName = "";
         Chat.Clear();
-        chatQuery = Db.Child("chat").Child(channel).LimitToLast(30);
+        oldestChatKey = null;
+        chatQuery = Db.Child("chat").Child(channel).LimitToLast(FeatureFlags.ChatLimits ? ChatKeep : 30);
         chatQuery.ValueChanged += OnChat;
+        ChatChanged?.Invoke();
     }
 
+    // เปิดแชทส่วนตัวกับเพื่อน (ปุ่ม CHAT ในรายชื่อเพื่อน) และล้างสถานะ "ยังไม่อ่าน" ของเพื่อนคนนั้น
+    public static void OpenDm(Friend friend)
+    {
+        if (!Ready || friend == null || !FeatureFlags.FriendChat) return;
+        SetChatChannel(DmChannel(Uid, friend.uid));
+        DmFriendName = friend.name;
+        dmFriendUid = friend.uid;
+        MarkDmRead(friend.uid);
+    }
+    private static string dmFriendUid;
+
+    // ตัวรับ ValueChanged ของช่องแชทปัจจุบัน: อ่านข้อความล่าสุดใหม่ทั้งหมด (แชทรวมข้ามข้อความหมดอายุ) แล้วยิงอีเวนต์ ChatChanged
     private static void OnChat(object sender, ValueChangedEventArgs e)
     {
         if (e.Snapshot == null) return;
         Chat.Clear();
+        oldestChatKey = null;
+        bool expires = ChatExpires;
+        long count = e.Snapshot.ChildrenCount;
         foreach (var child in e.Snapshot.Children)
+        {
+            if (oldestChatKey == null && count >= ChatKeep) oldestChatKey = child.Key;
+            long at = ToLong(child.Child("at").Value);
+            // แชทรวมหมดอายุ: ไม่แสดง และลบทิ้งจากฐานข้อมูล (เครื่องไหนเห็นก่อนก็ลบ)
+            if (expires && at > 0 && ServerNow - at > GlobalChatLifeMs) { if (serverOffsetKnown) child.Reference.RemoveValueAsync(); continue; }
             Chat.Add(new ChatLine
             {
                 uid = child.Child("uid").Value?.ToString(), name = child.Child("name").Value?.ToString() ?? "PILOT",
-                tag = child.Child("tag").Value?.ToString() ?? "", text = child.Child("text").Value?.ToString() ?? "", at = ToLong(child.Child("at").Value)
+                tag = child.Child("tag").Value?.ToString() ?? "", text = child.Child("text").Value?.ToString() ?? "", at = at
             });
+        }
         ChatChanged?.Invoke();
+    }
+
+    // เรียกทุก 1 วินาทีจากล็อบบี้: เอาข้อความแชทรวมที่ครบ 2 นาทีออกจากจอ
+    public static void TickChat()
+    {
+        if (!ChatExpires || Chat.Count == 0) return;
+        int removed = Chat.RemoveAll(line => line.at > 0 && ServerNow - line.at > GlobalChatLifeMs);
+        if (removed > 0) ChatChanged?.Invoke();
+    }
+
+    // วินาทีที่เหลือก่อนข้อความหายไป (ใช้แสดงในแชทรวม) / -1 = ไม่หมดอายุ
+    public static int SecondsLeft(ChatLine line)
+    {
+        if (!ChatExpires || line.at <= 0) return -1;
+        return (int)Mathf.Max(0, (GlobalChatLifeMs - (ServerNow - line.at)) / 1000);
     }
 
     // ส่งข้อความ (จำกัด 120 ตัวอักษร, 1 ข้อความ / 1.5 วินาที, กรองคำหยาบพื้นฐาน)
@@ -245,15 +326,54 @@ public static class Social
         lastChatAt = Time.unscaledTime;
         if (text.Length > 120) text = text.Substring(0, 120);
         text = Filter(text);
-        Db.Child("chat").Child(ChatChannel).Push().SetValueAsync(new Dictionary<string, object>
+        var channel = Db.Child("chat").Child(ChatChannel);
+        channel.Push().SetValueAsync(new Dictionary<string, object>
         {
-            { "uid", Uid }, { "name", MyName }, { "tag", GuildTag }, { "text", text }, { "at", Now }
+            { "uid", Uid }, { "name", MyName }, { "tag", GuildTag }, { "text", text }, { "at", ServerValue.Timestamp }
         });
+        // แชทส่วนตัว: บอกเพื่อนว่ามีข้อความใหม่ (ขึ้นตัวเลขแจ้งเตือนที่ปุ่ม SOCIAL ของเพื่อน)
+        if (IsDmChannel && !string.IsNullOrEmpty(dmFriendUid))
+            Db.Child("dm_notify").Child(dmFriendUid).Child(Uid).SetValueAsync(new Dictionary<string, object> { { "name", MyName }, { "at", ServerValue.Timestamp } });
+        PruneChat(channel);
         return null;
+    }
+
+    // ลบข้อความที่เก่ากว่า 50 ข้อความล่าสุดของช่องนี้ออกจากฐานข้อมูล (คนส่งเป็นคนลบ)
+    private static void PruneChat(DatabaseReference channel)
+    {
+        if (!FeatureFlags.ChatLimits || string.IsNullOrEmpty(oldestChatKey)) return;
+        string keep = oldestChatKey;
+        channel.OrderByKey().EndAt(keep).LimitToFirst(40).GetValueAsync().ContinueWithOnMainThread(task =>
+        {
+            if (task.IsFaulted || task.IsCanceled || task.Result == null) return;
+            foreach (var child in task.Result.Children)
+                if (string.CompareOrdinal(child.Key, keep) < 0) child.Reference.RemoveValueAsync();
+        });
+    }
+
+    // อ่านรายการ "มีข้อความส่วนตัวใหม่" จาก dm_notify/{uid} (ไม่นับเพื่อนที่กำลังเปิดคุยอยู่)
+    private static void ReadDmNotify(DataSnapshot snapshot)
+    {
+        UnreadDms.Clear();
+        foreach (var child in snapshot.Children)
+        {
+            if (IsDmChannel && child.Key == dmFriendUid) { child.Reference.RemoveValueAsync(); continue; }
+            UnreadDms[child.Key] = child.Child("name").Value?.ToString() ?? "PILOT";
+        }
+        Notify();
+    }
+
+    // อ่านข้อความส่วนตัวของเพื่อนแล้ว: ลบแจ้งเตือน
+    public static void MarkDmRead(string friendUid)
+    {
+        if (!Ready || string.IsNullOrEmpty(friendUid)) return;
+        if (UnreadDms.Remove(friendUid)) Notify();
+        Db.Child("dm_notify").Child(Uid).Child(friendUid).RemoveValueAsync();
     }
 
     // แก้รายการคำที่ไม่ต้องการได้ที่นี่
     private static readonly string[] BlockedWords = { "fuck", "shit", "เหี้ย", "ควย", "สัส" };
+    // แทนคำใน BlockedWords ด้วย * (ไม่สนตัวพิมพ์เล็ก/ใหญ่) และตัด < > ออกกัน rich text ในแชท
     private static string Filter(string text)
     {
         foreach (string word in BlockedWords)
@@ -276,6 +396,7 @@ public static class Social
         guildRef.ValueChanged += OnGuild;
     }
 
+    // ตัวรับ ValueChanged ของ guilds/{gid}: อ่านข้อมูลกิลด์ใหม่ ถ้ากิลด์ถูกลบหรือเราไม่อยู่ในสมาชิกแล้ว จะเคลียร์กิลด์ของเรา
     private static void OnGuild(object sender, ValueChangedEventArgs e)
     {
         var snap = e.Snapshot;
@@ -292,6 +413,7 @@ public static class Social
         Notify();
     }
 
+    // ตรวจป้ายกิลด์: ยาว 3-5 ตัว และเป็นตัวอักษรอังกฤษ/ตัวเลข ASCII เท่านั้น
     private static bool ValidTag(string tag)
     {
         if (tag.Length < 3 || tag.Length > 5) return false;
@@ -300,14 +422,56 @@ public static class Social
     }
 
     // สร้างกิลด์ (เสีย 500 เหรียญ) ชื่อ 3-20 ตัว ป้าย (TAG) 3-5 ตัวอังกฤษ/ตัวเลข ห้ามซ้ำ
+    // FeatureFlags.AutoGuildTag: เกมสร้างแท็กให้เองจากชื่อกิลด์ (ไม่ต้องพิมพ์) ซ้ำกับของคนอื่น = เติมตัวเลขสุ่มจนได้แท็กว่าง
     public static void CreateGuild(string name, string tag, Action<string> done)
     {
         if (!Ready || !FeatureFlags.Guilds) { done("Guilds are offline."); return; }
         name = (name ?? "").Trim();
-        tag = (tag ?? "").Trim().ToUpperInvariant();
         if (name.Length < 3 || name.Length > 20) { done("Guild name must be 3-20 characters."); return; }
-        if (!ValidTag(tag)) { done("Tag must be 3-5 letters or numbers (A-Z, 0-9)."); return; }
         if (Guild != null) { done("Leave your current guild first."); return; }
+        if (FeatureFlags.AutoGuildTag) { FindFreeTag(name, 0, free => { if (free == null) done("Could not make a guild tag. Try again."); else CreateWithTag(name, free, done); }); return; }
+        tag = (tag ?? "").Trim().ToUpperInvariant();
+        if (!ValidTag(tag)) { done("Tag must be 3-5 letters or numbers (A-Z, 0-9)."); return; }
+        CreateWithTag(name, tag, done);
+    }
+
+    // แท็กอัตโนมัติจากชื่อกิลด์: ตัวแรกของแต่ละคำ (อังกฤษ/ตัวเลข) เช่น "Star Hunter Squad" → SHS
+    // คำน้อยไป = ใช้ตัวอักษรต้นชื่อ / ชื่อภาษาไทยล้วน = "GLD" / attempt > 0 = 3 ตัวแรก + เลขสุ่ม 2 หลัก (กันซ้ำ)
+    public static string AutoTag(string name, int attempt)
+    {
+        var letters = new System.Text.StringBuilder();
+        var initials = new System.Text.StringBuilder();
+        bool wordStart = true;
+        foreach (char raw in name ?? "")
+        {
+            char c = char.ToUpperInvariant(raw);
+            bool ok = c < 128 && char.IsLetterOrDigit(c);
+            if (ok) { letters.Append(c); if (wordStart) initials.Append(c); }
+            wordStart = !ok;
+        }
+        string tag = initials.Length >= 3 ? initials.ToString() : letters.ToString();
+        if (tag.Length < 3) tag = (tag + "GLD").Substring(0, 3);
+        if (tag.Length > 4) tag = tag.Substring(0, 4);
+        if (attempt > 0) tag = tag.Substring(0, 3) + UnityEngine.Random.Range(10, 100);
+        return tag;
+    }
+
+    // หาแท็กที่ยังไม่มีใครใช้ (ลองสูงสุด 6 ครั้ง) แล้วส่งให้ found (หาไม่ได้ = null)
+    private static void FindFreeTag(string name, int attempt, Action<string> found)
+    {
+        if (attempt >= 6) { found(null); return; }
+        string tag = AutoTag(name, attempt);
+        Db.Child("guild_tags").Child(tag).GetValueAsync().ContinueWithOnMainThread(check =>
+        {
+            if (check.IsFaulted || check.IsCanceled) { found(null); return; }
+            if (check.Result != null && check.Result.Exists) FindFreeTag(name, attempt + 1, found);
+            else found(tag);
+        });
+    }
+
+    // สร้างกิลด์ด้วยแท็กที่ตรวจแล้ว: เช็กว่าแท็กว่าง → หักเหรียญ → เขียนข้อมูลกิลด์/แท็ก/สมาชิก
+    private static void CreateWithTag(string name, string tag, Action<string> done)
+    {
         var db = Db;
         string uid = Uid;
         db.Child("guild_tags").Child(tag).GetValueAsync().ContinueWithOnMainThread(check =>
@@ -329,6 +493,7 @@ public static class Social
         });
     }
 
+    // เข้าร่วมกิลด์ด้วยป้าย TAG: หา gid จาก guild_tags เช็กว่ายังไม่เต็ม 20 คน แล้วเพิ่มตัวเองเป็นสมาชิก (ผลส่งกลับทาง done)
     public static void JoinGuild(string tag, Action<string> done)
     {
         if (!Ready || !FeatureFlags.Guilds) { done("Guilds are offline."); return; }

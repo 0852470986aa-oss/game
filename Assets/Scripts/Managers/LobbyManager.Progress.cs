@@ -8,6 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+// ส่วนหน้าจอความก้าวหน้าของ LobbyManager: ป้ายเลเวล/แถบ XP, หน้า MISSIONS และหน้า PROFILE
 public partial class LobbyManager
 {
     private Button missionsButton, profileButton;
@@ -19,6 +20,7 @@ public partial class LobbyManager
     private bool progressSubscribed;
     private bool loginPopupShown;
     private int pageSerial;
+    // หน้าที่เปิดอยู่ในหน้าต่างความก้าวหน้า (None = ปิดอยู่)
     private enum ProgressPage { None, Missions, Profile }
     private ProgressPage openPage;
 
@@ -71,12 +73,20 @@ public partial class LobbyManager
         });
     }
 
+    // เรียกเมื่อ Progression.Changed: อัปเดตส่วนแสดงผลความก้าวหน้า (ยกเลิกการฟังถ้าล็อบบี้ถูกทำลายแล้ว)
     private void OnProgressChanged()
     {
         if (this == null) { Progression.Changed -= OnProgressChanged; return; }
         RefreshProgressUI();
+        // เลเวลเปลี่ยน/โหลดจาก Firebase เสร็จ: สกิลที่ล็อกตามเลเวลอาจปลดแล้ว (SkillUnlock.cs) อัปเดตหน้าสกิลและส่ง loadout ใหม่ถ้าอยู่ในห้อง
+        if (FeatureFlags.SkillLevelLock)
+        {
+            UpdateSkillDisplay(selectedSkillIndex);
+            if (Photon.Pun.PhotonNetwork.InRoom && profileLoaded) PublishLocalLoadout(false);
+        }
     }
 
+    // อัปเดตป้ายเลเวล แถบ XP ปุ่ม MISSIONS/PROFILE ตัวเลขรางวัลที่รอรับ และวาดหน้าที่เปิดอยู่ใหม่
     private void RefreshProgressUI()
     {
         bool on = FeatureFlags.Progression;
@@ -103,6 +113,7 @@ public partial class LobbyManager
         if (openPage != ProgressPage.None && progressOverlay != null && progressOverlay.gameObject.activeSelf) BuildPage(openPage);
     }
 
+    // เปิดหน้าต่างความก้าวหน้าที่หน้า MISSIONS หรือ PROFILE
     private void OpenProgressPage(ProgressPage page)
     {
         if (progressOverlay == null || !FeatureFlags.Progression) return;
@@ -110,9 +121,11 @@ public partial class LobbyManager
         openPage = page;
         progressOverlay.gameObject.SetActive(true);
         progressOverlay.transform.SetAsLastSibling();
+        SolidOverlay(progressOverlay, progressWindow);
         BuildPage(page);
     }
 
+    // ปิดหน้าต่างความก้าวหน้า และตั้ง openPage เป็น None
     private void CloseProgressPage()
     {
         openPage = ProgressPage.None;
@@ -124,7 +137,7 @@ public partial class LobbyManager
     {
         if (progressPage != null) Destroy(progressPage.gameObject);
         progressPage = UIRect("Page" + (++pageSerial), progressWindow, 0, 0, 1060, 620);
-        UIButton("Close", progressPage, "CLOSE", 445, 270, 130, 44, CloseProgressPage);
+        UIButton("Close", progressPage, "BACK", 425, 270, 170, 54, CloseProgressPage);
         if (page == ProgressPage.Missions) BuildMissionsPage(progressPage);
         else BuildProfilePage(progressPage);
     }
@@ -145,6 +158,7 @@ public partial class LobbyManager
         if (FeatureFlags.DailyLogin) BuildLoginStrip(page);
     }
 
+    // สร้างแถวภารกิจ 1 ข้อ: ข้อความ ความคืบหน้า รางวัล และปุ่ม CLAIM (กดได้เมื่อทำครบและยังไม่รับ)
     private void BuildMissionRow(RectTransform page, string key, MissionState state, float y)
     {
         var def = Progression.FindMission(state.id);
@@ -183,7 +197,7 @@ public partial class LobbyManager
                 .textWrappingMode = TextWrappingModes.Normal;
             if (current)
             {
-                var button = box.gameObject.GetComponent<Button>() ?? box.gameObject.AddComponent<Button>();
+                if (!box.TryGetComponent(out Button button)) button = box.gameObject.AddComponent<Button>(); // ห้ามใช้ ?? กับ GetComponent (Editor คืน null ปลอม)
                 box.raycastTarget = true;
                 button.targetGraphic = box;
                 button.onClick.AddListener(() =>
@@ -211,10 +225,10 @@ public partial class LobbyManager
     {
         var data = Progression.Data ?? new PlayerProgress();
         string pilot = FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUsername() : Photon.Pun.PhotonNetwork.NickName;
-        var name = UILabel("Name", page, pilot + "   /   LV " + data.level, -170, 270, 680, 44, 28, Color.white);
+        var name = UILabel("Name", page, pilot + "   /   LV " + data.level, -200, 270, 600, 44, 28, Color.white);
         name.richText = false;
-        UILabel("TitleText", page, "TITLE: " + Progression.Title, -170, 232, 680, 28, 18, new Color(1f, .8f, .35f));
-        UIButton("ChangeTitle", page, "CHANGE TITLE", 300, 232, 190, 36, Progression.CycleTitle);
+        UILabel("TitleText", page, "TITLE: " + Progression.Title, -200, 232, 600, 28, 18, new Color(1f, .8f, .35f));
+        UIButton("ChangeTitle", page, "CHANGE TITLE", 225, 270, 200, 54, Progression.CycleTitle); // อยู่ข้าง BACK ไม่เบียดกัน
         // แถบ XP
         int need = Progression.XpToNext(data.level);
         var track = UIPanel("Xp", page, 0, 196, 1000, 14, new Color(.12f, .15f, .22f));

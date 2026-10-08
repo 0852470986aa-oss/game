@@ -90,11 +90,61 @@ public partial class GameplayManager
         }
         // แม็พใหม่ (3, 4) ไม่มี Layout ใน Scene: สร้างพื้นหลังด้วยโค้ด
         BuildRuntimeMapBackground(selectedMapIndex);
+        // แม็พ 3/4: ของขยับบนพื้นหลัง (เศษหิน ไฟสัญญาณ ดาวตก / ประกายไฟ แสงร้อน) — MapAmbience.cs
+        MapAmbience.Build(selectedMapIndex, GetArenaMin(selectedMapIndex), GetArenaMax(selectedMapIndex));
+        SetupStarfield(selectedMapIndex);
+    }
+
+    // ตั้ง ParticleSystem "Starfield" (เม็ดดาวขาว) ให้กระจายทั่วทั้งสนามของแม็พที่เล่น + เผื่อขอบที่กล้องมองเห็น
+    // จำนวนดาวตามพื้นที่ (ความหนาแน่นเท่ากันทุกแม็พ) / เดิมตั้งเฉพาะแม็พ 2 แม็พอื่นดาวกองอยู่กลางจอ
+    // ปิด FeatureFlags.FullStarfield = ใช้ค่าที่ตั้งใน Scene ตามเดิม
+    private void SetupStarfield(int mapIndex)
+    {
+        if (!FeatureFlags.FullStarfield) return;
+        ParticleSystem stars = null;
+        foreach (GameObject root in gameObject.scene.GetRootGameObjects())
+        {
+            foreach (var ps in root.GetComponentsInChildren<ParticleSystem>(true))
+                if (ps.name == "Starfield") { stars = ps; break; }
+            if (stars != null) break;
+        }
+        if (stars == null) return;
+        // ย้ายออกมาเป็น root (ถ้าซ่อนอยู่ใต้ Layout ของแม็พอื่น ดาวจะถูกปิดไปด้วย)
+        if (stars.transform.parent != null) stars.transform.SetParent(null, true);
+        stars.gameObject.SetActive(true);
+        stars.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        stars.transform.position = new Vector3(0, 0, stars.transform.position.z);
+        stars.transform.rotation = Quaternion.identity;
+        stars.transform.localScale = Vector3.one;
+        const float margin = 14f, density = .055f, life = 20f; // ดาวต่อตารางหน่วย
+        Vector2 area = GetArenaMax(mapIndex) - GetArenaMin(mapIndex) + Vector2.one * margin * 2f;
+        int count = Mathf.Clamp(Mathf.RoundToInt(area.x * area.y * density), 200, 1500);
+        var main = stars.main;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+        main.startSpeed = 0;
+        main.duration = life; // prewarm จำลองแค่ 1 รอบ duration: ให้เท่าอายุดาว ดาวจะเต็มตั้งแต่เริ่มแมตช์
+        main.startLifetime = life;
+        main.maxParticles = count;
+        main.prewarm = true;
+        main.loop = true;
+        var shape = stars.shape;
+        shape.enabled = true;
+        shape.shapeType = ParticleSystemShapeType.Box; // Box = กระจายทั้งกล่อง (ไม่ใช่แค่ขอบ)
+        shape.position = Vector3.zero;
+        shape.rotation = Vector3.zero;
+        shape.scale = new Vector3(area.x, area.y, .1f);
+        var emission = stars.emission;
+        emission.enabled = true;
+        emission.rateOverTime = count / life;
+        var renderer = stars.GetComponent<ParticleSystemRenderer>();
+        if (renderer != null) renderer.maxParticleSize = Mathf.Max(renderer.maxParticleSize, .5f);
+        stars.Play();
     }
 
     // One deterministic solid layout on every client; background artwork stays untouched.
     // รุ่น v2: สนามแคบลง (กว้าง 92) + คริสตัลสะท้อนกระสุน + แท่นวาร์ป 4 มุม
-    public const string PrismLayoutName = "PrismPlayableLayout_v2";
+    // ชื่อกลุ่มเลย์เอาต์ (PrismLayoutName) อยู่ใน GameplayManager.PrismV3.cs: รุ่น 3 เมื่อเปิด FeatureFlags.PrismMapV3
     private const string LegacyPrismLayoutName = "PrismPlayableLayout";
 
     // สร้างเลย์เอาต์แม็พปริซึม (เสา, หินคริสตัลห้อย, คริสตัลสะท้อนกระสุน, แท่นวาร์ป) ใต้ Map1_Layout
@@ -102,6 +152,8 @@ public partial class GameplayManager
     public static void DecoratePrism(Transform layout)
     {
         if (layout == null || layout.Find(PrismLayoutName) != null) return;
+        // รุ่น 3: ชิ้นส่วนมุมบนชุดใหม่ (GameplayManager.PrismV3.cs)
+        if (FeatureFlags.PrismMapV3) { DecoratePrismV3(layout); return; }
         var central = Resources.LoadAll<Sprite>("Images/Obs_PrismPillar_04");
         if (central.Length == 0) { Debug.LogWarning("Prism pillar 04 is missing."); return; }
         // เลย์เอาต์รุ่นเก่าออกแบบไว้สำหรับสนามกว้าง 128 ใช้กับสนามใหม่ไม่ได้
@@ -172,18 +224,24 @@ public partial class GameplayManager
     // แท่นวาร์ป: คู่ A ซ้ายล่าง ↔ ขวาบน (ฟ้า), คู่ B ขวาล่าง ↔ ซ้ายบน (ชมพู) สมมาตรทั้งสองฝั่ง
     private static void AddWarpPads(Transform parent)
     {
-        var sheet = Resources.LoadAll<Sprite>("Images/Props_Prism");
-        Sprite padSprite = System.Array.Find(sheet, s => s.name == "Props_Prism_83");
-        var a1 = CreateWarpPad(parent, "WarpPad_A1", new Vector2(-40, -30), padSprite, WarpPad.ColorA);
-        var a2 = CreateWarpPad(parent, "WarpPad_A2", new Vector2(40, 30), padSprite, WarpPad.ColorA);
-        var b1 = CreateWarpPad(parent, "WarpPad_B1", new Vector2(40, -30), padSprite, WarpPad.ColorB);
-        var b2 = CreateWarpPad(parent, "WarpPad_B2", new Vector2(-40, 30), padSprite, WarpPad.ColorB);
+        // รุ่น 3 ใช้ภาพแท่นวงกลมมุมบน (pr_warp กว้าง 5.2 หน่วย) / รุ่นเดิมใช้ภาพในชุด Props_Prism (กว้าง 6 หน่วย)
+        Sprite padSprite = FeatureFlags.PrismMapV3 ? Resources.Load<Sprite>(PrismArtFolder + "pr_warp") : null;
+        float padWidth = padSprite != null ? 5.2f : 6f;
+        if (padSprite == null)
+        {
+            var sheet = Resources.LoadAll<Sprite>("Images/Props_Prism");
+            padSprite = System.Array.Find(sheet, s => s.name == "Props_Prism_83");
+        }
+        var a1 = CreateWarpPad(parent, "WarpPad_A1", new Vector2(-40, -30), padSprite, WarpPad.ColorA, padWidth);
+        var a2 = CreateWarpPad(parent, "WarpPad_A2", new Vector2(40, 30), padSprite, WarpPad.ColorA, padWidth);
+        var b1 = CreateWarpPad(parent, "WarpPad_B1", new Vector2(40, -30), padSprite, WarpPad.ColorB, padWidth);
+        var b2 = CreateWarpPad(parent, "WarpPad_B2", new Vector2(-40, 30), padSprite, WarpPad.ColorB, padWidth);
         a1.partner = a2; a2.partner = a1;
         b1.partner = b2; b2.partner = b1;
     }
 
-    // สร้างแท่นวาร์ป 1 อัน: ภาพกว้าง 6 หน่วย ย้อมสีตามคู่ + Trigger วงกลมรัศมี 2.1 หน่วย + คอมโพเนนต์ WarpPad
-    private static WarpPad CreateWarpPad(Transform parent, string name, Vector2 position, Sprite padSprite, Color tint)
+    // สร้างแท่นวาร์ป 1 อัน: ภาพกว้าง width หน่วย ย้อมสีตามคู่ + Trigger วงกลมรัศมี 2.1 หน่วย + คอมโพเนนต์ WarpPad
+    private static WarpPad CreateWarpPad(Transform parent, string name, Vector2 position, Sprite padSprite, Color tint, float width = 6f)
     {
         var holder = new GameObject(name);
         holder.transform.SetParent(parent, false);
@@ -192,7 +250,7 @@ public partial class GameplayManager
         {
             var art = new GameObject("Artwork");
             art.transform.SetParent(holder.transform, false);
-            float scale = 6f / Mathf.Max(padSprite.bounds.size.x, 0.01f);
+            float scale = width / Mathf.Max(padSprite.bounds.size.x, 0.01f);
             art.transform.localScale = Vector3.one * scale;
             var renderer = art.AddComponent<SpriteRenderer>();
             renderer.sprite = padSprite;
@@ -694,31 +752,7 @@ public partial class GameplayManager
     public static void PrepareMechCover(Transform layout)
     {
         if (layout == null) return;
-        // 1) ตั้ง ParticleSystem "Starfield" ให้เป็นดาวนิ่งกระจายเต็มขนาดสนาม (สูงสุด 500 ดวง)
-        var starfield = GameObject.Find("Starfield");
-        var stars = starfield != null ? starfield.GetComponent<ParticleSystem>() : null;
-        if (stars != null)
-        {
-            stars.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            stars.transform.position = Vector3.zero;
-            stars.transform.rotation = Quaternion.identity;
-            stars.transform.localScale = Vector3.one;
-            var main = stars.main;
-            main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startSpeed = 0;
-            main.startLifetime = 20;
-            main.maxParticles = 500;
-            main.prewarm = true;
-            main.loop = true;
-            var shape = stars.shape;
-            shape.enabled = true;
-            shape.shapeType = ParticleSystemShapeType.Box;
-            Vector2 area = GetArenaMax(2) - GetArenaMin(2);
-            shape.scale = new Vector3(area.x, area.y, .1f);
-            var emission = stars.emission;
-            emission.rateOverTime = 20;
-            stars.Play();
-        }
+        // 1) ดาวพื้นหลัง: ตั้งให้ทุกแม็พใน SetupStarfield (เรียกจาก ApplySelectedMapLayout)
         // มี EditableLayout = ตำแหน่ง/ขนาดที่จัดไว้ใน Scene คือของจริง ไม่ย้ายกลับ
         if (layout.GetComponent<EditableLayout>() == null) ApplyMechCoverPlacement(layout);
         // 2) ติด AutoTurret ให้ป้อมทุกอันที่ยังไม่มี

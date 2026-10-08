@@ -114,6 +114,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     private string[] mapNames = { "Electric Jellyfish Core", "Obelisk Plains of Prism", "Abandoned Mech Warzone", "Asteroid Station", "Molten Nebula" };
     // path รูปตัวอย่างแม็พในโฟลเดอร์ Resources เรียง index เดียวกับ mapNames
     private string[] mapImages = { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech", "Images/Map_AsteroidStation_Preview", "Images/Map_MoltenNebula_Preview" };
+    // รูปการ์ดแม็พในล็อบบี้: แม็พปริซึมรุ่น 3 (FeatureFlags.PrismMapV3) ใช้รูปตัวอย่างมุมบนแบบใหม่
+    private string MapImage(int map) => map == 1 && FeatureFlags.PrismMapV3 ? "Images/Map_PrismNebula_Preview" : mapImages[map];
     // จำนวนแม็พที่เลือกได้ (ปิด FeatureFlags.NewMaps = 3 แม็พเดิม)
     private static int MapChoices => GameplayManager.MapCount;
 
@@ -245,6 +247,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         HandleBackKey(); // ปุ่มย้อนกลับมือถือ / Esc (LobbyManager.Back.cs)
         FitLobbyUI();
         UpdateAutomaticRecovery();
+        CheckSoloTimeout(); // กดเล่นกับบอทแล้วค้าง (LobbyManager.Solo.cs)
         if (Time.unscaledTime >= nextStatusRefresh)
         {
             nextStatusRefresh = Time.unscaledTime + 1f;
@@ -281,6 +284,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     private void UpdateAutomaticRecovery()
     {
         if (loggingOut || isStartingGame || isLeavingRoom || automaticRecoveryBlocked) return;
+        // กำลังตัดเน็ตเพื่อเข้าโหมดเล่นกับบอท: ห้ามต่อเน็ตใหม่แทรก (เดิมแทรกได้ ทำให้กดครั้งแรกแวบแล้วไม่เข้าเกม)
+        if (FeatureFlags.SoloStartFix && pendingSolo) return;
         // 1) ลองโหลดโปรไฟล์ใหม่
         if (!profileLoaded && Time.unscaledTime > profileDeadline && Time.unscaledTime >= nextAutoProfileRetry
             && Application.internetReachability != NetworkReachability.NotReachable)
@@ -366,6 +371,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     // แสดงหน้าหลักและปิดหน้าอื่น; ถ้ายังอยู่ในห้องหรือกำลังกู้ห้อง จะไปหน้าห้องรอแทน
     public void ShowMainPanel()
     {
+        ClosePlayMenu();
+        CloseRoomRules();
         if (PhotonNetwork.InRoom || reconnecting) { ShowWaitingRoom(); return; }
         if (inventoryPanel != null) inventoryPanel.SetActive(false);
         if (roomPanel != null) roomPanel.SetActive(false);
@@ -383,6 +390,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         if (roomPanel != null) roomPanel.SetActive(false);
         if (settingsPanel != null) settingsPanel.SetActive(false);
         if (waitingRoomPanel != null) waitingRoomPanel.SetActive(false);
+        CloseEmbeddedWorkshop();
         ShowPanelAnimated(inventoryPanel);
         UpdateInventoryDisplay(selectedShipIndex);
     }
@@ -443,6 +451,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     {
         // หน้าตั้งค่าในล็อบบี้มีปุ่ม LOG OUT (ถามยืนยันก่อน)
         BattleSettingsPanel.Show(null, OnLogoutButtonClicked);
+        DarkenSettingsShade();
     }
 
     // ปิดหน้าตั้งค่าแบบเดิม (settingsPanel)
@@ -532,6 +541,11 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     {
         bool inRoom = PhotonNetwork.InRoom;
         bool busy = !inRoom || reconnecting || isLeavingRoom || isStartingGame || RoomStarting;
+        // ห้องแรงค์: ซ่อนปุ่ม COPY CODE / INVITE FRIENDS (หาคู่แบบสุ่มเท่านั้น)
+        bool rankedPrivate = inRoom && RankedPrivate(PhotonNetwork.CurrentRoom);
+        var copyCode = waitingRoomPanel != null ? waitingRoomPanel.transform.Find("LobbySurface/CopyCode") : null;
+        if (copyCode != null) copyCode.gameObject.SetActive(!rankedPrivate);
+        if (inviteFriendsButton != null && rankedPrivate) inviteFriendsButton.gameObject.SetActive(false);
         Player[] players = inRoom ? PhotonNetwork.PlayerList : new Player[0];
         System.Array.Sort(players, (a, b) => a.ActorNumber.CompareTo(b.ActorNumber));
         RenderPlayer(players.Length > 0 ? players[0] : null, waitP1NameText, waitP1ShipNameText,
@@ -540,7 +554,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             waitP2StatsText, waitP2SkillText, waitP2ShipImage, waitP2ReadyText);
         // ห้องหลายคน: ตารางนักบิน 10 ช่องแทนการ์ด 2 ใบ (LobbyManager.Roster.cs)
         RenderRoster(players);
-        if (waitRoomNumberText != null) waitRoomNumberText.text = inRoom ? "ROOM  " + PhotonNetwork.CurrentRoom.Name : "ROOM RECOVERY";
+        if (waitRoomNumberText != null) waitRoomNumberText.text = !inRoom ? "ROOM RECOVERY" : rankedPrivate ? "RANKED MATCH" : "ROOM  " + PhotonNetwork.CurrentRoom.Name; // ห้องแรงค์ไม่โชว์รหัส
         if (waitReadyButton != null)
         {
             waitReadyButton.interactable = !busy && profileLoaded && !readyPending;
@@ -597,7 +611,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
             nameText.text = present ? (player.IsMasterClient ? "[HOST] " : "") + LevelTag(player) + player.NickName + (player.IsLocal ? " (YOU)" : "") : "OPEN SLOT";
         }
         if (shipText != null) shipText.text = present ? ships[ship].name : "Waiting for a pilot";
-        if (stats != null) stats.text = present ? ships[ship].hp + " HP   /   ATK " + ships[ship].atk + "   /   SPD " + ships[ship].spd : "Share the room code to invite a friend";
+        if (stats != null) { stats.richText = true; stats.text = present ? RosterStats(ship, player) : "Share the room code to invite a friend"; } // รวมตีบวก + ไอเท็ม (ของคนอื่นอ่านจาก StatBonus)
         if (skillText != null) skillText.text = present ? "EQUIPPED SKILL  /  " + skills[skill].name : "1 VS 1";
         if (picture != null)
         {
@@ -622,6 +636,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         return guild + LevelOrRankTag(player);
     }
 
+    // ห้องแรงค์ที่ผู้เล่นมี MMR: คืน "แรงค์ MMR" / ห้องปกติ: คืน "Lv{เลเวล} " ถ้าเปิดระบบเลเวล ไม่งั้นคืน ""
     private static string LevelOrRankTag(Player player)
     {
         if (MatchRules.IsRanked(PhotonNetwork.CurrentRoom) && player.CustomProperties.TryGetValue("MMR", out object m) && m is int mmr)
@@ -787,8 +802,10 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     // BoolProperty/IntProperty อ่านค่าจาก Hashtable อย่างปลอดภัย ถ้าไม่มีหรือชนิดไม่ตรงคืนค่า false/fallback
     private bool RoomStarting => PhotonNetwork.InRoom && BoolProperty(PhotonNetwork.CurrentRoom.CustomProperties, "Starting");
     private int MapRevision => PhotonNetwork.InRoom ? IntProperty(PhotonNetwork.CurrentRoom.CustomProperties, "MapRevision", 0) : 0;
+    // คืน true เฉพาะเมื่อ key มีอยู่และเป็น bool ที่มีค่า true
     private static bool BoolProperty(ExitGames.Client.Photon.Hashtable props, string key)
         => props.TryGetValue(key, out object value) && value is bool flag && flag;
+    // คืนค่า int ของ key ถ้ามีอยู่และเป็น int ไม่งั้นคืน fallback
     private static int IntProperty(ExitGames.Client.Photon.Hashtable props, string key, int fallback)
         => props.TryGetValue(key, out object value) && value is int number ? number : fallback;
 
@@ -800,7 +817,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         {
             [ShipProperty] = Mathf.Clamp(equippedShipIndex, 0, ships.Length - 1),
             ["LoadoutLoaded"] = profileLoaded,
-            [SkillProperty] = Mathf.Clamp(equippedSkillIndex, 0, skills.Length - 1),
+            [SkillProperty] = Mathf.Clamp(SkillUnlock.Usable(equippedSkillIndex), 0, skills.Length - 1),
             [ShipPaint.Property] = ShipPaint.Local
         };
         string firebaseUid = FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUserId() : "";
@@ -812,6 +829,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         if (FeatureFlags.Ranked) props["MMR"] = Ranked.Mmr;
         // ป้ายกิลด์ [TAG] (เฟส 8)
         props["GuildTag"] = FeatureFlags.Guilds ? Social.GuildTag : "";
+        // โบนัสตีบวก/ไอเท็มของยานที่ใช้ ให้คนอื่นในห้องรอเห็นค่าพลังจริง (LobbyManager.UpgradeStats.cs)
+        if (FeatureFlags.ShowRivalStats) props[StatBonusProperty] = LocalStatBonusText();
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
     }
 

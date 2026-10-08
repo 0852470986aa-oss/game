@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
+// ส่วนเนื้อหาเพิ่มเฟส 7 ของ PlayerController (partial): อาวุธหลักแบบต่าง ๆ, สกิลใหม่, ผลของ Power-up และรูปยานใหม่
 public partial class PlayerController
 {
     public int WeaponType => BattleLoadoutCatalog.Ships[ShipIndex].weapon;
@@ -15,6 +16,7 @@ public partial class PlayerController
     // มุมของแต่ละนัดตามชนิดอาวุธ (ทุกเครื่องคำนวณเหมือนกันจากมุมที่ส่งมา)
     private static float[] VolleyAngles(int weapon)
         => weapon == BattleLoadoutCatalog.WeaponSpread ? new[] { -12f, 0f, 12f } : new[] { 0f };
+    // ตัวคูณความเร็วกระสุนตามชนิดอาวุธ: RAILGUN (WeaponSniper) เร็วขึ้น 1.8 เท่า อาวุธอื่นเท่าเดิม
     private static float VolleySpeed(int weapon) => weapon == BattleLoadoutCatalog.WeaponSniper ? 1.8f : 1f;
 
     // ยิงตามชนิดอาวุธ (เรียกจาก FireLightShot) คืน false = อาวุธปกติ ให้ใช้วิธีเดิม
@@ -29,6 +31,8 @@ public partial class PlayerController
         return true;
     }
 
+    // สร้างกระสุนในเครื่องนี้ตามมุมของอาวุธ (SCATTER = 3 นัด) และปรับความเร็วตามชนิดอาวุธ
+    // authority = เครื่องที่ยิงจริง, lag = เวลาหน่วงเครือข่ายใช้ชดเชยตำแหน่งกระสุน
     private void SpawnVolley(Vector2 position, float angle, float damage, int weapon, bool authority, float lag)
     {
         foreach (float offset in VolleyAngles(weapon))
@@ -38,6 +42,7 @@ public partial class PlayerController
         }
     }
 
+    // RPC ที่เครื่องอื่นได้รับเมื่อมีการยิงอาวุธพิเศษ: ตรวจว่าผู้ส่งเป็นเจ้าของยาน แล้วสร้างกระสุนตามพร้อมชดเชย lag จาก SentServerTime
     [PunRPC]
     public void FireVolleyRPC(Vector2 position, float angle, float damage, int weapon, PhotonMessageInfo info)
     {
@@ -87,6 +92,7 @@ public partial class PlayerController
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
     }
 
+    // Coroutine เปลี่ยนสียานเป็นสีที่กำหนด 0.35 วินาที แล้วคืนเป็นสีประจำยาน (ถ้าไม่ได้ติดสตัน)
     private System.Collections.IEnumerator TintFlash(Color color)
     {
         if (spriteRenderer == null) yield break;
@@ -101,13 +107,22 @@ public partial class PlayerController
     private readonly List<Renderer> cloakHidden = new List<Renderer>();
     public bool IsCloaked => cloaked && Time.time < cloakUntil;
 
+    // RPC เปิด/ปิดล่องหน (CLOAK) บนทุกเครื่อง: เล่นเอฟเฟกต์ตอนเริ่ม และตั้งเวลาหมดล่องหน 3 วินาที
     [PunRPC]
     public void CloakRPC(bool on, PhotonMessageInfo info)
     {
         if (!FromController(info)) return;
+        bool wasCloaked = cloaked;
         if (on && !cloaked) PlayCloakFx(); // รูปชุดใหม่: วังวนม่วงตอนเริ่มล่องหน
         cloaked = on && !isDead;
         cloakUntil = Time.time + 3f;
+        // ภาพชุดใหม่ (FeatureFlags.CloakFx): เริ่ม = แสงวาบ, ระหว่างล่องหน = ออร่าวนรอบยาน (เฉพาะตัวเอง/เพื่อนเห็น) / หลุดล่องหน = แสงแตกกระจาย (ทุกคนเห็น)
+        if (cloaked && !wasCloaked) StartCloakLoopFx(3f);
+        else if (!cloaked && wasCloaked)
+        {
+            StopCloakLoopFx();
+            if (!isDead) PlayCloakRevealFx();
+        }
     }
 
     // ศัตรูมองไม่เห็นยานที่ล่องหน (ตัวเองและเพื่อนร่วมทีมยังเห็น)
@@ -143,8 +158,19 @@ public partial class PlayerController
             var c = spriteRenderer.color;
             c.a = .45f;
             spriteRenderer.color = c;
+            cloakFaded = true;
+        }
+        else if (cloakFaded && spriteRenderer != null && !IsCloaked)
+        {
+            // แก้บัค: หมดล่องหนแล้วยานค้างโปร่งใส (เดิมกลับมาทึบเฉพาะตอนโดนยิง/ติดสตัน) -> คืนความทึบทันที
+            cloakFaded = false;
+            var c = spriteRenderer.color;
+            c.a = 1f;
+            spriteRenderer.color = c;
         }
     }
+    // ยานถูกทำให้โปร่งใสเพราะล่องหนอยู่ (ต้องคืนความทึบเมื่อหมดล่องหน)
+    private bool cloakFaded;
 
     // ยิงแล้วหลุดล่องหน (เรียกจาก Shoot)
     private void BreakCloak()
@@ -177,6 +203,7 @@ public partial class PlayerController
         UpdateEffectiveSpeed();
     }
 
+    // Coroutine รอให้บูสต์ความเร็วหมดเวลา แล้วคำนวณความเร็วยานใหม่
     private System.Collections.IEnumerator RefreshSpeedAfter(float seconds)
     {
         yield return new WaitForSeconds(seconds);

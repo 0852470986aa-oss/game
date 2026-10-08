@@ -12,6 +12,7 @@ using UnityEngine.UI;
 using Photon.Pun;
 using TMPro;
 
+// ส่วนแมตช์หลายคนของ GameplayManager: จุดเกิด, Kill Feed, ตารางคะแนน และหน้าผลจัดอันดับ
 public partial class GameplayManager
 {
     // true = แมตช์นี้มีผู้ต่อสู้เกิน 2 (คน + บอท) ตั้งครั้งเดียวตอน Start (รวมโหมดทีมด้วย)
@@ -105,6 +106,7 @@ public partial class GameplayManager
         return false;
     }
 
+    // ทิศหันหน้าตอนเกิดของแต่ละทีม: RED (ทีม 1) อยู่ฝั่งบนหัน 180 องศา, BLUE หันขึ้นตามปกติ
     private static Quaternion TeamFacing(int team) => team == 1 ? Quaternion.Euler(0, 0, 180f) : Quaternion.identity;
 
     // รัศมีที่ต้องเว้นว่างรอบยาน (คิดจากรูปทรงตัวชนของ Prefab)
@@ -229,6 +231,8 @@ public partial class GameplayManager
         }
     }
 
+    // หายานศัตรูที่ยังไม่ตายและอยู่ใกล้ยานเราที่สุด (ข้ามเพื่อนร่วมทีม) ใช้เป็นคู่แข่งที่โชว์บน HUD
+    // ไม่เจอใครเลยคืน remotePlayer เดิม
     private PlayerController NearestEnemy()
     {
         PlayerController best = null;
@@ -253,6 +257,7 @@ public partial class GameplayManager
         return rank;
     }
 
+    // หาแถวคะแนนของเราเองในรายการอันดับ (ไม่เจอคืน null)
     private MatchRules.Standing LocalStanding(List<MatchRules.Standing> all)
     {
         foreach (var entry in all) if (entry.isLocal) return entry;
@@ -272,8 +277,8 @@ public partial class GameplayManager
     private string TeamScoreLine()
     {
         int mine = LocalTeam;
-        return "<color=" + MatchRules.TeamHex[0] + ">BLUE " + MatchRules.TeamKills(0) + "</color>  :  <color=" + MatchRules.TeamHex[1] + ">"
-            + MatchRules.TeamKills(1) + " RED</color>   /   YOU: " + MatchRules.TeamNames[mine];
+        return "<color=" + MatchRules.TeamHex[0] + ">BLUE " + MatchRules.TeamPoints(0) + "</color>  :  <color=" + MatchRules.TeamHex[1] + ">"
+            + MatchRules.TeamPoints(1) + " RED</color>   /   YOU: " + MatchRules.TeamNames[mine];
     }
 
     // ชื่อพร้อมสีทีม (โหมดทีม) สำหรับข้อความ rich text
@@ -284,9 +289,11 @@ public partial class GameplayManager
     }
 
     // ตัวเลขที่แสดงในตาราง: โหมดยึดจุด/เก็บดาว = คะแนนโหมด, นอกนั้น = Kill
-    private bool ModeShowsScore => gameMode == MatchRules.ModeKoth || gameMode == MatchRules.ModeStars;
+    private bool ModeShowsScore => gameMode == MatchRules.ModeKoth || gameMode == MatchRules.ModeStars || WinRuleActive;
+    // คืนตัวเลขที่จะแสดงของแถวนั้น: คะแนนโหมด หรือจำนวน Kill ตาม ModeShowsScore
     private int DisplayScore(MatchRules.Standing entry) => ModeShowsScore ? entry.score : entry.kills;
 
+    // ทำความสะอาดชื่อผู้เล่น: ตัด < > ออกกันแทรก rich text, ชื่อว่างใช้ "PILOT"
     private static string CleanName(string name)
         => string.IsNullOrEmpty(name) ? "PILOT" : name.Replace("<", "").Replace(">", "");
 
@@ -299,6 +306,8 @@ public partial class GameplayManager
     // เรียกจาก PlayerController.OnPlayerDiedRPC (ทุกเครื่อง) เมื่อยานลำหนึ่งตาย
     public void OnCombatantDied(int killerId, PlayerController victim)
     {
+        // เงื่อนไขชนะ BOUNTY HUNT: แต้มค่าหัว (ต้องคิดก่อนล้างสตรีคของเหยื่อ) (GameplayManager.WinRules.cs)
+        AwardBountyFor(killerId, victim);
         // เฟส 7: นับ Kill Streak (GameplayManager.Content.cs)
         TrackKillStreak(killerId, victim);
         // เฟส 7B: ผลการตายในโหมดเกม (ลำดับตาย Battle Royale / ดาวหล่น)
@@ -327,6 +336,8 @@ public partial class GameplayManager
         AddFeedLine(line, involvesMe ? new Color(1f, .85f, .35f) : Color.white);
     }
 
+    // เพิ่มบรรทัดใหม่บนสุดของ Kill Feed (อยู่ 6 วิ เก็บไม่เกิน 5 บรรทัด)
+    // ไม่ทำอะไรถ้าปิด Kill Feed ใน FeatureFlags หรือในหน้าตั้งค่าผู้เล่น
     internal void AddFeedLine(string text, Color color)
     {
         if (!FeatureFlags.KillFeed || !GameSettings.KillFeed) return; // เฟส 9: ผู้เล่นปิด Kill Feed ได้
@@ -373,10 +384,13 @@ public partial class GameplayManager
     private TMP_Text[,] fullBoardCells;
     private Image[] fullBoardHighlights;
 
+    // อัปเดตตารางคะแนนย่อมุมขวา (4 อันดับแรก + แถวของเรา) และตารางเต็มถ้าเปิดอยู่
+    // ซ่อนตารางเมื่อแมตช์กำลังจบหรือขึ้นหน้าผลแล้ว (เรียก 4 ครั้ง/วิ)
     private void RefreshScoreboards()
     {
         if (!FeatureFlags.Scoreboard || battleHud == null) return;
-        if (miniBoard == null) CreateMiniBoard();
+        if (miniBoard == null) { CreateMiniBoard(); miniBoardPlaced = false; }
+        if (!miniBoardPlaced) AvoidSettingsButton();
         bool show = !isMatchEnding && !resultShown;
         miniBoard.gameObject.SetActive(show);
         if (!show) { if (fullBoard != null) fullBoard.gameObject.SetActive(false); return; }
@@ -401,7 +415,32 @@ public partial class GameplayManager
         if (fullBoard != null && fullBoard.gameObject.activeSelf) FillFullBoard();
     }
 
+    // ตัดข้อความให้ยาวไม่เกิน max ตัวอักษร (เกินจะตัดแล้วต่อท้ายด้วย ".")
     private static string Shorten(string text, int max) => text.Length <= max ? text : text.Substring(0, max - 1) + ".";
+
+    private bool miniBoardPlaced;
+
+    // ตารางย่อห้ามทับปุ่มตั้งค่า (Btn_Exit ที่วางไว้ใน Scene): ถ้าทับกัน เลื่อนตารางลงไปใต้ปุ่ม
+    private void AvoidSettingsButton()
+    {
+        if (Time.timeSinceLevelLoad < .5f) return; // รอให้ Canvas จัดขนาดเสร็จก่อนวัดตำแหน่ง
+        miniBoardPlaced = true;
+        var exit = battleHud.parent != null ? battleHud.parent.Find("TopCenter/Btn_Exit") as RectTransform : null;
+        var board = miniBoard.rectTransform;
+        if (exit == null || !exit.gameObject.activeInHierarchy) return;
+        Rect a = WorldRect(exit), b = WorldRect(board);
+        if (!a.Overlaps(b)) return;
+        float scale = board.lossyScale.y > 0 ? board.lossyScale.y : 1f;
+        board.anchoredPosition -= new Vector2(0, (b.yMax - a.yMin) / scale + 8f);
+    }
+
+    // แปลง RectTransform เป็นสี่เหลี่ยมในพิกัดโลก ใช้เช็กว่า UI สองชิ้นทับกันหรือไม่
+    private static Rect WorldRect(RectTransform rect)
+    {
+        var corners = new Vector3[4];
+        rect.GetWorldCorners(corners);
+        return Rect.MinMaxRect(corners[0].x, corners[0].y, corners[2].x, corners[2].y);
+    }
 
     // ตารางย่อมุมขวาบน (แตะเพื่อเปิด/ปิดตารางเต็ม)
     private void CreateMiniBoard()
@@ -419,6 +458,7 @@ public partial class GameplayManager
         miniBoardText.textWrappingMode = TextWrappingModes.Normal;
     }
 
+    // เปิด/ปิดตารางคะแนนเต็มกลางจอ (สร้างครั้งแรกเมื่อกด) และเติมข้อมูลล่าสุดเมื่อเปิด
     private void ToggleFullBoard()
     {
         if (fullBoard == null) CreateFullBoard();
@@ -463,6 +503,8 @@ public partial class GameplayManager
         fullBoard.gameObject.SetActive(false);
     }
 
+    // เติมข้อมูลทุกแถวของตารางเต็ม: อันดับ/ชื่อ/คะแนน/ตาย ไฮไลต์แถวของเรา
+    // สีตามทีม และแถวคนที่ออกไปแล้วเป็นสีเทา
     private void FillFullBoard()
     {
         int max = MatchRules.MaxCombatants;
@@ -493,6 +535,8 @@ public partial class GameplayManager
         return LoseReward + Mathf.RoundToInt((WinReward - LoseReward) * Mathf.Clamp01(t));
     }
 
+    // แสดงหน้าผลแมตช์หลายคน: คิดอันดับ/ผลทีม, ให้เหรียญตามอันดับ, บันทึกผลลง Firebase
+    // โหมดร่วมมือ (Survival/Campaign) จะไปใช้ ShowCoopResult แทน
     private void ShowFreeForAllResult()
     {
         // เฟส 7B: โหมดร่วมมือ (Survival / Campaign) มีหน้าผลของตัวเอง
@@ -511,7 +555,7 @@ public partial class GameplayManager
         int reward = PlaceReward(myRank, count);
         int myKills = me != null ? me.kills : MatchRules.LocalKills();
         // โหมดทีม: ผลตัดสินจาก Kill รวมของทีม (1 = ทีมเราชนะ, 0 = เสมอ, -1 = แพ้) ทั้งทีมได้เหรียญเท่ากัน
-        int blueKills = MatchRules.TeamKills(0), redKills = MatchRules.TeamKills(1);
+        int blueKills = MatchRules.TeamPoints(0), redKills = MatchRules.TeamPoints(1); // เงื่อนไขชนะแบบใหม่ = คะแนนรวมทีม
         int myTeam = LocalTeam;
         int teamOutcome = blueKills == redKills ? 0 : (myTeam == 0 ? blueKills > redKills : redKills > blueKills) ? 1 : -1;
         if (isTeamMode)
@@ -553,7 +597,7 @@ public partial class GameplayManager
         if (resultScore != null)
             resultScore.text = isTeamMode
                 ? "<color=" + MatchRules.TeamHex[0] + ">BLUE " + blueKills + "</color>  :  <color=" + MatchRules.TeamHex[1] + ">" + redKills + " RED</color>    YOUR KILLS " + myKills + "    +" + reward + " ASTRONIUM"
-                : "YOUR PLACE  #" + myRank + " / " + count + "    KILLS " + myKills + "    +" + reward + " ASTRONIUM";
+                : "YOUR PLACE  #" + myRank + " / " + count + "    KILLS " + myKills + (WinRuleActive && me != null ? "    SCORE " + me.score : "") + "    +" + reward + " ASTRONIUM";
 
         // 3) ซ่อนการ์ด 1v1 แล้วแสดงตารางอันดับ
         if (resultSurface != null)

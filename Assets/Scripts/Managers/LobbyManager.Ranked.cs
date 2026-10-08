@@ -8,6 +8,7 @@ using TMPro;
 using Photon.Pun;
 using Photon.Realtime;
 
+// ส่วนหน้าจอแรงค์ของ LobbyManager: ปุ่ม RANKED, หน้าสรุปแรงค์, ตารางอันดับ และการหาแมตช์แรงค์ผ่าน Photon
 public partial class LobbyManager
 {
     private Button rankedButton;
@@ -18,6 +19,22 @@ public partial class LobbyManager
     private bool rankedSubscribed;
     private System.Collections.Generic.List<LeaderboardEntry> leaderboard;
     private bool leaderboardLoading;
+    // แรงค์ที่กดดูในแถบแรงค์ (-1 = แสดงแรงค์ของเราเอง)
+    private int rankPreviewTier = -1;
+
+    // ===== แรงค์ชวนเพื่อนไม่ได้ (FeatureFlags.RankedNoInvite) =====
+    // ห้องแรงค์ต้องหาคู่แบบสุ่มจากปุ่ม FIND RANKED MATCH เท่านั้น กันจับคู่กับเพื่อนเพื่อปั๊มคะแนน:
+    // ไม่มีปุ่ม INVITE FRIENDS / COPY CODE ในห้องแรงค์, ไม่แสดงในรายการห้อง, จอยด้วยรหัส/คำชวน/ปุ่ม JOIN ของเพื่อนไม่ได้
+    // ห้องแรงค์ตั้งชื่อ "R" + ตัวเลข (CreateRankedRoom) จึงดูจากชื่อห้องได้เลย
+    public static bool IsRankedRoomName(string name)
+    {
+        if (string.IsNullOrEmpty(name) || name.Length < 2 || (name[0] != 'R' && name[0] != 'r')) return false;
+        for (int i = 1; i < name.Length; i++) if (!char.IsDigit(name[i])) return false;
+        return true;
+    }
+
+    // ห้องนี้ห้ามชวน/จอยแบบส่วนตัวไหม (ห้องแรงค์ + เปิดสวิตช์)
+    private static bool RankedPrivate(RoomInfo room) => FeatureFlags.RankedNoInvite && room != null && MatchRules.IsRanked(room);
 
     // ปุ่ม RANKED บนหน้าหลัก + หน้าต่างลอย (เรียกจาก BuildHomeScreen)
     private void BuildRankedUI(RectTransform root)
@@ -31,6 +48,7 @@ public partial class LobbyManager
         RefreshRankedButton();
     }
 
+    // เรียกเมื่อ Ranked.Changed: อัปเดตปุ่ม RANKED และวาดหน้าต่างแรงค์ใหม่ถ้าเปิดอยู่
     private void OnRankChanged()
     {
         if (this == null) { Ranked.Changed -= OnRankChanged; return; }
@@ -38,6 +56,7 @@ public partial class LobbyManager
         if (rankedOverlay != null && rankedOverlay.gameObject.activeSelf) BuildRankedPage();
     }
 
+    // อัปเดตปุ่ม RANKED: แสดงชื่อแรงค์ + MMR และใส่ "!" เมื่อมีรางวัลจบฤดูกาลรอรับ
     private void RefreshRankedButton()
     {
         if (rankedButton == null) return;
@@ -46,31 +65,37 @@ public partial class LobbyManager
         SetButtonLabel(rankedButton, "RANKED  " + Ranked.TierName(mmr) + " " + mmr + (Ranked.CanClaimSeasonReward ? "  !" : ""));
     }
 
+    // เปิดหน้าต่างแรงค์ (เริ่มที่หน้าสรุปแรงค์ ไม่ใช่ตารางอันดับ)
     private void OpenRanked()
     {
         if (rankedOverlay == null || !FeatureFlags.Ranked) return;
         Ranked.EnsureLoaded();
         showingLeaderboard = false;
+        rankPreviewTier = -1;
         rankedOverlay.gameObject.SetActive(true);
         rankedOverlay.transform.SetAsLastSibling();
+        SolidOverlay(rankedOverlay, rankedWindow);
         BuildRankedPage();
     }
 
+    // ปิดหน้าต่างแรงค์ (ซ่อน overlay)
     private void CloseRanked()
     {
         if (rankedOverlay != null) rankedOverlay.gameObject.SetActive(false);
     }
 
+    // วาดหน้าต่างแรงค์ใหม่: ลบหน้าเก่า แล้วสร้างหน้าตารางอันดับหรือหน้าสรุปแรงค์ตาม showingLeaderboard
     private void BuildRankedPage()
     {
         if (rankedWindow == null) return;
         if (rankedPage != null) Destroy(rankedPage.gameObject);
         rankedPage = UIRect("RPage" + (++pageSerial), rankedWindow, 0, 0, 900, 620);
-        UIButton("Close", rankedPage, "CLOSE", 355, 270, 130, 44, CloseRanked);
+        UIButton("Close", rankedPage, "BACK", 335, 270, 170, 54, CloseRanked);
         if (showingLeaderboard) BuildLeaderboardPage(rankedPage);
         else BuildRankSummary(rankedPage);
     }
 
+    // หน้าสรุปแรงค์: ป้ายแรงค์, MMR, สถิติฤดูกาล, แถบทุกแรงค์, ปุ่มรับรางวัลฤดูกาล, ปุ่มหาแมตช์ และปุ่มตารางอันดับ
     private void BuildRankSummary(RectTransform page)
     {
         var data = Ranked.Data ?? new RankData();
@@ -81,23 +106,47 @@ public partial class LobbyManager
             var left = Ranked.SeasonLeft;
             UILabel("Season", page, Ranked.SeasonName + "   ends in " + left.Days + "d " + left.Hours + "h", 0, 222, 800, 28, 17, accentColor);
         }
+        // แรงค์ที่แสดงในป้ายใหญ่: แรงค์ของเรา หรือแรงค์ที่กดดูจากแถบด้านล่าง
+        int shown = rankPreviewTier >= 0 && rankPreviewTier < Ranked.TierNames.Length ? rankPreviewTier : tier;
+        bool preview = shown != tier;
         // ป้ายแรงค์ใหญ่ (รูป Images/Ranks/rank_{tier}.png ถ้ามี ไม่งั้นใช้กล่องสี)
-        var badge = UIPanel("Badge", page, -250, 90, 200, 200, Ranked.TierColors[tier] * .6f + new Color(0, 0, 0, .4f));
-        var sprite = Resources.Load<Sprite>("Images/Ranks/rank_" + Ranked.TierNames[tier].ToLowerInvariant());
+        var badge = UIPanel("Badge", page, -250, 90, 200, 200, Ranked.TierColors[shown] * .6f + new Color(0, 0, 0, .4f));
+        var sprite = Resources.Load<Sprite>("Images/Ranks/rank_" + Ranked.TierNames[shown].ToLowerInvariant());
         if (sprite != null) { badge.sprite = sprite; badge.color = Color.white; badge.preserveAspect = true; }
-        else UILabel("Tier", badge.transform, Ranked.TierNames[tier], 0, 0, 190, 60, 30, Color.white);
-        var tierLabel = UILabel("TierName", page, Ranked.TierNames[tier], 120, 150, 420, 50, 40, Ranked.TierColors[tier]);
+        else UILabel("Tier", badge.transform, Ranked.TierNames[shown], 0, 0, 190, 60, 30, Color.white);
+        var tierLabel = UILabel("TierName", page, Ranked.TierNames[shown], 120, 150, 420, 50, 40, Ranked.TierColors[shown]);
         tierLabel.richText = false;
-        UILabel("Mmr", page, data.mmr + " MMR", 120, 100, 420, 40, 28, Color.white);
-        int toNext = Ranked.PointsToNext(data.mmr);
-        UILabel("Next", page, toNext < 0 ? "Highest rank reached!" : toNext + " MMR to " + Ranked.TierNames[tier + 1], 120, 62, 420, 28, 17, Color.gray);
-        UILabel("Record", page, "SEASON  W " + data.wins + "  /  L " + data.losses + "  /  D " + data.draws + "     PEAK " + data.peak, 120, 24, 520, 28, 17, Color.white);
-        // แถบแรงค์ทั้งหมด
+        if (preview)
+        {
+            // กำลังดูแรงค์อื่น: ช่วง MMR, รางวัลจบฤดูกาล, ห่างจากเราเท่าไร
+            int min = Ranked.TierMin[shown];
+            string range = shown + 1 < Ranked.TierMin.Length ? min + " - " + (Ranked.TierMin[shown + 1] - 1) + " MMR" : min + "+ MMR";
+            UILabel("Mmr", page, range, 120, 100, 420, 40, 28, Color.white);
+            int gap = min - data.mmr;
+            UILabel("Next", page, gap > 0 ? gap + " MMR above you" : "You have passed this rank", 120, 62, 420, 28, 17, Color.gray);
+            UILabel("Record", page, "SEASON REWARD  +" + Ranked.SeasonRewardCoins[shown] + " ASTRONIUM", 120, 24, 520, 28, 17, new Color(1f, .85f, .4f));
+            UILabel("PreviewHint", page, "Tap your rank to go back", -250, -22, 300, 24, 14, Color.gray);
+        }
+        else
+        {
+            UILabel("Mmr", page, data.mmr + " MMR", 120, 100, 420, 40, 28, Color.white);
+            int toNext = Ranked.PointsToNext(data.mmr);
+            UILabel("Next", page, toNext < 0 ? "Highest rank reached!" : toNext + " MMR to " + Ranked.TierNames[tier + 1], 120, 62, 420, 28, 17, Color.gray);
+            UILabel("Record", page, "SEASON  W " + data.wins + "  /  L " + data.losses + "  /  D " + data.draws + "     PEAK " + data.peak, 120, 24, 520, 28, 17, Color.white);
+            UILabel("PreviewHint", page, "Tap a rank below to view it", -250, -22, 300, 24, 14, Color.gray);
+        }
+        // แถบแรงค์ทั้งหมด (กดเพื่อดูรูปและข้อมูลของแรงค์นั้น / กดแรงค์ของเรา = กลับ)
         for (int i = 0; i < Ranked.TierNames.Length; i++)
         {
-            var step = UIPanel("Tier" + i, page, -360 + i * 120, -70, 112, 44, i == tier ? Ranked.TierColors[i] * .7f + new Color(0, 0, 0, .3f) : new Color(.06f, .1f, .17f));
-            UILabel("Text", step.transform, Ranked.TierNames[i] + "\n<size=11>" + Ranked.TierMin[i] + "+</size>", 0, 0, 110, 42, 14, i == tier ? Color.white : Ranked.TierColors[i])
+            bool mine = i == tier, viewing = i == shown;
+            var step = UIPanel("Tier" + i, page, -360 + i * 120, -70, 112, 44, viewing ? Ranked.TierColors[i] * .7f + new Color(0, 0, 0, .3f) : new Color(.06f, .1f, .17f));
+            UILabel("Text", step.transform, Ranked.TierNames[i] + "\n<size=11>" + (mine ? "YOU" : Ranked.TierMin[i] + "+") + "</size>", 0, 0, 110, 42, 14, viewing ? Color.white : Ranked.TierColors[i])
                 .textWrappingMode = TextWrappingModes.Normal;
+            step.raycastTarget = true;
+            if (!step.TryGetComponent(out Button stepButton)) stepButton = step.gameObject.AddComponent<Button>(); // ห้ามใช้ ?? กับ GetComponent (Editor คืน null ปลอม)
+            stepButton.targetGraphic = step;
+            int pick = i;
+            stepButton.onClick.AddListener(() => { rankPreviewTier = pick == tier ? -1 : pick; BuildRankedPage(); });
         }
         // รางวัลจบฤดูกาล
         if (Ranked.CanClaimSeasonReward)
@@ -118,7 +167,7 @@ public partial class LobbyManager
             0, -185, 840, 28, 14, Color.gray);
         var find = UIButton("Find", page, "FIND RANKED MATCH", -170, -250, 320, 58, OnRankedMatchClicked);
         find.interactable = profileLoaded && PhotonNetwork.InLobby && !roomRequestPending && !reconnecting && !pendingSolo;
-        var board = UIButton("Board", page, "LEADERBOARD", 190, -250, 280, 58, () => { showingLeaderboard = true; LoadLeaderboard(); BuildRankedPage(); });
+        var board = UIButton("Board", page, "LEADERBOARD", 190, -250, 280, 58, () => { showingLeaderboard = true; leaderboard = null; LoadLeaderboard(); BuildRankedPage(); }); // โหลดใหม่ทุกครั้งที่เปิด
         board.gameObject.SetActive(FeatureFlags.Leaderboard);
     }
 
@@ -136,17 +185,26 @@ public partial class LobbyManager
         });
     }
 
+    // หน้าตารางอันดับ Top 20 (อันดับ ชื่อ แรงค์ MMR เลเวล) ไฮไลต์แถวของเรา และแสดงแรงค์ของเราด้านล่าง
     private void BuildLeaderboardPage(RectTransform page)
     {
         UILabel("Title", page, "LEADERBOARD  TOP 20", -200, 270, 460, 44, 28, Color.white);
-        UIButton("Back", page, "< BACK", 190, 270, 150, 44, () => { showingLeaderboard = false; BuildRankedPage(); });
+        UIButton("Back", page, "< RANK", 130, 270, 160, 54, () => { showingLeaderboard = false; BuildRankedPage(); });
         string me = FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUserId() : "";
         if (leaderboard == null)
         {
             UILabel("Loading", page, FirebaseManager.Instance == null ? "Leaderboard needs an online login." : "Loading...", 0, 0, 700, 40, 20, Color.gray);
             return;
         }
-        if (leaderboard.Count == 0) { UILabel("Empty", page, "No ranked players yet. Be the first!", 0, 0, 700, 40, 20, Color.gray); return; }
+        if (leaderboard.Count == 0)
+        {
+            // อ่านไม่ได้ (เน็ต/สิทธิ์/ยังไม่ล็อกอิน) ≠ ยังไม่มีผู้เล่น — บอกให้ชัดและให้กดลองใหม่
+            string error = FirebaseManager.Instance != null ? FirebaseManager.Instance.LastLeaderboardError : null;
+            UILabel("Empty", page, string.IsNullOrEmpty(error) ? "No ranked players yet. Be the first!" : "Could not load the leaderboard: " + error, 0, 20, 820, 60, 20, Color.gray)
+                .textWrappingMode = TextWrappingModes.Normal;
+            UIButton("Retry", page, "RETRY", 0, -60, 200, 50, () => { leaderboard = null; LoadLeaderboard(); BuildRankedPage(); });
+            return;
+        }
         string[] heads = { "#", "PILOT", "RANK", "MMR", "LV" };
         float[] xs = { -380, -170, 120, 260, 360 };
         float[] ws = { 60, 360, 180, 110, 80 };
@@ -178,7 +236,7 @@ public partial class LobbyManager
         PhotonNetwork.LocalPlayer.SetCustomProperties(new ExitGames.Client.Photon.Hashtable
         {
             ["ShipType"] = equippedShipIndex,
-            ["SkillType"] = equippedSkillIndex,
+            ["SkillType"] = SkillUnlock.Usable(equippedSkillIndex),
             [ShipPaint.Property] = ShipPaint.Local,
             ["MMR"] = Ranked.Mmr
         });

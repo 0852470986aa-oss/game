@@ -19,9 +19,7 @@ public partial class LobbyManager
         ShipData ship = ships[index];
 
         if (shipNameText != null) shipNameText.text = ship.name;
-        if (shipHPText != null) shipHPText.text = "HP: " + ship.hp;
-        if (shipATKText != null) shipATKText.text = "ATK: " + ship.atk;
-        if (shipSPDText != null) shipSPDText.text = "SPD: " + ship.spd;
+        WriteUpgradedStats(index, shipHPText, shipATKText, shipSPDText, ""); // รวมตีบวก + ไอเท็ม (LobbyManager.UpgradeStats.cs)
         if (shipSkillText != null) shipSkillText.text = ""; // ลบระบบ Skill เดิมทิ้ง
         if (shipImage != null)
         {
@@ -41,9 +39,7 @@ public partial class LobbyManager
         ShipData ship = ships[index];
 
         if (inventoryShipName != null) inventoryShipName.text = ship.name;
-        if (inventoryShipHP != null) inventoryShipHP.text = "HP: " + ship.hp;
-        if (inventoryShipATK != null) inventoryShipATK.text = "ATK: " + ship.atk;
-        if (inventoryShipSPD != null) inventoryShipSPD.text = "SPD: " + ship.spd + "   " + BattleLoadoutCatalog.WeaponNames[ship.weapon];
+        WriteUpgradedStats(index, inventoryShipHP, inventoryShipATK, inventoryShipSPD, "   " + BattleLoadoutCatalog.WeaponNames[ship.weapon]);
         if (inventoryShipSkill != null) inventoryShipSkill.text = ""; // ลบระบบ Skill เดิมทิ้ง
         if (inventoryShipImage != null)
         {
@@ -162,38 +158,64 @@ public partial class LobbyManager
     {
         if (index < 0 || index >= skills.Length) return;
         SkillData skill = skills[index];
+        int active = SkillUnlock.Usable(equippedSkillIndex); // สกิลที่ใช้รบจริง (ที่ติดตั้งไว้ยังล็อก = สกิลแรก)
         if (hangarSkillCards != null)
             for (int i = 0; i < hangarSkillCards.Length; i++)
             {
-                hangarSkillCards[i].GetComponent<Image>().color = i == index ? new Color(0.1f, 0.38f, 0.46f) : panelColor;
-                hangarSkillStates[i].text = i == equippedSkillIndex ? "INSTALLED" : i == index ? "SELECTED" : "AVAILABLE";
+                bool locked = !SkillUnlock.Unlocked(i);
+                hangarSkillCards[i].GetComponent<Image>().color = i == index ? new Color(0.1f, 0.38f, 0.46f) : locked ? new Color(.05f, .07f, .1f) : panelColor;
+                hangarSkillStates[i].text = locked ? "LOCKED  LV " + SkillUnlock.RequiredLevel(i)
+                    : i == active ? "INSTALLED" : i == index ? "SELECTED" : "AVAILABLE";
+                hangarSkillStates[i].color = locked ? new Color(1f, .55f, .45f) : Color.white;
             }
         if (homeSkillText != null)
-            homeSkillText.text = "EQUIPPED  /  " + skills[equippedSkillIndex].name;
+            homeSkillText.text = "EQUIPPED  /  " + skills[active].name;
 
         if (skillDescText != null)
-            skillDescText.text = skill.name + " - " + skill.description;
+        {
+            // คำอธิบายละเอียด ไทย/อังกฤษ (SkillInfo.cs): ชื่อ + ตัวเลข + วิธีใช้
+            skillDescText.richText = true;
+            skillDescText.textWrappingMode = TextWrappingModes.Normal;
+            skillDescText.enableAutoSizing = true;
+            skillDescText.fontSizeMin = 14;
+            skillDescText.fontSizeMax = 22;
+            skillDescText.alignment = TextAlignmentOptions.Left;
+            skillDescText.text = "<size=125%><color=#5FE3E3>" + skill.name + "</color></size>   <color=#FFD27A>" + SkillInfo.Stats(index, skill.cooldown)
+                + "</color>\n" + SkillInfo.Describe(index);
+        }
 
         if (installSkillButton == null) return;
         if (installSkillText == null) installSkillText = installSkillButton.GetComponentInChildren<TMP_Text>();
 
-        if (index == equippedSkillIndex)
+        if (!SkillUnlock.Unlocked(index))
+        {
+            // ยังไม่ถึงเลเวล: ติดตั้งไม่ได้
+            installSkillButton.interactable = false;
+            installSkillButton.GetComponent<Image>().color = new Color(0.35f, 0.3f, 0.3f);
+            if (installSkillText != null) installSkillText.text = "UNLOCK AT LV " + SkillUnlock.RequiredLevel(index);
+        }
+        else if (index == active)
         {
             installSkillButton.interactable = false;
             installSkillButton.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f);
-            if (installSkillText != null) installSkillText.text = "Installed";
+            if (installSkillText != null) installSkillText.text = "INSTALLED";
         }
         else
         {
             installSkillButton.interactable = true;
             installSkillButton.GetComponent<Image>().color = new Color(0.3f, 0.6f, 0.9f);
-            if (installSkillText != null) installSkillText.text = "Install";
+            if (installSkillText != null) installSkillText.text = "INSTALL";
         }
     }
 
     // กดปุ่ม Install: ตั้งสกิลที่เลือกเป็นสกิลที่ใช้รบ บันทึกลง Firebase แล้วอัปเดตหน้าจอ (สกิลไม่มีราคา)
     public void OnInstallSkillClicked()
     {
+        if (!SkillUnlock.Unlocked(selectedSkillIndex))
+        {
+            UpdateStatus("Reach level " + SkillUnlock.RequiredLevel(selectedSkillIndex) + " to unlock " + skills[selectedSkillIndex].name + ".");
+            return;
+        }
         equippedSkillIndex = selectedSkillIndex;
         if (FirebaseManager.Instance != null)
         {

@@ -16,16 +16,40 @@ public partial class PlayerController
         {
             if (botAim.sqrMagnitude < .0001f) return;
             float botAngle = Mathf.Atan2(botAim.y, botAim.x) * Mathf.Rad2Deg - 90f;
-            float botFacing = Mathf.LerpAngle(transform.eulerAngles.z, botAngle, 1f - Mathf.Exp(-rotationSpeed * Time.deltaTime));
-            transform.rotation = Quaternion.Euler(0, 0, botFacing);
+            float botFacing = Mathf.LerpAngle(CurrentFacing(), botAngle, 1f - Mathf.Exp(-rotationSpeed * Time.deltaTime));
+            SetFacing(botFacing);
             return;
         }
         if (fireButton == null || !fireButton.isPressed || !fireButton.HasAim) return;
         Vector2 direction = fireButton.AimDirection;
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg - 90f;
         // Only the right stick rotates the ship; translation remains controlled by the left stick.
-        float facing = Mathf.LerpAngle(transform.eulerAngles.z, angle, 1f - Mathf.Exp(-rotationSpeed * BattleSettingsPanel.AimSensitivity * Time.deltaTime));
-        transform.rotation = Quaternion.Euler(0, 0, facing);
+        float facing = Mathf.LerpAngle(CurrentFacing(), angle, 1f - Mathf.Exp(-rotationSpeed * BattleSettingsPanel.AimSensitivity * Time.deltaTime));
+        SetFacing(facing);
+    }
+
+    // ===== หมุนยานโดยไม่ทำให้ยานสั่น (FeatureFlags.SmoothShipRotation) =====
+    // เดิม: เขียน transform.rotation ทุกเฟรม ขณะที่ Rigidbody2D เปิด Interpolate -> Unity ดึงตำแหน่งฟิสิกส์กลับไปที่ตำแหน่ง
+    // ที่ถูก interpolate (ช้ากว่าจริงนิดหนึ่ง) ทุกครั้ง ยานจึงกระตุกไปมาตอนเล็ง/ยิง
+    // ใหม่: เก็บมุมไว้ แล้วตั้งมุมที่ Rigidbody2D ใน FixedUpdate (ApplyPendingFacing) ตำแหน่งไม่โดนรีเซ็ต
+    private bool facingPending;
+    private float facingTarget;
+    // หมุนผ่านฟิสิกส์ได้ไหม (ยานของเครื่องนี้ที่เป็น Dynamic เท่านั้น)
+    private bool PhysicsFacing => FeatureFlags.SmoothShipRotation && playerRigidbody != null && playerRigidbody.bodyType == RigidbodyType2D.Dynamic;
+    // มุมหัวยานปัจจุบัน (รวมมุมที่สั่งไว้แต่ยังไม่ถึงรอบฟิสิกส์)
+    private float CurrentFacing() => !PhysicsFacing ? transform.eulerAngles.z : facingPending ? facingTarget : playerRigidbody.rotation;
+    // สั่งหมุนหัวยานไปที่มุม z (องศา)
+    private void SetFacing(float z)
+    {
+        if (PhysicsFacing) { facingTarget = z; facingPending = true; }
+        else transform.rotation = Quaternion.Euler(0, 0, z);
+    }
+    // เรียกต้น FixedUpdate: ใส่มุมที่สั่งไว้ให้ Rigidbody2D
+    private void ApplyPendingFacing()
+    {
+        if (!facingPending) return;
+        facingPending = false;
+        if (playerRigidbody != null) playerRigidbody.rotation = facingTarget;
     }
 
     // อ่านจอยซ้ายแล้วค่อยๆ ปรับ movementInput เข้าหาทิศที่กด (เร่ง/หน่วงตาม acceleration) ถ้าไม่กดก็ค่อยๆ หยุด

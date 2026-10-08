@@ -77,6 +77,7 @@ public partial class PlayerController
         ApplyCloakVisibility();
     }
 
+    // อัปเดตภาพของยานทุกเฟรม (เรียกจาก LateUpdate): เส้นเล็ง/วงกันตัว แล้วสร้างและขยับไฟไอพ่นตามระยะที่ยานเคลื่อนที่
     private void LateUpdateVisuals()
     {
         UpdateAimGuide();
@@ -86,7 +87,8 @@ public partial class PlayerController
         // 1) ครั้งแรก: เลือกสไตล์ไอพ่นจากชื่อภาพยาน (ship2 = 1, ship3 = 2 เขียว, อื่นๆ = 0 แดง) และเตรียม sprite เปลวไฟ
         if (sheetThrusters == null)
         {
-            int style = spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
+            var profile = OwnThrusterProfile(); // ยานใหม่ที่มีรูปของตัวเอง: ใช้จุดหัวฉีดตามรูป (PlayerController.ShipThrusters.cs)
+            int style = profile != null ? profile.style : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
                 : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship3") ? 2 : 0;
             exhaustStyle = style;
             Sprite source = style == 2 ? GreenThrusterFrame(0, 0) : ShipEffectSprite(4);
@@ -116,6 +118,12 @@ public partial class PlayerController
                     new Vector2(.404f, .64f), new Vector2(.594f, .64f) }
                 : new[] { new Vector2(.333f, .215f), new Vector2(.662f, .215f) };
             exhaustAngles = style == 1 ? new[] { 0f, 0f, 180f, 180f } : new float[exhaustAnchors.Length];
+            if (profile != null)
+            {
+                exhaustAnchors = profile.anchors;
+                exhaustAngles = new float[exhaustAnchors.Length]; // ทุกหัวฉีดพ่นไปท้ายยาน
+                exhaustWidthScale = profile.width;
+            }
             sheetThrusters = new SpriteRenderer[exhaustAnchors.Length];
             sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
             exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
@@ -183,6 +191,7 @@ public partial class PlayerController
             float width = hull.size.x * (exhaustStyle == 2 ? Mathf.Lerp(.10f, .14f, displayedThrust)
                 : Mathf.Lerp(.052f, .072f, displayedThrust));
             if (exhaustStyle == 1 && i >= 2) width *= .85f;
+            width *= exhaustWidthScale;
             nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
             Vector2 anchor = exhaustAnchors[i];
             if (spriteRenderer.flipX) anchor.x = 1f - anchor.x;

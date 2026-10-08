@@ -42,6 +42,15 @@ public partial class LobbyManager
     public override void OnJoinedRoom()
     {
         if (PhotonNetwork.OfflineMode) { LaunchSoloRoom(); return; }
+        // กันหลุดเข้าห้องแรงค์ทางอื่นที่ไม่ใช่การหาคู่แรงค์ (เช่นจอยชื่อห้องตรง ๆ) — กลับเข้าห้องเดิมหลังเน็ตหลุดยังได้
+        if (RankedPrivate(PhotonNetwork.CurrentRoom) && !pendingRanked && !reconnecting)
+        {
+            roomRequestPending = false;
+            isLeavingRoom = PhotonNetwork.LeaveRoom(false);
+            UpdateStatus("Ranked matches can't be joined with a code or invite. Use FIND RANKED MATCH.");
+            EnablePlayButtons(true);
+            return;
+        }
         pendingRanked = false;
         roomRequestPending = false;
         readyPending = false;
@@ -126,10 +135,18 @@ public partial class LobbyManager
         if (reconnecting) { RecoveryFailed("The room expired or the slot is no longer available."); return; }
         Debug.LogError($"Join Room Failed: {returnCode} - {message}");
         
-        // ErrorCode 32765 is GameFull, 32758 is GameDoesNotExist (Photon ErrorCodes)
+        // ErrorCode 32765 = GameFull, 32758 = GameDoesNotExist, 32764 = GameClosed (Photon ErrorCodes)
         if (returnCode == 32765)
         {
             UpdateStatus("Room is full!");
+        }
+        else if (returnCode == 32758)
+        {
+            UpdateStatus("Room not found. Check the code - the room may have closed.");
+        }
+        else if (returnCode == 32764)
+        {
+            UpdateStatus("That room is closed or the match has already started.");
         }
         else
         {
@@ -207,7 +224,14 @@ public partial class LobbyManager
         RenderRoomList();
         if (loggingOut) return;
         // ตั้งใจตัดเน็ตเพื่อเข้าโหมดเล่นคนเดียว
-        if (pendingSolo) { EnterOfflineSolo(); return; }
+        if (pendingSolo)
+        {
+            // เดิมเข้าโหมดออฟไลน์ทันทีในตัว callback นี้ -> Photon ยังเก็บกวาดการตัดเน็ตไม่เสร็จ ห้อง SOLO ที่เพิ่งสร้างโดนล้าง
+            // (กดครั้งแรกแวบแล้วเด้งกลับ ต้องกดใหม่) ตอนนี้รอ 1 เฟรมก่อน (FeatureFlags.SoloStartFix)
+            if (FeatureFlags.SoloStartFix) StartCoroutine(EnterOfflineSoloNextFrame());
+            else EnterOfflineSolo();
+            return;
+        }
         // 2) สาเหตุที่ลองใหม่ไม่ช่วย
         automaticRecoveryBlocked = cause == DisconnectCause.InvalidAuthentication
             || cause == DisconnectCause.CustomAuthenticationFailed || cause == DisconnectCause.MaxCcuReached
@@ -286,6 +310,7 @@ public partial class LobbyManager
         {
             if (room.RemovedFromList) continue; // ข้ามห้องที่โดนลบไปแล้ว
             if (!room.IsOpen || !room.IsVisible) continue; // ข้ามห้องที่ปิดหรือซ่อนอยู่
+            if (RankedPrivate(room)) continue; // ห้องแรงค์เข้าได้จากปุ่ม FIND RANKED MATCH เท่านั้น
 
             visibleCount++;
             GameObject roomItem = Instantiate(roomItemPrefab, roomListContent);
@@ -331,14 +356,25 @@ public partial class LobbyManager
     // เข้าห้องตามชื่อ/รหัส (จากปุ่ม Join ในรายการ หรือช่องค้นหา): ส่งยาน สกิล สียานเป็น property ก่อน แล้ว JoinRoom
     public void JoinRoomByName(string roomName)
     {
-        if (string.IsNullOrWhiteSpace(roomName) || !BeginRoomRequest()) return;
-        roomName = roomName.Trim();
+        roomName = CleanRoomCode(roomName);
+        if (string.IsNullOrEmpty(roomName)) return;
+        if (FeatureFlags.RankedNoInvite && IsRankedRoomName(roomName))
+        {
+            UpdateStatus("Ranked matches can't be joined with a code or invite. Use FIND RANKED MATCH.");
+            return;
+        }
+        if (!BeginRoomRequest())
+        {
+            // เดิมกดแล้วเงียบ: บอกเหตุผลที่ยังจอยไม่ได้
+            if (!roomRequestPending && profileLoaded) UpdateStatus("Connecting to the server... try again in a moment.");
+            return;
+        }
         UpdateStatus("Joining room " + roomName + "...");
 
         // Set chosen ship & skill for Gameplay spawn
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
-        props.Add("SkillType", equippedSkillIndex);
+        props.Add("SkillType", SkillUnlock.Usable(equippedSkillIndex)); // สกิลที่ยังล็อก = ใช้สกิลแรก (SkillUnlock.cs)
         props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
@@ -359,7 +395,7 @@ public partial class LobbyManager
         // Set chosen ship & skill for Gameplay spawn
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
-        props.Add("SkillType", equippedSkillIndex);
+        props.Add("SkillType", SkillUnlock.Usable(equippedSkillIndex)); // สกิลที่ยังล็อก = ใช้สกิลแรก (SkillUnlock.cs)
         props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
@@ -384,7 +420,7 @@ public partial class LobbyManager
         // Set chosen ship & skill for Gameplay spawn
         ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
         props.Add("ShipType", equippedShipIndex);
-        props.Add("SkillType", equippedSkillIndex);
+        props.Add("SkillType", SkillUnlock.Usable(equippedSkillIndex)); // สกิลที่ยังล็อก = ใช้สกิลแรก (SkillUnlock.cs)
         props.Add(ShipPaint.Property, ShipPaint.Local);
         PhotonNetwork.LocalPlayer.SetCustomProperties(props);
 
@@ -412,11 +448,22 @@ public partial class LobbyManager
     // ปุ่ม JOIN ในหน้าค้นหาห้อง: เข้าห้องตามรหัสที่พิมพ์ (ถ้าว่างแจ้งให้ใส่รหัสก่อน)
     public void OnSearchRoom()
     {
-        if (roomSearchInput == null || string.IsNullOrWhiteSpace(roomSearchInput.text))
+        string code = roomSearchInput != null ? CleanRoomCode(roomSearchInput.text) : "";
+        if (string.IsNullOrEmpty(code))
         {
             UpdateStatus("Enter a room code first.");
             return;
         }
-        JoinRoomByName(roomSearchInput.text);
+        roomSearchInput.text = code;
+        JoinRoomByName(code);
+    }
+
+    // ทำความสะอาดเลขห้องที่พิมพ์/วางมา: เก็บแค่ตัวอักษรอังกฤษกับตัวเลข (ตัดช่องว่าง ขีด # ขึ้นบรรทัดใหม่ ที่ติดมาตอนคัดลอก)
+    public static string CleanRoomCode(string raw)
+    {
+        if (string.IsNullOrEmpty(raw)) return "";
+        var code = new System.Text.StringBuilder();
+        foreach (char c in raw) if (c < 128 && char.IsLetterOrDigit(c)) code.Append(c);
+        return code.ToString();
     }
 }

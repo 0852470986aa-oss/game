@@ -4,6 +4,7 @@
 using UnityEngine;
 using Photon.Pun;
 
+// ส่วนผลของตีบวกและไอเท็มของ PlayerController (partial): คูณค่าพลัง ฟื้นเลือด ฟื้นเมื่อฆ่าได้ และเวลากันตัวหลังเกิด
 public partial class PlayerController
 {
     private float itemRegen;          // HP/วินาที เมื่อไม่โดนยิง 3 วินาที (Nano Repair)

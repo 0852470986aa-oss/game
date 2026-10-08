@@ -5,8 +5,10 @@
 // ความยาก (PlayerController.BotDifficulty): 0 = เป้าซ้อม (ไม่ยิง ขยับช้า), 1 ง่าย, 2 กลาง, 3 ยาก
 using UnityEngine;
 
+// คอมโพเนนต์ AI ของยานบอท: คิดตัดสินใจเป็นช่วง ๆ แล้วส่งคำสั่งเดิน/เล็ง/ยิง/สกิลให้ PlayerController
 public class BotController : MonoBehaviour
 {
+    // สถานะของบอท: ไล่เป้า / สู้ในระยะ / ถอยหนีเมื่อเลือดน้อย / หลบออกจากพื้นที่อันตราย
     private enum State { Chase, Fight, Retreat, Evade }
 
     private PlayerController ship;
@@ -29,6 +31,7 @@ public class BotController : MonoBehaviour
     private float lastDamagedAt = -10f;
     private float wanderAngle;
 
+    // เริ่มต้น: ดึง PlayerController ของยาน แล้วตั้งค่าความไวในการคิด ความแม่นการเล็ง และการใช้สกิลตามระดับความยาก
     private void Start()
     {
         ship = GetComponent<PlayerController>();
@@ -50,6 +53,8 @@ public class BotController : MonoBehaviour
         if (attacker != null && attacker != ship && !attacker.isDead && !MatchRules.IsAlly(attacker.CombatantId, ship.CombatantId)) target = attacker;
     }
 
+    // ทุกเฟรม (เฉพาะเครื่องที่ควบคุมบอท): หยุดทุกคำสั่งถ้าตาย/จบแมตช์ ติดตามความเร็วเป้า
+    // เรียก Think ตามรอบเวลาและเรียก Aim ทุกเฟรม
     private void Update()
     {
         if (ship == null || !ship.photonView.IsMine) return;
@@ -184,6 +189,8 @@ public class BotController : MonoBehaviour
         ship.botAim = AimDirection(ship.transform.position);
     }
 
+    // คำนวณทิศเล็งไปยังตำแหน่งที่เป้าน่าจะไปถึง (ดักทางตาม leadFactor) แล้วบวกมุมพลาด aimOffset
+    // ไม่มีเป้า = คืนทิศหน้ายานเดิม
     private Vector2 AimDirection(Vector2 me)
     {
         if (target == null) return ship.transform.up;
@@ -236,6 +243,7 @@ public class BotController : MonoBehaviour
         return -move;
     }
 
+    // ตรวจว่าทิศทางนี้ว่างไหมในระยะ 2.2 หน่วย (ไม่ชนสิ่งกีดขวางทึบ และไม่ออกนอกขอบสนาม) คืน true = เดินไปได้
     private bool IsClear(Vector2 me, Vector2 direction)
     {
         float probe = 2.2f;

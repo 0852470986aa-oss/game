@@ -14,6 +14,7 @@ using Photon.Pun;
 using Photon.Realtime;
 using ExitGames.Client.Photon;
 
+// คลาสจัดการไอเท็มในแม็พ: Master สุ่มเกิด/ตัดสินคนเก็บ ทุกเครื่องแสดงผลและใช้ผลไอเท็ม
 public class PowerUpManager : MonoBehaviour, IOnEventCallback
 {
     private const byte EvSpawn = 61, EvClaim = 62, EvTaken = 63;
@@ -25,6 +26,7 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
     private const int MaxActive = 4;
     private const float SpawnEvery = 10f, Lifetime = 25f, PickupRadius = 2.2f;
 
+    // ข้อมูลไอเท็ม 1 ชิ้นที่อยู่ในแม็พ: id, ชนิด, GameObject ที่แสดง, เวลาหมดอายุ และส่งขอเก็บไปแล้วหรือยัง
     private sealed class Pickup
     {
         public int id, type;
@@ -38,11 +40,15 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
     private int counter;
     private static Sprite circleSprite;
 
+    // ลงทะเบียนรับ Event ของ Photon (OnEvent) เมื่อเปิดคอมโพเนนต์
     private void OnEnable() => PhotonNetwork.AddCallbackTarget(this);
+    // ยกเลิกการรับ Event ของ Photon เมื่อปิดคอมโพเนนต์
     private void OnDisable() => PhotonNetwork.RemoveCallbackTarget(this);
 
     private static bool Enabled => PhotonNetwork.InRoom && MatchRules.PowerUpsEnabled(PhotonNetwork.CurrentRoom);
 
+    // ทุกเฟรม: หมุนไอเท็ม, Master เกิดไอเท็มตามรอบ/ลบที่หมดเวลา/ให้บอทเก็บ
+    // และถ้ายานเราแตะไอเท็มให้ส่งขอเก็บไปที่ Master
     private void Update()
     {
         var game = GameplayManager.Instance;
@@ -97,6 +103,7 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
         }
     }
 
+    // คืน id ของไอเท็มที่ยานนี้อยู่ในระยะเก็บ (PickupRadius) ไม่แตะอะไรคืน -1
     private int Touching(PlayerController ship)
     {
         foreach (var pickup in active.Values)
@@ -130,12 +137,15 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
         PhotonNetwork.RaiseEvent(code, data, new RaiseEventOptions { Receivers = receivers }, SendOptions.SendReliable);
     }
 
+    // Photon เรียกเมื่อได้รับ RaiseEvent: ส่งต่อเฉพาะรหัส 61-63 ของไอเท็มให้ Handle
     public void OnEvent(EventData photonEvent)
     {
         if (photonEvent.Code == EvSpawn || photonEvent.Code == EvClaim || photonEvent.Code == EvTaken)
             Handle(photonEvent.Code, photonEvent.CustomData as object[]);
     }
 
+    // จัดการ Event ไอเท็ม: SPAWN = สร้างไอเท็ม, CLAIM = Master ยืนยันคนเก็บ,
+    // TAKEN = ลบไอเท็ม แล้วเจ้าของยานใช้ผล + ขึ้นป้ายชื่อไอเท็มถ้าเป็นเรา
     private void Handle(byte code, object[] data)
     {
         if (data == null) return;
@@ -198,6 +208,8 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
         return go;
     }
 
+    // สร้าง Sprite วงกลมขอบนุ่ม 64x64 ด้วยโค้ด (สร้างครั้งเดียวแล้วแคช)
+    // ใช้แทนรูปไอเท็มที่ยังไม่มี และใช้เป็นพื้นวงของโหมดเกม
     internal static Sprite CircleSprite()
     {
         if (circleSprite != null) return circleSprite;
@@ -218,6 +230,7 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
         return circleSprite;
     }
 
+    // ลบ GameObject ของไอเท็มที่ยังค้างในแม็พทั้งหมดเมื่อ Manager ถูกทำลาย
     private void OnDestroy()
     {
         foreach (var pickup in active.Values) if (pickup.view != null) Destroy(pickup.view);

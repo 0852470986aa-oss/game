@@ -13,6 +13,8 @@ using Photon.Realtime;
 using ExitGames.Client.Photon;
 using TMPro;
 
+// ส่วนโหมดเกมของ GameplayManager (ยึดจุด/เก็บดาว/Survival/Battle Royale/Campaign)
+// รับ IOnEventCallback เพื่อรับ RaiseEvent ของดาว (รหัส 71-73)
 public partial class GameplayManager : IOnEventCallback
 {
     private int gameMode;
@@ -25,6 +27,9 @@ public partial class GameplayManager : IOnEventCallback
         var room = PhotonNetwork.CurrentRoom;
         gameMode = PhotonNetwork.InRoom ? MatchRules.GameMode(room) : MatchRules.ModeDeathmatch;
         MatchRules.ScoreOverride = null;
+        MatchRules.ResetBounty();
+        // เงื่อนไขชนะแบบใหม่: ตารางคะแนน/หน้าผลเรียงตามคะแนนของเงื่อนไขนั้น (MatchRules.WinRules.cs)
+        if (gameMode == MatchRules.ModeDeathmatch && MatchRules.UsesRuleScore(room)) MatchRules.ScoreOverride = MatchRules.RuleScore;
         deathOrder.Clear();
         if (gameMode == MatchRules.ModeKoth || gameMode == MatchRules.ModeStars)
         {
@@ -46,6 +51,59 @@ public partial class GameplayManager : IOnEventCallback
             targetKills = campaign.boss ? 999 : campaign.kills;
         }
         if (gameMode == MatchRules.ModeRoyale) SetupRoyaleZone();
+        ApplyModeHudText();
+    }
+
+    // ข้อความบนสุดของ HUD ให้ตรงกับโหมด (เดิมทุกโหมดขึ้น "YOU 0 : 0 RIVAL / FIRST TO 5 KILLS" ก่อนเริ่ม)
+    private void ApplyModeHudText()
+    {
+        if (battleHud == null) return;
+        var objective = FindPart<TMP_Text>(battleHud, "Objective");
+        if (gameMode == MatchRules.ModeDeathmatch)
+        {
+            if (objective != null) objective.text = WinRuleObjective(); // FIRST TO X หรือเงื่อนไขชนะที่เลือก
+            return;
+        }
+        if (objective != null) objective.text = ModeObjective();
+        try { if (scoreText != null) scoreText.text = ModeScoreLine(); }
+        catch (System.Exception) { if (scoreText != null) scoreText.text = MatchRules.ModeTitles[gameMode]; }
+    }
+
+    // ข้อความเป้าหมายของโหมดปัจจุบันที่แสดงบน HUD เช่น "HOLD THE ZONE"
+    private string ModeObjective()
+    {
+        switch (gameMode)
+        {
+            case MatchRules.ModeKoth: return "HOLD THE ZONE";
+            case MatchRules.ModeStars: return "COLLECT STARS";
+            case MatchRules.ModeSurvival: return "SURVIVE " + SurvivalWaves + " WAVES";
+            case MatchRules.ModeRoyale: return "LAST SHIP STANDING";
+            case MatchRules.ModeCampaign: return campaign != null && campaign.boss ? "DESTROY THE BOSS" : "DESTROY " + targetKills + " ENEMIES";
+        }
+        return "";
+    }
+
+    // ปุ่มซ้ายในหน้าผลของโหมดเล่นคนเดียว: เนื้อเรื่องที่ผ่านด่าน = "ด่านถัดไป" นอกนั้น = "เล่นอีกครั้ง"
+    private void ApplySoloRematchLabel()
+    {
+        if (rematchLabel == null || !PhotonNetwork.InRoom || !MatchRules.IsSolo(PhotonNetwork.CurrentRoom)) return;
+        rematchLabel.text = CampaignNextStageReady() ? "NEXT STAGE" : "PLAY AGAIN";
+    }
+
+    // true = ห้องนี้ตั้งผลโหมด (ModeResult) เป็นชนะแล้ว
+    private bool CampaignWon()
+        => PhotonNetwork.InRoom && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue(ModeResultKey, out object v) && v is int r && r > 0;
+
+    // true = เล่นโหมดเนื้อเรื่อง ผ่านด่านแล้ว และยังมีด่านถัดไปให้เล่น
+    private bool CampaignNextStageReady()
+        => gameMode == MatchRules.ModeCampaign && CampaignWon() && MatchRules.CampaignStage(PhotonNetwork.CurrentRoom) < Campaign.Count;
+
+    // ด่านที่จะเล่นเมื่อกดปุ่มนั้น: ผ่าน = ด่านถัดไป (ไม่เกินด่านที่ปลดล็อก) / แพ้ = ด่านเดิม
+    private int CampaignReplayStage()
+    {
+        int current = MatchRules.CampaignStage(PhotonNetwork.CurrentRoom);
+        int stage = CampaignWon() ? Mathf.Min(current + 1, Campaign.Count) : current;
+        return Mathf.Clamp(Mathf.Min(stage, Campaign.NextStage), 1, Campaign.Count);
     }
 
     // Master ล้างค่าของแมตช์ก่อนในห้องเดิม (คะแนนโหมด, วงยึดจุด, ระลอก, ผล, บอทระลอกเลข 1100+)
@@ -59,7 +117,7 @@ public partial class GameplayManager : IOnEventCallback
             if (!(entry.Key is string key) || entry.Value == null) continue;
             if (key.StartsWith(MatchRules.ModeScorePrefix) || key == ZoneXKey || key == ZoneYKey || key == WaveKey || key == ModeResultKey || key == "Banner")
                 props[key] = null;
-            foreach (string prefix in new[] { MatchRules.BotKillPrefix, MatchRules.BotDeathPrefix, MatchRules.TeamPrefix })
+            foreach (string prefix in new[] { MatchRules.BotKillPrefix, MatchRules.BotDeathPrefix, MatchRules.TeamPrefix, MatchStats.BotPrefix })
                 if (key.StartsWith(prefix) && int.TryParse(key.Substring(prefix.Length), out int id) && id >= PlayerController.BotIdBase + 100)
                     props[key] = null;
         }
@@ -96,6 +154,7 @@ public partial class GameplayManager : IOnEventCallback
         return lives <= 0 || MatchRules.Deaths(ship.photonView.Owner) < lives;
     }
 
+    // จำนวนชีวิตที่เหลือของเรา (-1 = โหมดนี้ไม่จำกัดชีวิต)
     private int LivesLeft()
     {
         int lives = MatchRules.Lives(PhotonNetwork.CurrentRoom);
@@ -104,6 +163,8 @@ public partial class GameplayManager : IOnEventCallback
 
     // หมดชีวิตแล้ว: กล้องตามยานอื่นที่ยังรอด (ดูคนอื่นเล่น)
     private float nextSpectateSwitch;
+    // เมื่อเราตายและเกิดใหม่ไม่ได้แล้ว: ให้กล้องตามยานอื่นที่ยังรอด สลับตัวทุก 4 วิ
+    // (โหมดร่วมมือจะตามเฉพาะคนจริง ไม่ตามบอท)
     private void UpdateSpectate()
     {
         if (localPlayer == null || !localPlayer.isDead || CanRespawn(localPlayer) || Time.unscaledTime < nextSpectateSwitch) return;
@@ -138,6 +199,8 @@ public partial class GameplayManager : IOnEventCallback
         return "";
     }
 
+    // เช็กเงื่อนไขจบแมตช์ของโหมด: ยึดจุด/ดาว = มีคนถึงเป้า, Royale = เหลือรอด 1 คน,
+    // Survival/Campaign = Master ตั้งผล ModeResult แล้ว
     private bool ModeShouldEnd()
     {
         var room = PhotonNetwork.CurrentRoom;
@@ -155,6 +218,7 @@ public partial class GameplayManager : IOnEventCallback
         return false;
     }
 
+    // คะแนนโหมดสูงสุดในห้อง (อ่านจาก Room Properties ที่ขึ้นต้นด้วย ModeScorePrefix)
     private int BestModeScore()
     {
         int best = 0;
@@ -165,6 +229,7 @@ public partial class GameplayManager : IOnEventCallback
         return best;
     }
 
+    // เวลาเริ่มแมตช์ (PhotonNetwork.Time) จาก Room Property "StartTime" ถ้าไม่มีใช้เวลาปัจจุบัน
     private double MatchStartTime()
         => PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("StartTime", out object v) && v is double start ? start : PhotonNetwork.Time;
 
@@ -227,6 +292,8 @@ public partial class GameplayManager : IOnEventCallback
     private float nextZoneTick;
     private string zoneState = "";
 
+    // ทุกเฟรมของโหมดยึดจุด: รอ Master เลือกจุดวง, เช็กว่าใครอยู่ในวง เปลี่ยนสีวง/ข้อความสถานะ
+    // และ Master ให้ 1 คะแนน/วิ แก่ทุกคนในกลุ่มที่ยึดวงไว้คนเดียว
     private void UpdateKoth()
     {
         var room = PhotonNetwork.CurrentRoom;
@@ -274,6 +341,7 @@ public partial class GameplayManager : IOnEventCallback
         }
     }
 
+    // Master เลือกจุดตั้งวงที่ไม่ทับสิ่งกีดขวาง (ไล่จากกลางสนามออกไป) แล้วบอกทุกเครื่องผ่าน Room Properties
     private void PickZone()
     {
         int map = GetCurrentMapIndex();
@@ -323,6 +391,8 @@ public partial class GameplayManager : IOnEventCallback
     private float nextStarAt = -1f;
     private int starCounter;
 
+    // ทุกเฟรมของโหมดเก็บดาว: หมุนดาว, Master เกิดดาวทุก 2.5 วิ (ไม่เกิน 6 ดวง) และให้บอทเก็บ
+    // ยานเราแตะดาวแล้วส่งขอเก็บไปที่ Master
     private void UpdateStars()
     {
         if (!matchStarted) return;
@@ -360,12 +430,14 @@ public partial class GameplayManager : IOnEventCallback
         }
     }
 
+    // ส่ง Event เกิดดาวที่ตำแหน่ง point ให้ทุกเครื่อง (id ไม่ซ้ำ = ActorNumber*10000 + ลำดับ)
     private void SpawnStar(Vector2 point)
     {
         int id = PhotonNetwork.LocalPlayer.ActorNumber * 10000 + (++starCounter);
         SendModeEvent(EvStarSpawn, new object[] { id, point.x, point.y }, ReceiverGroup.All);
     }
 
+    // คืน id ของดาวที่ยานนี้อยู่ใกล้ไม่ถึง 2 หน่วย (-1 = ไม่แตะดาว)
     private int TouchingStar(PlayerController ship)
     {
         foreach (var pair in stars)
@@ -373,17 +445,21 @@ public partial class GameplayManager : IOnEventCallback
         return -1;
     }
 
+    // ส่ง Event ของโหมดผ่าน RaiseEvent (โหมดออฟไลน์เรียกตัวรับในเครื่องตรงๆ)
     private void SendModeEvent(byte code, object[] data, ReceiverGroup receivers)
     {
         if (PhotonNetwork.OfflineMode) { HandleModeEvent(code, data); return; }
         PhotonNetwork.RaiseEvent(code, data, new RaiseEventOptions { Receivers = receivers }, SendOptions.SendReliable);
     }
 
+    // Photon เรียกเมื่อได้รับ RaiseEvent: ส่งต่อเฉพาะรหัส 71-73 (ดาว) ให้ HandleModeEvent
     public void OnEvent(EventData photonEvent)
     {
         if (photonEvent.Code >= EvStarSpawn && photonEvent.Code <= EvStarTaken) HandleModeEvent(photonEvent.Code, photonEvent.CustomData as object[]);
     }
 
+    // จัดการ Event ดาว: SPAWN = สร้างดาว, CLAIM = Master ยืนยันคนเก็บ,
+    // TAKEN = ลบดาวและ Master บวกคะแนนให้คนเก็บ
     private void HandleModeEvent(byte code, object[] data)
     {
         if (data == null) return;
@@ -426,6 +502,7 @@ public partial class GameplayManager : IOnEventCallback
     private float nextWaveAt = -1f;
     private int botSequence = 100;
 
+    // ระลอกปัจจุบันของ Survival จาก Room Property "Wave" (0 = ยังไม่เริ่ม)
     private int CurrentWave()
         => PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue(WaveKey, out object v) && v is int wave ? wave : 0;
 
@@ -438,6 +515,8 @@ public partial class GameplayManager : IOnEventCallback
         return count;
     }
 
+    // Master คุมโหมด Survival: เช็กแพ้, รอบอทระลอกนี้หมดแล้วเว้น 4 วิปล่อยระลอกถัดไป
+    // (ระลอก 5 และ 10 มีบอส) ครบ 10 ระลอก = ชนะ
     private void UpdateSurvival()
     {
         if (!matchStarted || !PhotonNetwork.IsMasterClient) return;
@@ -475,6 +554,7 @@ public partial class GameplayManager : IOnEventCallback
         }
     }
 
+    // Master ตั้งผลโหมดร่วมมือลง Room Property (1 = ชนะ, -1 = แพ้) ตั้งได้ครั้งเดียว
     private void SetModeResult(int result)
     {
         if (!PhotonNetwork.IsMasterClient) return;
@@ -517,6 +597,8 @@ public partial class GameplayManager : IOnEventCallback
         PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable { ["Banner"] = text + "|" + Random.Range(0, 100000) });
     }
 
+    // Photon เรียกเมื่อ Room Properties เปลี่ยน: ถ้ามี "Banner" ใหม่ให้ขึ้นป้ายกลางจอ
+    // (ตัดเลขสุ่มหลัง | ออก)
     public override void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable changed)
     {
         if (changed.TryGetValue("Banner", out object value) && value is string text)
@@ -552,6 +634,7 @@ public partial class GameplayManager : IOnEventCallback
         return Mathf.Lerp(royaleStartRadius, royaleEndRadius, t);
     }
 
+    // นับยานที่ยังอยู่ในเกม (ไม่นับคนตายที่เกิดใหม่ไม่ได้ และคนจริงที่หลุดไป)
     private int AliveCount()
     {
         int alive = 0;
@@ -564,6 +647,8 @@ public partial class GameplayManager : IOnEventCallback
         return alive;
     }
 
+    // ทุกเฟรมของ Battle Royale: ปรับขนาดวงตามเวลา, ยานนอกวงเสียเลือด
+    // และเตือน "GET BACK TO THE ZONE!" ทุก 3 วิเมื่อเราอยู่นอกวง
     private void UpdateRoyale()
     {
         if (royaleView == null) royaleView = CreateZoneView(royaleCenter, 1f, out royaleFill, out royaleRing);
@@ -594,6 +679,7 @@ public partial class GameplayManager : IOnEventCallback
     private TMP_Text briefingText;
     private float briefingUntil;
 
+    // true = ยังมีบอสที่ยังไม่ตายอยู่ในฉาก
     private bool BossAlive()
     {
         foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))
@@ -601,6 +687,8 @@ public partial class GameplayManager : IOnEventCallback
         return false;
     }
 
+    // ทุกเฟรมของโหมดเนื้อเรื่อง: แสดงบรรยายด่านช่วงแรก, Master เกิดศัตรูของด่านครั้งเดียว
+    // แล้วตัดสินชนะเมื่อฆ่าบอส/ฆ่าครบ หรือแพ้เมื่อชีวิตหมด
     private void UpdateCampaign()
     {
         if (campaign == null) return;
@@ -626,6 +714,7 @@ public partial class GameplayManager : IOnEventCallback
     }
 
     private bool bossSeen;
+    // true = เคยเห็นบอสในฉากแล้ว (กันตัดสินว่าชนะก่อนบอสถูกสร้างเสร็จ)
     private bool BossSeen()
     {
         if (!bossSeen) foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None)) if (ship.IsBoss) { bossSeen = true; break; }
@@ -691,6 +780,7 @@ public partial class GameplayManager : IOnEventCallback
             btnReturnToMenu.onClick.AddListener(LeaveRoom);
         }
         ReportProgress(won, false, 1, Mathf.Max(1, PhotonNetwork.PlayerList.Length), reward);
+        ApplySoloRematchLabel();
         FitResultUI();
     }
 }

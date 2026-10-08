@@ -32,6 +32,7 @@ public partial class PlayerController
 
         // 3) หักเลือด แจ้งคนยิงว่ายิงโดน และส่ง RPC เอฟเฟกต์โดนยิงไปทุกเครื่อง (ค่า currentHp ใหม่ไปถึงอีกเครื่องผ่าน OnPhotonSerializeView)
         ConfirmHitToShooter(killerId, false);
+        MatchStats.Took(CombatantId, Mathf.Min(damage, Mathf.Max(0f, currentHp))); // ดาเมจที่โดน (สถิติหลังแมตช์)
         currentHp -= damage;
         lastHullDamageAt = Time.time;
         

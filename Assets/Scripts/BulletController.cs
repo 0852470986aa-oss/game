@@ -74,6 +74,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
     {
         var prefab = Resources.Load<GameObject>("BulletPrefab");
         if (prefab == null) return null;
+        if (isAuthority) MatchStats.Shot(shooter); // นับนัดที่ยิง (สถิติหลังแมตช์ MatchStats.cs)
         Quaternion rotation = Quaternion.Euler(0, 0, angle);
         Vector2 forward = rotation * Vector3.up;
         position += forward * 18f * Mathf.Clamp(lag, 0f, .3f);

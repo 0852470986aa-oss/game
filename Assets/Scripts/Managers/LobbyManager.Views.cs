@@ -171,6 +171,7 @@ public partial class LobbyManager
     public void CopyRoomCode()
     {
         if (!PhotonNetwork.InRoom) return;
+        if (RankedPrivate(PhotonNetwork.CurrentRoom)) { UpdateStatus("Ranked rooms can't be shared."); return; }
         GUIUtility.systemCopyBuffer = PhotonNetwork.CurrentRoom.Name;
         UpdateStatus("Room code copied. Share it with your friend.");
     }
@@ -187,6 +188,7 @@ public partial class LobbyManager
     private RectTransform UIRect(string name, Transform parent, float x, float y, float width, float height)
     {
         var rect = parent.Find(name) as RectTransform;
+        if (rect == null) rect = FindNavigationControl(parent, name);
         if (rect == null)
         {
             var go = new GameObject(name, typeof(RectTransform));
@@ -199,6 +201,7 @@ public partial class LobbyManager
 #if UNITY_EDITOR
             if (!Application.isPlaying) UnityEditor.Undo.RegisterCreatedObjectUndo(go, "Create editable lobby UI");
 #endif
+            UiLayout.Placed(rect); // ชิ้นที่สร้างใหม่ (รวมการ์ดในโรงเก็บยาน) ใช้ตำแหน่งที่บันทึกเองถ้ามี
         }
         return rect;
     }
@@ -206,7 +209,7 @@ public partial class LobbyManager
     // สร้าง/หา panel ที่มี Image สี; ตั้งสีเฉพาะตอนสร้างครั้งแรก
     private Image UIPanel(string name, Transform parent, float x, float y, float width, float height, Color color)
     {
-        bool initializeStyle = parent.Find(name) == null;
+        bool initializeStyle = parent.Find(name) == null && FindNavigationControl(parent, name) == null;
         RectTransform rect = UIRect(name, parent, x, y, width, height);
         Image img = rect.GetComponent<Image>();
         if (img == null)
@@ -333,6 +336,8 @@ public partial class LobbyManager
             waitReadyButton = UIButton("Ready", root, "READY", 0, -334, 270, 52, OnReadyButtonClicked);
             waitStartButton = UIButton("StartBattle", root, "START BATTLE", 420, -334, 270, 52, OnStartGameClicked);
             lobbyMessage = UILabel("Message", root, "", 0, -263, 1160, 24, 15, new Color(1f, 0.77f, 0.43f));
+            BuildRoomNavigation(root);
+            LayoutPrepRoom(root); // หน้าเตรียมพร้อมรบแบบใหม่ (LobbyManager.NewLayout.cs)
         }
         // 2) หน้าค้นหาห้อง: ฝั่งซ้ายสร้างห้อง ฝั่งขวาใส่รหัสเข้าห้องและรายการห้องแบบเลื่อนได้ ด้านล่างเป็นการ์ดแม็พ
         if (roomPanel != null)
@@ -392,8 +397,10 @@ public partial class LobbyManager
         {
             BuildHomeScreen();
         }
-        if (inventoryPanel != null) BuildHangarScreen();
+        if (inventoryPanel != null) { BuildHangarScreen(); BuildHangarNavigation(); }
+        ApplyLobbyIcons(); // ไอคอนหน้าข้อความปุ่ม (LobbyManager.Icons.cs) — ทำหลังจัดหน้าเสร็จทุกอย่าง
         FitLobbyUI();
+        if (Application.isPlaying) UiLayout.ApplyAll(); // ตำแหน่งที่บันทึกเองของทุกชิ้น (UiLayout.cs)
     }
 
 #if UNITY_EDITOR
@@ -566,8 +573,10 @@ public partial class LobbyManager
     private void SetHangarPage(bool skillsPage)
     {
         if (hangarBusy) return;
+        CloseEmbeddedWorkshop(false);
         hangarShipsPage.SetActive(!skillsPage);
         hangarSkillsPage.SetActive(skillsPage);
+        StyleHangarTabs(skillsPage);
         UpdateInventoryDisplay(selectedShipIndex);
         UpdateSkillDisplay(selectedSkillIndex);
     }
@@ -644,6 +653,7 @@ public partial class LobbyManager
         UILabel("Footer", root, FeatureFlags.MultiPlayer ? "PILOT HUB  /  1 VS 1  &  FREE-FOR-ALL UP TO 10 PILOTS" : "PILOT HUB  /  1 VS 1 MULTIPLAYER", 0, -339, 1150, 24, 14, Color.gray);
         UpdateShipDisplay(equippedShipIndex);
         UpdateSkillDisplay(equippedSkillIndex);
+        BuildHomeNavigation(root);
     }
 
     // สร้างการ์ดผู้เล่นในห้องรอ (first = ฝั่ง P1 ซ้าย, ไม่ใช่ = P2 ขวา) แล้วเก็บ reference ไว้ให้ RenderPlayer ใช้
@@ -684,7 +694,7 @@ public partial class LobbyManager
                 // 3 แม็พ: การ์ดใหญ่แบบเดิม
                 Button button = UIButton("MapCard" + i, parent, "", (i - 1) * 405, y, 392, 202, () => SelectLobbyMap(index));
                 Image art = UIPanel("MapPreview", button.transform, -130, 8, 112, 168, Color.white);
-                art.sprite = Resources.Load<Sprite>(mapImages[i]); art.preserveAspect = true;
+                art.sprite = Resources.Load<Sprite>(MapImage(i)); art.preserveAspect = true;
                 labels[i] = UILabel("MapName", button.transform, mapShortNames[i], 61, 64, 246, 34, 19, accentColor);
                 UILabel("Description", button.transform, mapDescriptions[i], 61, -1, 238, 90, 17, Color.white);
                 UILabel("SelectionHint", button.transform, "SELECT MAP", 61, -70, 238, 26, 15, Color.gray);
@@ -696,9 +706,11 @@ public partial class LobbyManager
                 float spacing = 1220f / count;
                 Button button = UIButton("MapCard" + i, parent, "", (i - (count - 1) * .5f) * spacing, y, spacing - 10, 202, () => SelectLobbyMap(index));
                 Image art = UIPanel("MapPreview", button.transform, 0, 30, spacing - 30, 120, Color.white);
-                art.sprite = Resources.Load<Sprite>(mapImages[i]); art.preserveAspect = true;
+                art.sprite = Resources.Load<Sprite>(MapImage(i)); art.preserveAspect = true;
                 labels[i] = UILabel("MapName", button.transform, mapShortNames[i], 0, -46, spacing - 16, 28, 16, accentColor);
                 UILabel("SelectionHint", button.transform, "SELECT MAP", 0, -76, spacing - 16, 24, 14, Color.gray);
+                // การ์ด 3 ใบแรกอาจถูกบันทึกใน Scene ด้วยขนาดใหญ่แบบเดิม: บังคับขนาด/ตำแหน่งใหม่ทุกใบ
+                LayoutCompactMapCard(button, (i - (count - 1) * .5f) * spacing, y, spacing - 10);
                 buttons[i] = button;
             }
         }

@@ -1,0 +1,28 @@
+{
+    "items": [
+        {
+            "path": "LobbyScene:Canvas/InventoryPanel/LobbySurface/WorkshopOverlay/WorkshopWindow/WPage/AllItems",
+            "position": {
+                "x": -420.0,
+                "y": -50.999996185302737
+            },
+            "size": {
+                "x": 200.0,
+                "y": 36.0
+            },
+            "anchorMin": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "anchorMax": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "pivot": {
+                "x": 0.5,
+                "y": 0.5
+            },
+            "scale": 1.0
+        }
+    ]
+}

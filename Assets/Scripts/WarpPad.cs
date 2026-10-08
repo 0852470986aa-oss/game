@@ -48,6 +48,7 @@ public class WarpPad : MonoBehaviour
 
     // เมื่อมี Collider เข้ามาหรืออยู่ในแท่น ให้ลองวาร์ป (ทำงานทุกเครื่อง แต่ PlayerController.TryWarp จะทำต่อเฉพาะเครื่องเจ้าของยาน)
     private void OnTriggerEnter2D(Collider2D other) => TryWarp(other);
+    // ยานยังอยู่ในแท่นต่อเนื่อง (เช่นติดคูลดาวน์ตอนเข้า) ให้ลองวาร์ปซ้ำทุกเฟรมจนสำเร็จ
     private void OnTriggerStay2D(Collider2D other) => TryWarp(other);
 
     // หา PlayerController จาก Collider ที่ชน แล้วสั่ง TryWarp จากแท่นนี้ไปแท่นคู่

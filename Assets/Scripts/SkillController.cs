@@ -101,6 +101,7 @@ public sealed class SkillSheetVisual : MonoBehaviour
     private int frame = -1;
     // breakTime = วินาทีที่เริ่มเล่นช่วง "แตก" (ใช้กับโล่) -1 = ไม่ใช้; Break() กระโดดไปช่วงแตกทันที
     public float breakTime = -1;
+    // สั่งให้แอนิเมชันกระโดดไปเล่นช่วง "แตก" ทันที (เลื่อนเวลาเริ่ม started ย้อนกลับ) ใช้ตอนโล่แตก ไม่มีผลถ้า breakTime < 0
     public void Break() { if (breakTime >= 0) started = PhotonNetwork.Time - breakTime; }
     // เปลี่ยนเฟรมที่แสดง เก็บเฟรมเดิมไว้ใน previousRenderer เพื่อทำ crossfade
     public void SetFrame(int index)

@@ -40,6 +40,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     public override void OnPlayerLeftRoom(Photon.Realtime.Player otherPlayer)
     {
         if (intentionalLeave || resultShown) return;
+        if (endPending) return; // หมดเวลาแล้ว กำลังรอตัดสินผล (เงื่อนไขชนะแบบใหม่): คนออกตอนนี้ไม่ยกเลิกแมตช์
         // เฟส 9: หลุดชั่วคราว = รอให้กลับมาก่อน 25 วิ (GameplayManager.Reconnect.cs)
         if (IsAwayInGrace(otherPlayer)) return;
         awayUntil.Remove(otherPlayer.ActorNumber);
@@ -54,6 +55,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     public override void OnMasterClientSwitched(Photon.Realtime.Player newMasterClient)
     {
         if (intentionalLeave || resultShown || !PhotonNetwork.InRoom) return;
+        if (endPending) { TakeOverBots(); return; } // กำลังรอตัดสินผล: รับช่วงบอทอย่างเดียว ไม่ยกเลิกแมตช์
         // Master ใหม่รับช่วงควบคุมยานบอทต่อ (บอทเป็นวัตถุของห้อง)
         TakeOverBots();
         int active = 0;
@@ -381,7 +383,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
 
         // Attach CameraFollow explicitly by searching for Camera
         Camera mainCam = Camera.main;
-        if (mainCam == null) mainCam = FindObjectOfType<Camera>();
+        if (mainCam == null) mainCam = FindFirstObjectByType<Camera>();
         
         if (mainCam != null && mainCam.GetComponent<CameraFollow>() == null)
         {
@@ -404,6 +406,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         CreateMatchUI();
         StyleBattleHUD();
         BuildResultUI();
+        UiLayout.ApplyAll(); // ตำแหน่ง UI ที่บันทึกเอง (UiLayout.cs)
 
         // PHASE 5: เล่นเพลงตอนสู้
         if (AudioManager.Instance != null)
@@ -420,6 +423,12 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         {
             // สร้างสิ่งกีดขวาง (ทำแค่ครั้งเดียวตอนเริ่มเกม)
             if (autoGenerateMap)
+            {
+                GenerateMapObstacles();
+            }
+            // แม็พใหม่ 3 (สถานี) / 4 (ลาวา) ไม่มีของวางไว้ใน Scene: ต้องสร้างกำแพงขอบ + สิ่งกีดขวางด้วยโค้ดเสมอ
+            // (เดิมสร้างเฉพาะตอนเปิด autoGenerateMap ซึ่งใน Scene ปิดไว้ -> แม็พใหม่ไม่มีสิ่งกีดขวางเลย)
+            else if (FeatureFlags.NewMaps && IsRuntimeMap(GetCurrentMapIndex()))
             {
                 GenerateMapObstacles();
             }
@@ -481,11 +490,18 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
             // (ถ้ากลับเข้าแมตช์เดิมหลังหลุด = LoadedBattleToken ตรงกับรอบนี้ จะไม่ล้างคะแนน)
             PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("BattleToken", out object roundToken);
             PhotonNetwork.LocalPlayer.CustomProperties.TryGetValue("LoadedBattleToken", out object loadedToken);
-            if (roundToken == null || !Equals(roundToken, loadedToken))
+            bool freshRound = roundToken == null || !Equals(roundToken, loadedToken);
+            // ยอดรวมในเครื่องของสถิติ/ดาเมจ/ค่าหัว: แมตช์ใหม่เริ่ม 0, กลับเข้าแมตช์เดิมต่อจากค่าเดิม
+            MatchStats.BeginMatch(freshRound);
+            MatchRules.BeginScores(freshRound);
+            if (freshRound)
             {
                 ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
                 props.Add("Kills", 0);
                 props.Add("Deaths", 0);
+                props.Add(MatchRules.DamageKey, 0); // ดาเมจรวม / ค่าหัว (เงื่อนไขชนะ MatchRules.WinRules.cs)
+                props.Add(MatchRules.BountyKey, 0);
+                props.Add(MatchStats.PlayerKey, new int[4]); // สถิติหลังแมตช์ (MatchStats.cs)
                 PhotonNetwork.LocalPlayer.SetCustomProperties(props);
             }
 
@@ -547,7 +563,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
             if (remoteFindTimer <= 0f)
             {
                 remoteFindTimer = 1f;
-                PlayerController[] allPlayers = FindObjectsOfType<PlayerController>();
+                PlayerController[] allPlayers = FindObjectsByType<PlayerController>(FindObjectsSortMode.InstanceID);
                 foreach(var p in allPlayers)
                 {
                     // คู่แข่ง = ยานที่ไม่ใช่ของเรา (รวมยานบอทที่ Master ควบคุม)
@@ -581,6 +597,8 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     private void UpdateMatchTimerAndScore()
     {
         if (isMatchEnding || PhotonNetwork.CurrentRoom == null) return;
+        MatchRules.FlushDamage(); // ส่งดาเมจสะสม (เงื่อนไขชนะ MOST DAMAGE)
+        MatchStats.Flush(); // ส่งสถิติสะสม (MatchStats.cs)
         // 1) ยังไม่เริ่ม: แสดงเวลาเต็ม (เช่น 03:00)
         if (!matchStarted)
         {
@@ -596,6 +614,13 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         int enemyKills = MatchRules.BestRivalKills();
         // โหมดทีม: เทียบ Kill รวมของทีมเรากับทีมตรงข้าม (เป้าหมายเป็นของทีม)
         if (isTeamMode) { myKills = MatchRules.TeamKills(LocalTeam); enemyKills = MatchRules.TeamKills(1 - LocalTeam); }
+        // เงื่อนไขชนะแบบใหม่: แสดงคะแนนตามเงื่อนไข และไม่จบกลางคัน (เล่นจนหมดเวลา)
+        bool ruleScore = WinRuleActive;
+        if (ruleScore)
+        {
+            myKills = isTeamMode ? MatchRules.TeamPoints(LocalTeam) : MyRuleScore();
+            enemyKills = isTeamMode ? MatchRules.TeamPoints(1 - LocalTeam) : BestRivalRuleScore();
+        }
 
         // เฟส 7B: โหมดเกมพิเศษ ใช้คะแนน/เงื่อนไขจบของโหมดแทนการนับ Kill (GameplayManager.Modes.cs)
         if (gameMode != MatchRules.ModeDeathmatch)
@@ -612,7 +637,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
 
             // 3) มีคนได้ Kill ครบ -> จบแมตช์
             // เช็คเงื่อนไขจบเกม: First to 3 Kills
-            if (myKills >= targetKills || enemyKills >= targetKills)
+            if (!ruleScore && (myKills >= targetKills || enemyKills >= targetKills))
             {
                 isMatchEnding = true;
                 EndMatch();
@@ -637,7 +662,9 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
             if (matchTimer <= 0)
             {
                 isMatchEnding = true;
-                EndMatch();
+                // เงื่อนไขชนะแบบใหม่: ส่งคะแนนล่าสุดแล้วรอให้ทุกเครื่องได้รับก่อนตัดสิน (กันสองเครื่องเห็นผลไม่ตรงกัน)
+                if (WinRuleActive) { MatchRules.FlushDamage(true); StartCoroutine(EndMatchAfterSync()); }
+                else EndMatch();
             }
         }
     }
@@ -646,6 +673,9 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     // ส่ง RPC SetMatchEndedRPC ของยานเราไปทุกเครื่อง สรุปผลจาก Kill แล้วเปิดหน้าผลเสมอ หรือ ชนะ/แพ้ (GameplayManager.Results.cs)
     private void EndMatch()
     {
+        // ส่งยอดดาเมจ/สถิติล่าสุดก่อนสรุปผล (ทุกแบบ: 1v1 / FFA / ทีม / ร่วมมือ)
+        MatchRules.FlushDamage(true);
+        MatchStats.Flush(true);
         if (localPlayer != null)
         {
             localPlayer.photonView.RPC("SetMatchEndedRPC", RpcTarget.All);
@@ -657,6 +687,8 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         // 1) อ่าน Kill ล่าสุดของเราและศัตรู
         int myKills = MatchRules.LocalKills();
         int enemyKills = MatchRules.BestRivalKills();
+        // เงื่อนไขชนะแบบใหม่: ตัดสินจากคะแนนของเงื่อนไขนั้น
+        if (WinRuleActive) { myKills = MyRuleScore(); enemyKills = BestRivalRuleScore(); }
 
         // 2) ตัดสินผล: เท่ากัน = เสมอ, เรามากกว่า = ชนะ
         bool isDraw = myKills == enemyKills;
@@ -680,7 +712,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         if (isDraw)
             ShowDrawResultScreen(enemyName);
         else
-            ShowResultScreen(isWinner, myShip, enemyShip, enemyName, myKills);
+            ShowResultScreen(isWinner, myShip, enemyShip, enemyName, WinRuleActive ? MatchRules.LocalKills() : myKills);
     }
 
 
@@ -773,8 +805,20 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
         if (intentionalLeave) return;
         intentionalLeave = true;
         StopInterruptedBattle();
-        if (!PhotonNetwork.InRoom) SceneManager.LoadScene("LobbyScene");
-        else if (!PhotonNetwork.LeaveRoom(false)) intentionalLeave = false;
+        if (!PhotonNetwork.InRoom) { SceneManager.LoadScene("LobbyScene"); return; }
+        // กำลังออกอยู่แล้ว (เช่นปุ่มใน Inspector สั่งออกไปก่อน) ไม่ต้องสั่งซ้ำ
+        if (PhotonNetwork.NetworkClientState != Photon.Realtime.ClientState.Leaving) PhotonNetwork.LeaveRoom(false);
+        StartCoroutine(LeaveFallback());
+    }
+
+    // กันค้างในสนาม: กดออกแล้ว 5 วิยังไม่กลับล็อบบี้ (เน็ตค้าง/Photon ไม่ตอบ/สั่งออกไม่สำเร็จ)
+    // ตัดการเชื่อมต่อแล้วกลับล็อบบี้เอง (ล็อบบี้จะเชื่อมต่อใหม่ให้อัตโนมัติ)
+    private System.Collections.IEnumerator LeaveFallback()
+    {
+        yield return new WaitForSecondsRealtime(5f);
+        if (this == null || SceneManager.GetActiveScene().name == "LobbyScene") yield break;
+        if (PhotonNetwork.IsConnected) PhotonNetwork.Disconnect();
+        else SceneManager.LoadScene("LobbyScene");
     }
 
     // Callback ของ Photon เมื่อเครื่องเราออกจากห้องสำเร็จ: กลับไป LobbyScene

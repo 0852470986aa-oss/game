@@ -7,12 +7,14 @@
 // ปิด FeatureFlags.PlayerOptions = ซ่อนปุ่ม MORE OPTIONS และทุกค่ากลับเป็นค่าเริ่มต้น (เหมือนก่อนเฟส 9)
 using UnityEngine;
 
+// คลาส static รวมค่าตั้งของผู้เล่นในเครื่อง อ่านจาก PlayerPrefs (ถ้าปิด FeatureFlags.PlayerOptions คืนค่าเริ่มต้นทั้งหมด)
 public static class GameSettings
 {
     // แจ้งเมื่อค่าใดๆ เปลี่ยน (GameplayManager ใช้จัดปุ่มบนจอใหม่ทันที)
     public static event System.Action Changed;
 
     private static bool On => FeatureFlags.PlayerOptions;
+    // อ่านค่าเปิด/ปิดจาก PlayerPrefs (เก็บเป็น 1/0) ถ้ายังไม่เคยตั้งใช้ค่า fallback
     private static bool Flag(string key, bool fallback) => PlayerPrefs.GetInt(key, fallback ? 1 : 0) == 1;
 
     // แสดงข้อความใครฆ่าใครมุมจอ
@@ -50,9 +52,12 @@ public static class GameSettings
     public static int ButtonOpacityIndex => On ? Mathf.Clamp(PlayerPrefs.GetInt("Opt_ButtonOpacity", 2), 0, ButtonOpacities.Length - 1) : 2;
     public static float ButtonOpacity => ButtonOpacities[ButtonOpacityIndex];
 
+    // บันทึกค่าเปิด/ปิดลง PlayerPrefs แล้วเรียก Save (ใช้การแสดงผลใหม่และแจ้ง Changed)
     public static void SetFlag(string key, bool value) { PlayerPrefs.SetInt(key, value ? 1 : 0); Save(); }
+    // บันทึกค่าตัวเลข (ดัชนีตัวเลือก) ลง PlayerPrefs แล้วเรียก Save
     public static void SetInt(string key, int value) { PlayerPrefs.SetInt(key, value); Save(); }
 
+    // บันทึก PlayerPrefs ลงดิสก์ ใช้ค่า FPS/กราฟิกใหม่ทันที และแจ้งผู้ที่สมัคร event Changed
     private static void Save()
     {
         PlayerPrefs.Save();

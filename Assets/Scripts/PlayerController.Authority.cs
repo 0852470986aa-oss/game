@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Photon.Pun;
 
+// ส่วนกันโกงของ PlayerController (partial): ส่งคำขอดาเมจให้ Host ตรวจ แล้วรับดาเมจเฉพาะที่ Host ส่งมา
 public partial class PlayerController
 {
     internal const float MaxHitDistance = 120f;
@@ -25,6 +26,8 @@ public partial class PlayerController
     public static void SendDamage(PlayerController target, float damage, int shooterId, bool skill)
     {
         if (target == null || target.photonView == null) return;
+        MatchRules.RecordDamage(shooterId, damage, target); // เงื่อนไขชนะ MOST DAMAGE (MatchRules.WinRules.cs)
+        if (!target.isDead && shooterId != target.CombatantId) MatchStats.Hit(shooterId, Mathf.Min(damage, Mathf.Max(1f, target.currentHp)), skill); // สถิติหลังแมตช์
         if (!HostDamageActive)
         {
             target.photonView.RPC("TakeDamage", RpcTarget.All, damage, shooterId);

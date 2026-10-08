@@ -7,22 +7,28 @@
 // ปิด FeatureFlags.NewMaps = เลือกได้แค่ 3 แม็พเดิม
 using UnityEngine;
 
+// ส่วนแม็พใหม่ของ GameplayManager: สร้างแม็พ 3 (สถานีอวกาศ) และแม็พ 4 (ลาวา) ด้วยโค้ดตอนเริ่มแมตช์
 public partial class GameplayManager
 {
     public const int StationMapIndex = 3;
     public const int LavaMapIndex = 4;
     // จำนวนแม็พที่เลือกได้ในล็อบบี้
     public static int MapCount => FeatureFlags.NewMaps ? 5 : 3;
+    // true = แม็พที่สร้างด้วยโค้ดตอนรันเกม (แม็พ 3 และ 4) ไม่ได้จัดวางไว้ใน Scene
     public static bool IsRuntimeMap(int map) => map == StationMapIndex || map == LavaMapIndex;
     // พื้นหลังของแม็พ (index ตรงกับเลขแม็พ)
     public static readonly string[] MapBackgroundImages =
         { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech", "Images/Map_AsteroidStation", "Images/Map_MoltenNebula" };
 
+    // ชนิดตัวชนของชิ้นส่วนแม็พ: วงกลม / สี่เหลี่ยม / รูปหลายเหลี่ยมตามรูป Sprite
     public enum MapCollider { Circle, Box, Poly }
 
+    // ข้อมูลชิ้นส่วนแม็พ 1 ชิ้น: รูป, ตำแหน่ง, ขนาด, มุมหมุน, ชนิดตัวชน และค่า a/b
+    // (a/b = สัดส่วนรัศมีของ Circle หรือกว้าง/สูงของ Box เทียบกับขนาดรูป)
     public struct MapPiece
     {
         public string sprite; public Vector2 position; public float size, rotation; public MapCollider collider; public float a, b;
+        // Constructor สำหรับเขียนตาราง Layout สั้นๆ: รับ x, y แยกแล้วแปลงเป็น Vector2
         public MapPiece(string sprite, float x, float y, float size, float rotation, MapCollider collider, float a, float b)
         {
             this.sprite = sprite; position = new Vector2(x, y); this.size = size; this.rotation = rotation;

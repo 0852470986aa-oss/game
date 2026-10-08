@@ -8,6 +8,7 @@ using UnityEngine.UI;
 using Photon.Pun;
 using Photon.Realtime;
 
+// ส่วนเล่นคนเดียวของ LobbyManager (partial): ปุ่มเลือกโหมด/ความยากของบอท และเริ่มแมตช์ Offline Mode
 public partial class LobbyManager
 {
     private Button soloDifficultyButton;
@@ -56,6 +57,8 @@ public partial class LobbyManager
         RefreshSoloButtons();
     }
 
+    // อัปเดตปุ่มโซโล่ทั้งหมด: แสดงตาม FeatureFlags.Bots กดได้เมื่อโหลดโปรไฟล์แล้วและไม่ได้รอเข้าห้อง
+    // เปลี่ยนข้อความความยาก/โหมด (CAMPAIGN แสดงด่านถัดไป) แล้วรีเฟรชการ์ดโหมด
     private void RefreshSoloButtons()
     {
         bool visible = FeatureFlags.Bots;
@@ -64,7 +67,7 @@ public partial class LobbyManager
         {
             soloDifficultyButton.gameObject.SetActive(visible);
             soloDifficultyButton.interactable = canStart;
-            SetButtonLabel(soloDifficultyButton, MatchRules.DifficultyNames[SoloDifficulty]);
+            SetButtonLabel(soloDifficultyButton, "DIFFICULTY: " + MatchRules.DifficultyNames[SoloDifficulty]);
         }
         if (soloPlayButton != null) { soloPlayButton.gameObject.SetActive(visible); soloPlayButton.interactable = canStart; }
         if (trainingButton != null) { trainingButton.gameObject.SetActive(visible); trainingButton.interactable = canStart; }
@@ -75,8 +78,10 @@ public partial class LobbyManager
             SetButtonLabel(soloBotsButton, SoloModeGame[SoloMode] == MatchRules.ModeCampaign
                 ? "CAMPAIGN " + Campaign.NextStage + "/" + Campaign.Count : SoloModeLabels[SoloMode]);
         }
+        RefreshModeSelection();
     }
 
+    // กดปุ่มโหมดโซโล่: วนไปโหมดถัดไปที่เปิดใช้ได้ บันทึกลง PlayerPrefs แล้วรีเฟรชปุ่ม
     private void OnSoloBotsClicked()
     {
         // วนไปโหมดถัดไป (ข้ามโหมดทีมถ้าปิด FeatureFlags.Teams)
@@ -90,6 +95,7 @@ public partial class LobbyManager
         RefreshSoloButtons();
     }
 
+    // กดปุ่ม DIFFICULTY: วนความยากบอท ง่าย → กลาง → ยาก → ง่าย แล้วรีเฟรชปุ่ม
     private void OnSoloDifficultyClicked()
     {
         SoloDifficulty = SoloDifficulty % 3 + 1;
@@ -102,6 +108,7 @@ public partial class LobbyManager
         if (!FeatureFlags.Bots || !profileLoaded || pendingSolo || PhotonNetwork.InRoom) return;
         if (!Application.CanStreamedLevelBeLoaded("SampleScene")) { UpdateStatus("Gameplay scene is missing from Build Profiles."); return; }
         pendingSolo = true;
+        soloRequestedAt = Time.unscaledTime;
         pendingTraining = training;
         RefreshSoloButtons();
         EnablePlayButtons(false);
@@ -113,8 +120,30 @@ public partial class LobbyManager
     // เรียกจาก OnDisconnected เมื่อกำลังจะเล่นคนเดียว
     private void EnterOfflineSolo()
     {
-        if (!PhotonNetwork.OfflineMode) PhotonNetwork.OfflineMode = true; // จะเรียก OnConnectedToMaster ต่อ
-        else CreateSoloRoom();
+        if (PhotonNetwork.OfflineMode) { CreateSoloRoom(); return; }
+        // ยังต่อออนไลน์อยู่ (เช่น ระบบต่อเน็ตอัตโนมัติแทรกเข้ามาก่อน): Photon ไม่ยอมเข้าโหมดออฟไลน์ -> ตัดอีกครั้งแล้วรอ OnDisconnected
+        if (FeatureFlags.SoloStartFix && PhotonNetwork.IsConnected) { PhotonNetwork.Disconnect(); return; }
+        PhotonNetwork.OfflineMode = true; // จะเรียก OnConnectedToMaster ต่อ
+    }
+
+    // ===== กันกดเล่นกับบอทครั้งแรกแล้วไม่เข้าเกม (FeatureFlags.SoloStartFix) =====
+    // รอให้ Photon จัดการการตัดเน็ตเสร็จ 1 เฟรม แล้วค่อยเข้าโหมดออฟไลน์
+    private System.Collections.IEnumerator EnterOfflineSoloNextFrame()
+    {
+        yield return null;
+        if (this != null && pendingSolo) EnterOfflineSolo();
+    }
+    // เวลาที่กดเริ่ม (ไว้จับว่าค้างนานเกินไหม)
+    private float soloRequestedAt;
+    // เรียกจาก Update: กดแล้วเกิน 8 วิยังไม่ได้เข้าห้อง SOLO = ยกเลิกสถานะค้าง ให้กดใหม่ได้ (เดิมค้างจนต้องออกเข้าใหม่)
+    private void CheckSoloTimeout()
+    {
+        if (!FeatureFlags.SoloStartFix || !pendingSolo || PhotonNetwork.InRoom || Time.unscaledTime < soloRequestedAt + 8f) return;
+        Debug.LogWarning("[Solo] Start timed out (state " + PhotonNetwork.NetworkClientState + "). Ready to retry.");
+        pendingSolo = false;
+        RefreshSoloButtons();
+        RefreshModeSelection();
+        UpdateStatus("Could not start the battle. Press VS BOT again.");
     }
 
     // เรียกจาก OnConnectedToMaster ในโหมดออฟไลน์: สร้างห้อง SOLO พร้อมกติกาและบอท

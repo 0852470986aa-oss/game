@@ -28,6 +28,7 @@ public class JellyArenaVisuals : MonoBehaviour
     // ตัวแรกใช้ transform ของตัวเองเป็นพ่อ ตัว static ใช้ parent ที่ส่งมา (ใช้ตอนสร้างใน Editor ด้วย)
     private SpriteRenderer Add(Sprite sprite, Vector2 point, float size, string label, int order)
         => Add(transform, sprite, point, size, label, order);
+    // ตัวทำงานจริงของ Add: สร้างลูกใต้ parent ที่ส่งมา (ใช้ได้ทั้งตอนเล่นและใน Editor)
     private static SpriteRenderer Add(Transform parent, Sprite sprite, Vector2 point, float size, string label, int order)
     {
         var item = new GameObject(label);
@@ -43,6 +44,22 @@ public class JellyArenaVisuals : MonoBehaviour
         item.transform.localScale = Vector3.one * (size / Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y));
         return art;
     }
+    // ภาพแมงกะพรุน/ลูกพลังงานที่ตัดแยกไฟล์แล้ว (ไม่มีเศษภาพข้างเคียงติดขอบ) ถ้าไม่มีไฟล์หรือปิด Flag ใช้ภาพจากแผ่นรวมเดิม
+    private static Sprite CleanSprite(string file, Sprite fallback)
+    {
+        if (!FeatureFlags.CleanJellyArt) return fallback;
+        var clean = Resources.Load<Sprite>("Images/Maps/Jelly/" + file);
+        return clean != null ? clean : fallback;
+    }
+    // เปลี่ยนภาพของประดับที่บันทึกไว้ใน Scene เป็นภาพที่ตัดใหม่ โดยคงขนาดที่เห็นบนจอไว้เท่าเดิม
+    private static void SwapToClean(SpriteRenderer art, Sprite clean)
+    {
+        if (art == null || art.sprite == null || clean == null || art.sprite == clean) return;
+        float before = Mathf.Max(art.sprite.bounds.size.x, art.sprite.bounds.size.y);
+        float after = Mathf.Max(clean.bounds.size.x, clean.bounds.size.y);
+        art.sprite = clean;
+        if (after > 0.0001f) art.transform.localScale *= before / after;
+    }
     // ของประดับที่บันทึกลง Scene ได้ (แก้ขนาด/ตำแหน่งแกนกลางและแมงกะพรุนได้)
     // GravityWell ผูกกับแรงดึงจริงในเกม จึงถูกวางกลับตำแหน่งเดิมทุกครั้งที่เริ่มเกม
     private static bool IsEditableOrnament(string name)
@@ -52,15 +69,21 @@ public class JellyArenaVisuals : MonoBehaviour
     void Awake()
     {
         var sheet = SkillSheetVisual.Load("Props_Jellyfish");
-        var jelly = System.Array.Find(sheet, s => s.name == "Props_Jellyfish_1");
-        var orb = System.Array.Find(sheet, s => s.name == "Props_Jellyfish_2");
+        var jelly = CleanSprite("jellyfish", System.Array.Find(sheet, s => s.name == "Props_Jellyfish_1"));
+        var orb = CleanSprite("energy_orb", System.Array.Find(sheet, s => s.name == "Props_Jellyfish_2"));
         if (jelly == null || orb == null) { enabled = false; return; }
         // authored = true ถ้า Scene มีของประดับที่บันทึกไว้แล้ว (มีลูกชื่อ EnergyCoreArtwork)
         bool authored = transform.Find("EnergyCoreArtwork") != null;
         foreach (Transform child in transform)
             if (child.name != "Background" && !(authored && IsEditableOrnament(child.name))) child.gameObject.SetActive(false);
         active = this;
-        if (!authored || !BindAuthoredOrnaments())
+        if (authored && BindAuthoredOrnaments())
+        {
+            // ของประดับที่บันทึกไว้ใน Scene ยังชี้ภาพจากแผ่นรวม: เปลี่ยนเป็นภาพที่ตัดใหม่ (ลำดับ แกนกลาง → หลุม → แมงกะพรุน)
+            for (int i = 0; i < ornaments.Count; i++)
+                SwapToClean(ornaments[i], i <= wells.Length ? orb : jelly);
+        }
+        else
         {
             // A visible core anchors the map visually and matches the EnergyCore zone.
             var core = Add(orb, Vector2.zero, 10, "EnergyCoreArtwork", -1);
@@ -123,8 +146,8 @@ public class JellyArenaVisuals : MonoBehaviour
     {
         if (layout == null || layout.Find("EnergyCoreArtwork") != null) return false;
         var sheet = SkillSheetVisual.Load("Props_Jellyfish");
-        var jelly = System.Array.Find(sheet, s => s.name == "Props_Jellyfish_1");
-        var orb = System.Array.Find(sheet, s => s.name == "Props_Jellyfish_2");
+        var jelly = CleanSprite("jellyfish", System.Array.Find(sheet, s => s.name == "Props_Jellyfish_1"));
+        var orb = CleanSprite("energy_orb", System.Array.Find(sheet, s => s.name == "Props_Jellyfish_2"));
         if (jelly == null || orb == null) { Debug.LogWarning("Props_Jellyfish sprites are missing."); return false; }
         UnityEditor.Undo.RegisterFullObjectHierarchyUndo(layout.gameObject, "Build Editable Map Layouts");
         foreach (Transform child in layout)
@@ -178,6 +201,7 @@ public class JellyArenaVisuals : MonoBehaviour
     }
     // เปิด/ปิดคอมโพเนนต์: อัปเดตตัวแปร active ให้ PullAt รู้ว่าแม็พนี้ทำงานอยู่หรือไม่
     void OnDisable() { if (active == this) active = null; }
+    // เปิดคอมโพเนนต์: ตั้งตัวนี้เป็น active ให้ PullAt ใช้คิดแรงดูด
     void OnEnable() { active = this; }
 }
 

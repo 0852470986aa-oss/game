@@ -12,6 +12,7 @@ using Photon.Realtime;
 using TMPro;
 using UnityEngine.SceneManagement;
 
+// ส่วนต่อเน็ตใหม่ของ GameplayManager: พากลับเข้าห้องเดิมเมื่อเน็ตหลุด และจัดการยานของคนที่หลุด
 public partial class GameplayManager
 {
     private const float ReconnectGraceSeconds = 25f;
@@ -94,17 +95,21 @@ public partial class GameplayManager
         SceneManager.LoadScene("LobbyScene");
     }
 
+    // Photon เรียกเมื่อต่อ Master Server ได้: ถ้ากำลังต่อใหม่อยู่ ให้ RejoinRoom กลับห้องแมตช์เดิม
     public override void OnConnectedToMaster()
     {
         if (battleReconnecting) PhotonNetwork.RejoinRoom(battleRoomName);
     }
 
+    // Photon เรียกเมื่อกลับเข้าห้องไม่สำเร็จ: ตัดเวลารอให้หมดทันที (ไปกลับห้องรอแทน)
     public override void OnJoinRoomFailed(short returnCode, string message)
     {
         // ห้องหมดอายุ/ที่ถูกยกเลิกแล้ว = ไม่ต้องรอต่อ
         if (battleReconnecting) battleReconnectDeadline = Mathf.Min(battleReconnectDeadline, Time.unscaledTime + .1f);
     }
 
+    // Photon เรียกเมื่อกลับเข้าห้องเดิมสำเร็จ: ปิดข้อความรอ ขึ้นป้าย RECONNECTED
+    // และนัดตรวจอีก 3 วิว่ายานเรายังอยู่ไหม (CheckRejoinedShip)
     public override void OnJoinedRoom()
     {
         if (!battleReconnecting) return;
@@ -137,6 +142,8 @@ public partial class GameplayManager
         }
     }
 
+    // แสดง/ซ่อนข้อความ "CONNECTION LOST / RECONNECTING..." กลางจอ
+    // สร้างครั้งแรกเมื่อจะแสดง พร้อมปุ่ม BACK TO LOBBY สำหรับยอมแพ้แล้วออกจากห้อง
     private void ShowReconnectOverlay(bool show)
     {
         if (battleHud == null) return;
@@ -230,6 +237,7 @@ public partial class GameplayManager
         }
     }
 
+    // ปรับความโปร่งของยานผู้เล่น actor นี้: ghost = true จางลง (alpha 0.35) / false กลับเป็นปกติ
     private void SetGhost(int actor, bool ghost)
     {
         foreach (var ship in FindObjectsByType<PlayerController>(FindObjectsSortMode.None))

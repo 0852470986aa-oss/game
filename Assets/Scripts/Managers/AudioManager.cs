@@ -54,7 +54,9 @@ public class AudioManager : MonoBehaviour
 
     // Setter ระดับเสียง เรียกจาก Slider ในหน้าตั้งค่า: บีบค่าให้อยู่ 0..1 แล้วบันทึก
     public void SetMasterVolume(float value) { masterVolume = Mathf.Clamp01(value); Save("MasterVolume", masterVolume); }
+    // ตั้งระดับเสียงเพลงพื้นหลัง (BGM) 0..1 แล้วบันทึกคีย์ "MusicVolume"
     public void SetMusicVolume(float value) { musicVolume = Mathf.Clamp01(value); Save("MusicVolume", musicVolume); }
+    // ตั้งระดับเสียงเอฟเฟกต์ (SFX) 0..1 แล้วบันทึกคีย์ "SFXVolume"
     public void SetSFXVolume(float value) { sfxVolume = Mathf.Clamp01(value); Save("SFXVolume", sfxVolume); }
     // บันทึกค่าลง PlayerPrefs, อัปเดตเสียงทันที แล้วหน่วง 0.5 วิค่อย Save ลงดิสก์ (กันเซฟถี่ตอนลาก Slider)
     private void Save(string key, float value)
@@ -67,7 +69,9 @@ public class AudioManager : MonoBehaviour
     }
     // เขียน PlayerPrefs ลงดิสก์จริงเมื่อมีค่าค้าง; ถูกเรียกตอนครบเวลาหน่วง, ตอนแอปถูกพัก (มือถือ) และตอนปิดเกม
     private void FlushSettings() { if (settingsDirty) { PlayerPrefs.Save(); settingsDirty = false; } }
+    // Unity เรียกเมื่อแอปถูกพัก (สลับแอปบนมือถือ): เซฟค่าระดับเสียงที่ค้างอยู่ทันที
     private void OnApplicationPause(bool paused) { if (paused) FlushSettings(); }
+    // Unity เรียกตอนปิดเกม: เซฟค่าระดับเสียงที่ค้างอยู่ก่อนออก
     private void OnApplicationQuit() => FlushSettings();
 
     // นำระดับเสียงปัจจุบันไปใส่ให้ AudioSource ของ BGM และ SFX ทุกตัว

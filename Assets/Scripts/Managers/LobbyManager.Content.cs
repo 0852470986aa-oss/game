@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Photon.Pun;
 
+// ส่วนล็อบบี้ของเนื้อหาเฟส 7: จัดการ์ดยาน/สกิลเพิ่มเติม และปุ่ม POWER-UPS / โหมดเกมในห้องรอ
 public partial class LobbyManager
 {
     // เรียกจาก BuildHangarScreen หลังสร้างการ์ดทั้งหมด
@@ -26,9 +27,11 @@ public partial class LobbyManager
             for (int n = 0; n < visibleShips.Count; n++)
             {
                 var card = shipButtons[visibleShips[n]];
+                if (card.transform.Find("ExpandedShipLayoutV1") != null) continue;
                 var rect = (RectTransform)card.transform;
                 rect.anchoredPosition = new Vector2(n % 2 == 0 ? -497 : -313, 140 - (n / 2) * 142);
                 rect.sizeDelta = new Vector2(180, 126);
+                UiLayout.Placed(rect);
                 Place(card.transform, "ShipArt", 0, 20, 120, 72);
                 var name = Place(card.transform, "Name", 0, -27, 170, 26);
                 var label = name != null ? name.GetComponent<TMP_Text>() : null;
@@ -36,6 +39,7 @@ public partial class LobbyManager
                 var own = Place(card.transform, "Ownership", 0, -50, 170, 20);
                 var ownLabel = own != null ? own.GetComponent<TMP_Text>() : null;
                 if (ownLabel != null) { ownLabel.enableAutoSizing = true; ownLabel.fontSizeMin = 10; ownLabel.fontSizeMax = 14; }
+                UIRect("ExpandedShipLayoutV1", card.transform, 0, 0, 0, 0);
             }
         }
         // ===== สกิล =====
@@ -53,28 +57,33 @@ public partial class LobbyManager
         if (visibleSkills.Count > 4 && hangarSkillCards != null)
         {
             int m = visibleSkills.Count;
-            float width = Mathf.Min(270f, 1140f / m - 10f);
+            float width = 278f;
             for (int n = 0; n < m; n++)
             {
                 var card = hangarSkillCards[visibleSkills[n]];
+                if (card.transform.Find("ExpandedSkillLayoutV2") != null) continue;
                 var rect = (RectTransform)card.transform;
-                rect.anchoredPosition = new Vector2(-(m - 1) * (width + 10f) / 2f + n * (width + 10f), 116);
-                rect.sizeDelta = new Vector2(width, 160);
-                Place(card.transform, "State", 0, 65, width - 16, 22);
-                Place(card.transform, "Icon", 0, 18, Mathf.Min(88, width - 30), Mathf.Min(88, width - 30));
-                var name = Place(card.transform, "SkillName", 0, -55, width - 16, 35);
+                rect.anchoredPosition = new Vector2(-435 + (n % 4) * 290, 155 - (n / 4) * 115);
+                rect.sizeDelta = new Vector2(width, 105);
+                UiLayout.Placed(rect);
+                Place(card.transform, "State", 36, 30, 180, 24);
+                Place(card.transform, "Icon", -90, 0, 64, 64);
+                var name = Place(card.transform, "SkillName", 36, -12, 180, 42);
                 var label = name != null ? name.GetComponent<TMP_Text>() : null;
                 if (label != null) { label.enableAutoSizing = true; label.fontSizeMin = 12; label.fontSizeMax = 20; }
+                UIRect("ExpandedSkillLayoutV2", card.transform, 0, 0, 0, 0);
             }
         }
     }
 
+    // หาลูกชื่อ child ใต้ parent แล้วตั้งตำแหน่ง/ขนาดใหม่ คืน RectTransform นั้น (ไม่เจอคืน null)
     private static RectTransform Place(Transform parent, string child, float x, float y, float w, float h)
     {
         var rect = parent.Find(child) as RectTransform;
         if (rect == null) return null;
         rect.anchoredPosition = new Vector2(x, y);
         rect.sizeDelta = new Vector2(w, h);
+        UiLayout.Placed(rect); // ตำแหน่งที่บันทึกเอง (UiLayout.cs)
         return rect;
     }
 
@@ -91,6 +100,7 @@ public partial class LobbyManager
     // ===== ห้องรอ: ปุ่ม POWER-UPS =====
     private Button roomPowerUpsButton;
 
+    // สร้างปุ่ม POWER-UPS ในห้องรอ กดแล้วสลับกติกาห้องเปิด/ปิดไอเท็มเกิดในแม็พ (เฉพาะคนที่แก้กติกาได้)
     private void BuildRoomPowerUpsButton(RectTransform root)
     {
         roomPowerUpsButton = UIButton("RoomPowerUps", root, "POWER-UPS ON", 210, -334, 140, 44, () =>
@@ -100,6 +110,7 @@ public partial class LobbyManager
         });
     }
 
+    // อัปเดตปุ่ม POWER-UPS: แสดงเฉพาะตอนอยู่ในห้อง กดได้เฉพาะคนที่แก้กติกาห้องได้ และแสดงสถานะ ON/OFF
     private void RefreshRoomPowerUpsButton()
     {
         if (roomPowerUpsButton == null) return;
@@ -115,6 +126,7 @@ public partial class LobbyManager
     private static readonly int[] OnlineModes = { MatchRules.ModeDeathmatch, MatchRules.ModeKoth, MatchRules.ModeStars, MatchRules.ModeRoyale, MatchRules.ModeSurvival };
     private Button roomGameModeButton;
 
+    // สร้างปุ่มโหมดเกมในห้องรอ กดแล้ววนไปโหมดถัดไปใน OnlineModes (เฉพาะคนที่แก้กติกาได้)
     private void BuildRoomGameModeButton(RectTransform root)
     {
         roomGameModeButton = UIButton("RoomGameMode", root, "DEATHMATCH", 545, -37, 170, 34, () =>
@@ -125,6 +137,7 @@ public partial class LobbyManager
         });
     }
 
+    // อัปเดตปุ่มโหมดเกม: แสดงเฉพาะตอนอยู่ในห้อง กดได้เฉพาะคนที่แก้กติกาได้ และแสดงชื่อโหมดปัจจุบันของห้อง
     private void RefreshRoomGameModeButton()
     {
         if (roomGameModeButton == null) return;

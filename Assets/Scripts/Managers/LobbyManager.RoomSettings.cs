@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using Photon.Pun;
 using TMPro;
 
+// ส่วนปุ่มตั้งค่าห้องของ LobbyManager (partial): สร้างปุ่ม อัปเดตข้อความ และเขียนกติกาลง Room Custom Properties
 public partial class LobbyManager
 {
     private Button roomKillsButton;
@@ -55,6 +56,18 @@ public partial class LobbyManager
         roomHazardButton = UIButton("RoomHazards", root, "HAZARDS ON", -20, 246, 150, 40, OnRoomHazardsClicked);
         // บอทเติมห้อง: ถ้าไม่มีเพื่อนเข้า Host เริ่มเกมกับบอทได้ (OFF → EASY → NORMAL → HARD)
         roomBotButton = UIButton("RoomBots", root, "BOT OFF", 135, 246, 150, 40, OnRoomBotClicked);
+        // เงื่อนไขชนะ (FIRST TO X / MOST KILLS / NET SCORE / MOST DAMAGE / BOUNTY HUNT) ดู MatchRules.WinRules.cs
+        roomWinRuleButton = UIButton("RoomWinRule", root, "FIRST TO X", 290, 246, 150, 40, OnRoomWinRuleClicked);
+    }
+
+    private Button roomWinRuleButton;
+
+    // Host กดปุ่มเงื่อนไขชนะ: วนไปแบบถัดไป แล้วเขียนลงห้อง (ทุกคนต้องกด READY ใหม่เหมือนกติกาอื่น)
+    private void OnRoomWinRuleClicked()
+    {
+        if (!CanEditRoomSettings()) return;
+        int next = (MatchRules.WinRule(PhotonNetwork.CurrentRoom) + 1) % MatchRules.WinRuleNames.Length;
+        SetRoomRule(MatchRules.WinRuleKey, next);
     }
 
     // อัปเดตข้อความและสิทธิ์กดของปุ่ม (เรียกทุกครั้งที่ห้องรอรีเฟรช)
@@ -63,7 +76,13 @@ public partial class LobbyManager
         bool visible = FeatureFlags.RoomSettings && PhotonNetwork.InRoom;
         bool canEdit = visible && CanEditRoomSettings();
         var room = PhotonNetwork.CurrentRoom;
-        SetRoomSettingButton(roomKillsButton, visible, canEdit, "KILLS " + MatchRules.KillTarget(room));
+        // เงื่อนไขชนะแบบใหม่ไม่ใช้เป้า Kill (เล่นจนหมดเวลา) จึงล็อกปุ่ม KILLS ไว้
+        bool usesKillTarget = !MatchRules.UsesRuleScore(room);
+        SetRoomSettingButton(roomKillsButton, visible, canEdit && usesKillTarget, usesKillTarget ? "KILLS " + MatchRules.KillTarget(room) : "KILLS  -");
+        bool winRuleVisible = visible && FeatureFlags.WinRules && !MatchRules.IsRanked(room) && MatchRules.GameMode(room) == MatchRules.ModeDeathmatch;
+        SetRoomSettingButton(roomWinRuleButton, winRuleVisible, canEdit, MatchRules.WinRuleNames[MatchRules.WinRule(room)]);
+        var winRuleLabel = roomRulesMenu != null ? roomRulesMenu.Find("RuleLabel8") : null; // หัวข้อ WIN CONDITION ซ่อนตามปุ่ม
+        if (winRuleLabel != null) winRuleLabel.gameObject.SetActive(winRuleVisible);
         SetRoomSettingButton(roomTimeButton, visible, canEdit, "TIME " + MatchRules.FormatTime(MatchRules.MatchSeconds(room)));
         SetRoomSettingButton(roomHazardButton, visible, canEdit, MatchRules.Hazards(room) ? "HAZARDS ON" : "HAZARDS OFF");
         // ป้ายโหมด: 1 VS 1 / FFA xP (Host เห็นคำว่า >> ให้รู้ว่ากดได้)
@@ -82,6 +101,7 @@ public partial class LobbyManager
             MatchRules.BotFill(room) ? "BOT " + MatchRules.DifficultyNames[MatchRules.BotDifficulty(room)] : "BOT OFF");
     }
 
+    // ตั้งค่าปุ่มตั้งค่าห้อง 1 ปุ่ม: แสดง/ซ่อน, กดได้เฉพาะคนที่แก้ได้ (Host) และเปลี่ยนข้อความบนปุ่ม
     private static void SetRoomSettingButton(Button button, bool visible, bool canEdit, string label)
     {
         if (button == null) return;
@@ -95,18 +115,21 @@ public partial class LobbyManager
         => PhotonNetwork.InRoom && PhotonNetwork.IsMasterClient && !isStartingGame && !isLeavingRoom && !RoomStarting && !reconnecting
             && !MatchRules.IsRanked(PhotonNetwork.CurrentRoom); // ห้องแรงค์: กติกาตายตัว
 
+    // Host กดปุ่ม KILLS: วนจำนวน Kill เป้าหมายไปค่าถัดไปใน KillOptions แล้วเขียนลงห้อง
     private void OnRoomKillsClicked()
     {
         if (!CanEditRoomSettings()) return;
         SetRoomRule(MatchRules.KillTargetKey, MatchRules.Next(MatchRules.KillOptions, MatchRules.KillTarget(PhotonNetwork.CurrentRoom)));
     }
 
+    // Host กดปุ่ม TIME: วนเวลาแมตช์ไปค่าถัดไปใน TimeOptions แล้วเขียนลงห้อง
     private void OnRoomTimeClicked()
     {
         if (!CanEditRoomSettings()) return;
         SetRoomRule(MatchRules.MatchSecondsKey, MatchRules.Next(MatchRules.TimeOptions, MatchRules.MatchSeconds(PhotonNetwork.CurrentRoom)));
     }
 
+    // Host กดปุ่ม HAZARDS: สลับเปิด/ปิดอันตรายในแม็พ แล้วเขียนลงห้อง
     private void OnRoomHazardsClicked()
     {
         if (!CanEditRoomSettings()) return;

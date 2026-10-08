@@ -12,7 +12,6 @@ public class CameraShake : MonoBehaviour
     // ค่าสั่นของเฟรมปัจจุบัน (CameraFollow อ่านไปบวกตำแหน่งกล้อง) เป็น 0 เมื่อไม่สั่น
     public Vector3 currentShakeOffset = Vector3.zero;
     // สถานะกำลังสั่น และ coroutine ที่กำลังทำงาน (ใช้หยุดอันเก่าเมื่อสั่งสั่นใหม่)
-    private bool isShaking = false;
     private Coroutine shakeRoutine;
 
     // Unity เรียกตอนสร้างวัตถุ: ตั้งตัวเองเป็น Instance
@@ -35,7 +34,6 @@ public class CameraShake : MonoBehaviour
     // Coroutine: ทุกเฟรมสุ่ม offset x,y ในช่วง ±magnitude จนครบ duration แล้วรีเซ็ต offset เป็น 0
     private IEnumerator Shake(float duration, float magnitude)
     {
-        isShaking = true;
         float elapsed = 0.0f;
 
         while (elapsed < duration)
@@ -49,7 +47,6 @@ public class CameraShake : MonoBehaviour
         }
 
         currentShakeOffset = Vector3.zero;
-        isShaking = false;
         shakeRoutine = null;
     }
 }

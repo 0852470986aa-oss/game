@@ -142,6 +142,7 @@ public partial class GameplayManager
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = new Vector2(x, y);
         rect.sizeDelta = new Vector2(w, h);
+        if (Application.isPlaying) UiLayout.Placed(rect); // ตำแหน่งที่บันทึกเอง (UiLayout.cs)
         return rect;
     }
 
@@ -225,6 +226,7 @@ public partial class GameplayManager
         rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
         rect.anchoredPosition = new Vector2(x, y);
         rect.localScale = Vector3.one * scale;
+        UiLayout.Placed(rect);
     }
 
     // สร้างการ์ดชื่อ+แถบเลือดของเรา (local) หรือคู่แข่ง ด้านบนจอ (ไม่พบการเรียกใช้ในโค้ดปัจจุบัน)
@@ -321,7 +323,8 @@ public partial class GameplayManager
             var leave = button.onClick;
             hudSettingsButton = button; // ปุ่มย้อนกลับมือถือ/Esc ในสนามรบกดปุ่มนี้แทน (GameplayManager.Settings.cs)
             button.onClick = new Button.ButtonClickedEvent();
-            button.onClick.AddListener(() => BattleSettingsPanel.Show(() => leave.Invoke()));
+            // กด LEAVE: ทำคำสั่งเดิมของปุ่ม แล้วถ้าคำสั่งเดิมไม่ได้พาออก (ไม่ได้ตั้งไว้/ตั้งผิด) ออกด้วย LeaveRoom เอง
+            button.onClick.AddListener(() => BattleSettingsPanel.Show(() => { leave.Invoke(); if (!intentionalLeave && this != null) LeaveRoom(); }));
         }
     }
 
@@ -368,6 +371,7 @@ public partial class GameplayManager
         scoreText.text = "YOU  0  :  0  RIVAL";
         var objective = FindPart<TMP_Text>(battleHud, "Objective");
         if (objective != null) objective.text = "FIRST TO " + targetKills + " KILLS";
+        ApplyModeHudText(); // โหมดอื่นใช้ข้อความของโหมดนั้น (GameplayManager.Modes.cs)
         HookSettingsButton(canvas, false);
 
         // ส่วนที่โผล่เฉพาะบางจังหวะ: เริ่มแบบซ่อนไว้ แล้วโค้ดเดิมจะเปิด/ปิดเอง
@@ -725,6 +729,7 @@ public partial class GameplayManager
         battleHud.localScale = Vector3.one * scale;
         battleHud.anchoredPosition = Vector2.Scale(safe.center - new Vector2(Screen.width, Screen.height) * 0.5f, units);
         ApplyControlLayout(); // เฟส 9: ขนาด/ฝั่งปุ่มตามที่ผู้เล่นตั้ง (GameplayManager.Settings.cs)
+        PlaceTopRightButtons(); // ปุ่มตั้งค่า + อีโมต แถวเดียวมุมขวาบน (GameplayManager.TopButtons.cs)
     }
 
     // สร้างหน้าผลการแข่งด้วยโค้ด (เรียกจาก Start) ถ้ามี ResultSurface ใน Scene จะผูกของเดิมแทน
@@ -847,6 +852,17 @@ public partial class GameplayManager
     // ปรับขนาดหน้าผลให้พอดี Safe Area แบบเดียวกับ FitBattleHUD
     private void FitResultUI()
     {
+        // หน้าผล: ซ่อนปุ่มตั้งค่ามุมจอ (เดิมโผล่ทะลุหน้าผล) และตั้งชื่อปุ่มเล่นต่อของโหมดคนเดียว
+        if (resultShown)
+        {
+            var exit = battleHud != null && battleHud.parent != null ? battleHud.parent.Find("TopCenter/Btn_Exit") : null;
+            if (exit != null) exit.gameObject.SetActive(false);
+            ApplySoloRematchLabel();
+            EnsureStatsButton(); // ปุ่ม MATCH STATS (GameplayManager.Stats.cs)
+            // ไอคอนปุ่มหน้าผล (UiIcon.cs): เล่นต่อ / กลับล็อบบี้
+            UiIcon.Attach(rematchLabel, "play");
+            UiIcon.Attach(resultSurface != null ? FindPart<TMP_Text>(resultSurface, "ReturnToLobby/Label") : null, "home");
+        }
         if (resultSurface == null || Screen.width <= 0 || Screen.height <= 0) return;
         var parent = resultSurface.parent as RectTransform;
         if (parent == null) return;
@@ -915,7 +931,7 @@ public partial class GameplayManager
         // 2) หา Canvas แล้วสร้างข้อความเวลา (สีขาว) และคะแนน (สีเหลือง) ด้านบนจอ
         Canvas canvas = null;
         if (playerInfoText != null) canvas = playerInfoText.canvas;
-        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
 
         if (canvas != null)
         {
@@ -988,7 +1004,7 @@ public partial class GameplayManager
         }
         var originalInfo = playerInfoText;
         Canvas canvas = originalInfo != null ? originalInfo.canvas : null;
-        if (canvas == null) canvas = FindObjectOfType<Canvas>();
+        if (canvas == null) canvas = FindFirstObjectByType<Canvas>();
         if (canvas == null) { Debug.LogError("No Canvas found in this scene.", this); return; }
 
         // 2) เริ่มกลุ่ม Undo เดียว (Undo ครั้งเดียวย้อนได้ทั้งหมด)

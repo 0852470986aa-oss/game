@@ -7,7 +7,7 @@ using UnityEngine;
 // ถ้าใน Scene มีต้นแบบ BattleSettingsTemplate (สร้างด้วยเมนู Editable) จะคัดลอกต้นแบบนั้นมาใช้
 // หน้าตาจึงเป็นตามที่จัดในหน้า Edit; ถ้าไม่มีต้นแบบ จะสร้างด้วยโค้ดแบบเดิม
 // คลาส MonoBehaviour ที่ติดกับ Canvas ของหน้าตั้งค่า เปิดได้ทีละหน้าเดียว (อ้างอิงผ่าน current)
-public class BattleSettingsPanel : MonoBehaviour
+public partial class BattleSettingsPanel : MonoBehaviour
 {
     // ชื่อ GameObject ต้นแบบใน Scene ที่ FindTemplate ใช้ค้นหา
     public const string TemplateName = "BattleSettingsTemplate";
@@ -44,7 +44,7 @@ public class BattleSettingsPanel : MonoBehaviour
             current = copy.AddComponent<BattleSettingsPanel>();
             current.leave = onLeave;
             current.logout = onLogout;
-            if (current.BindAuthored()) return;
+            if (current.BindAuthored()) { current.MakeUnified(); return; }
             Debug.LogWarning("BattleSettingsTemplate is missing SettingsPanel; using the code-built settings panel.", template);
             current = null;
             Destroy(copy);
@@ -55,6 +55,7 @@ public class BattleSettingsPanel : MonoBehaviour
         current.leave = onLeave;
         current.logout = onLogout;
         current.Build();
+        current.MakeUnified();
     }
 
     // สร้าง Canvas แบบ Screen Space Overlay (sortingOrder 200 ให้อยู่บนสุด)
@@ -85,7 +86,9 @@ public class BattleSettingsPanel : MonoBehaviour
     {
         var item = new GameObject(name,typeof(RectTransform));
         var rect = item.GetComponent<RectTransform>(); rect.SetParent(parent,false);
-        rect.sizeDelta = new Vector2(w,h); rect.anchoredPosition = new Vector2(x,y); return rect;
+        rect.sizeDelta = new Vector2(w,h); rect.anchoredPosition = new Vector2(x,y);
+        if (Application.isPlaying) UiLayout.Placed(rect); // ตำแหน่งที่บันทึกเอง (UiLayout.cs)
+        return rect;
     }
     // ตัวช่วยสร้างข้อความ TextMeshPro ขนาดตัวอักษร 23 จัดกึ่งกลาง (ไม่รับการคลิก)
     // ชื่อวัตถุไม่ซ้ำกัน เพื่อให้ต้นแบบใน Scene หาเจอได้ (หน้าตา/การทำงานเหมือนเดิม)
@@ -240,7 +243,8 @@ public class BattleSettingsPanel : MonoBehaviour
     // กด LEAVE = ปิดหน้านี้แล้วเรียก leave (ผู้เรียก Show จัดการออกจากแมตช์), กด CANCEL = ปิดหน้ายืนยัน
     private void Confirm()
     {
-        if(authoredConfirmation != null) { authoredConfirmation.SetActive(true); return; }
+        // SetAsLastSibling: หน้าตั้งค่าแบบหน้าเดียวสร้างกล่องเลื่อน/แท็บทีหลัง ถ้าไม่ยกขึ้นบนสุด กล่องเลื่อนจะบังปุ่ม LEAVE/CANCEL จนกดไม่ได้
+        if(authoredConfirmation != null) { authoredConfirmation.transform.SetAsLastSibling(); authoredConfirmation.SetActive(true); return; }
         if(confirmation != null) return;
         var rect=Rect("ConfirmLeave",panel,0,0,640,560); confirmation=rect.gameObject;
         confirmation.AddComponent<UnityEngine.UI.Image>().color=new Color(.035f,.065f,.12f);
@@ -252,7 +256,7 @@ public class BattleSettingsPanel : MonoBehaviour
     // กดปุ่ม LOG OUT: แสดงหน้ายืนยัน "LOG OUT?" แบบเดียวกับ Confirm แต่เรียก logout เมื่อยืนยัน
     private void ConfirmLogout()
     {
-        if(authoredLogoutConfirmation != null) { authoredLogoutConfirmation.SetActive(true); return; }
+        if(authoredLogoutConfirmation != null) { authoredLogoutConfirmation.transform.SetAsLastSibling(); authoredLogoutConfirmation.SetActive(true); return; }
         if(logoutConfirmation != null) return;
         var rect=Rect("ConfirmLogout",panel,0,0,640,560); logoutConfirmation=rect.gameObject;
         logoutConfirmation.AddComponent<UnityEngine.UI.Image>().color=new Color(.035f,.065f,.12f);
@@ -264,6 +268,7 @@ public class BattleSettingsPanel : MonoBehaviour
     // ===================== เฟส 9: หน้า MORE OPTIONS =====================
     // ปุ่มมุมขวาบนของหน้าตั้งค่า (ซ่อนเมื่อปิด FeatureFlags.PlayerOptions)
     private GameObject optionsPage;
+    // สร้างปุ่ม MORE OPTIONS มุมขวาบนของ panel กดแล้วเรียก ShowOptions (ไม่สร้างถ้าปิด FeatureFlags.PlayerOptions)
     private void AddOptionsButton()
     {
         if(!FeatureFlags.PlayerOptions || panel == null) return;
@@ -276,10 +281,15 @@ public class BattleSettingsPanel : MonoBehaviour
     // แถวตั้งค่า 1 แถว: ชื่อ, ฟังก์ชันอ่านค่าเป็นข้อความ, ฟังก์ชันเมื่อกด (เปลี่ยนเป็นค่าถัดไป)
     private struct OptionRow { public string title; public System.Func<string> value; public System.Action next; }
 
+    // แปลงค่า bool เป็นข้อความ "ON"/"OFF" สำหรับแสดงในแถวตั้งค่า
     private static string OnOff(bool on) => on ? "ON" : "OFF";
+    // สลับค่าเปิด/ปิดของคีย์ใน PlayerPrefs (บันทึกเป็นค่าตรงข้ามกับค่าปัจจุบัน) ผ่าน GameSettings.SetFlag
     private static void Toggle(string key, bool current) => GameSettings.SetFlag(key, !current);
+    // เลื่อนตัวเลือกของคีย์ไปค่าถัดไปแบบวนรอบ (current + 1) % count แล้วบันทึกผ่าน GameSettings.SetInt
     private static void Cycle(string key, int current, int count) => GameSettings.SetInt(key, (current + 1) % count);
 
+    // สร้างรายการแถวตั้งค่าทั้งหมด (ชื่อ, ค่าที่แสดง, การเปลี่ยนค่าเมื่อกด) ใช้ทั้งหน้า MORE OPTIONS และหน้าแบบหน้าเดียว
+    // แถว LANGUAGE เพิ่มเฉพาะเมื่อเปิด FeatureFlags.Language
     private OptionRow[] BuildOptionRows()
     {
         var rows = new System.Collections.Generic.List<OptionRow>

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
+// ส่วนเนื้อหาเฟส 7 ของ GameplayManager: นับ Kill Streak และป้ายข้อความกลางจอ
 public partial class GameplayManager
 {
     private readonly Dictionary<int, int> killStreaks = new Dictionary<int, int>();

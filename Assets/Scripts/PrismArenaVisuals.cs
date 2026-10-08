@@ -8,6 +8,7 @@ using System.Collections.Generic;
 // - พื้นสนามมุมบนแบบสร้างด้วยโค้ด (แทนภาพวิวมุมข้างที่มีท้องฟ้า) + ลายตาข่ายคริสตัล + ขอบมืด
 // - ละอองแสงลอยในอากาศ
 // - แสงเรืองที่รูนบนเสา และแสงรอบกลุ่มคริสตัล (บอกว่าคริสตัลสะท้อนกระสุนได้)
+// - รุ่น 3 (FeatureFlags.PrismMapV3): พื้นหลังเนบิวลามุมบน, แสงเรืองที่เสากลาง/กองคริสตัล, แท่นวาร์ปหมุน, เศษคริสตัลโคจรเป็นวงกลม
 // คอมโพเนนต์หลักของภาพบรรยากาศแม็พปริซึม ติดอยู่ที่ Map1_Layout
 public class PrismArenaVisuals : MonoBehaviour
 {
@@ -23,7 +24,9 @@ public class PrismArenaVisuals : MonoBehaviour
     // ของที่ขยับ (ภาพล้วน ไม่มีตัวชน ไม่ส่งผ่านเน็ต)
     // Bob = ของลอยขึ้นลง, Shard = เศษคริสตัลโคจรรอบเสากลาง, Mist = หมอกลอยผ่านสนาม
     private struct Bob { public Transform item; public Vector3 origin; public float phase; }
+    // เศษคริสตัล 1 ชิ้น: รัศมีวงโคจร ความเร็วโคจร มุมเริ่มต้น ความเร็วหมุนตัว และเฟสการลอยขึ้นลง
     private struct Shard { public SpriteRenderer art; public float radius, speed, angle, spin, bob; }
+    // หมอก 1 ก้อน: ความเร็วเลื่อนไปทางขวา ความทึบสูงสุด และเฟสของการจางเข้าออก
     private struct Mist { public SpriteRenderer art; public float speed, alpha, phase; }
     private readonly List<Bob> bobs = new List<Bob>();
     private readonly List<Shard> shards = new List<Shard>();
@@ -35,6 +38,10 @@ public class PrismArenaVisuals : MonoBehaviour
     private readonly List<Bounds> pillarBounds = new List<Bounds>();
     private Vector2 arenaMin, arenaMax;
     private float nextSparkle;
+    // รุ่น 3: ภาพที่หมุนอยู่กับที่ (ลายวนบนแท่นวาร์ป) และโหมดมุมบน (เศษคริสตัลโคจรเป็นวงกลม ไม่แบนแบบมุมเอียง)
+    private struct Spinner { public Transform item; public float speed; }
+    private readonly List<Spinner> spinners = new List<Spinner>();
+    private bool topDown;
 
     // false = ใช้ภาพพื้นหลังเดิมของแม็พ (Map_ObeliskPlains) / true = ใช้พื้นมุมบนที่สร้างด้วยโค้ด
     public static bool UseGeneratedGround = false;
@@ -42,14 +49,16 @@ public class PrismArenaVisuals : MonoBehaviour
     // .45 = ใช้ 45% ล่างของภาพ / เพิ่มค่า = เห็นภาพมากขึ้น (มีภูเขา/ท้องฟ้า) แต่คมขึ้น
     public static float GroundFraction = .45f;
 
-    // เรียกครั้งเดียวตอนเริ่ม: จัดพื้นหลัง, สร้างละอองแสง, ตกแต่งชิ้นส่วนใน PrismPlayableLayout_v2, สร้างเศษคริสตัลและหมอก
+    // เรียกครั้งเดียวตอนเริ่ม: จัดพื้นหลัง, สร้างละอองแสง, ตกแต่งชิ้นส่วนใน PrismPlayableLayout_v2/_v3, สร้างเศษคริสตัลและหมอก
     private void Start()
     {
         int mapIndex = GameplayManager.GetCurrentMapIndex();
         Vector2 min = GameplayManager.GetArenaMin(mapIndex), max = GameplayManager.GetArenaMax(mapIndex);
         Vector2 arena = max - min;
-        if (UseGeneratedGround) BuildGround(arena);
-        else PlaceBackgroundOnGround(min, max);
+        topDown = FeatureFlags.PrismMapV3;
+        bool nebula = topDown && UseNebulaBackground(min, max);
+        if (!nebula && UseGeneratedGround) BuildGround(arena);
+        else if (!nebula) PlaceBackgroundOnGround(min, max);
         BuildMotes(arena);
         var layout = transform.Find(GameplayManager.PrismLayoutName);
         if (layout != null)
@@ -113,6 +122,14 @@ public class PrismArenaVisuals : MonoBehaviour
             var shard = shards[i];
             if (shard.art == null) continue;
             float angle = shard.angle + time * shard.speed;
+            if (topDown)
+            {
+                // รุ่น 3 มองจากด้านบน: โคจรเป็นวงกลมรอบเสากลาง รัศมีขยับเข้าออกเล็กน้อย อยู่ชั้นบนเสมอ
+                float radius = shard.radius + Mathf.Sin(time * 1.3f + shard.bob) * .4f;
+                shard.art.transform.position = new Vector3(Mathf.Cos(angle) * radius, Mathf.Sin(angle) * radius, 0);
+                shard.art.transform.rotation = Quaternion.Euler(0, 0, time * shard.spin);
+                continue;
+            }
             // วงรีแบน ให้ดูเหมือนวนรอบเสาในมุมเอียง; ครึ่งบนอยู่หลังเสา ครึ่งล่างอยู่หน้าเสา
             Vector3 orbit = new Vector3(Mathf.Cos(angle) * shard.radius, Mathf.Sin(angle) * shard.radius * .45f + 1.5f
                 + Mathf.Sin(time * 1.7f + shard.bob) * .35f, 0);
@@ -130,6 +147,9 @@ public class PrismArenaVisuals : MonoBehaviour
             rock.art.transform.rotation = Quaternion.Euler(0, 0, time * rock.spin);
             rock.art.sortingOrder = Mathf.Sin(a) > 0 ? 1 : 6;
         }
+        // 3.7) รุ่น 3: ลายวนบนแท่นวาร์ปหมุนช้า ๆ
+        foreach (var spinner in spinners)
+            if (spinner.item != null) spinner.item.Rotate(0, 0, spinner.speed * Time.deltaTime);
         // 4) หมอกเลื่อนไปทางขวา เลยขอบแล้ววนกลับมาฝั่งซ้าย
         float width = arenaMax.x - arenaMin.x;
         foreach (var mist in mists)
@@ -149,7 +169,10 @@ public class PrismArenaVisuals : MonoBehaviour
             if (target != null)
             {
                 Bounds bounds = target.bounds;
-                Vector2 point = new Vector2(Random.Range(bounds.min.x, bounds.max.x), Random.Range(bounds.center.y, bounds.max.y));
+                // มุมบน: สุ่มทั้งก้อน (ย่อขอบเข้ามา 30%) / มุมข้าง: ครึ่งบนของภาพ
+                if (topDown) bounds.extents *= .7f;
+                Vector2 point = new Vector2(Random.Range(bounds.min.x, bounds.max.x),
+                    Random.Range(topDown ? bounds.min.y : bounds.center.y, bounds.max.y));
                 PrismFx.Burst(point, new Color(.85f, 1f, 1f), Random.Range(.6f, 1.1f));
             }
         }
@@ -158,11 +181,18 @@ public class PrismArenaVisuals : MonoBehaviour
     // สร้างเศษคริสตัล 12 ชิ้น (สูง 0.7-1.4 หน่วย) โคจรรอบกลางสนามรัศมี 6.5-10 หน่วย
     private void BuildOrbitingShards()
     {
-        var sheet = Resources.LoadAll<Sprite>("Images/Obs_Crystals");
         var pieces = new List<Sprite>();
-        foreach (var sprite in sheet)
-            if (sprite.name == "Obs_Crystals_8" || sprite.name == "Obs_Crystals_10" || sprite.name == "Obs_Crystals_0")
-                pieces.Add(sprite);
+        // รุ่น 3: เศษคริสตัลมุมบนชุดใหม่ (pr_shard_a/b/c)
+        if (topDown)
+            foreach (var key in new[] { "pr_shard_a", "pr_shard_b", "pr_shard_c" })
+            {
+                var sprite = Resources.Load<Sprite>(GameplayManager.PrismArtFolder + key);
+                if (sprite != null) pieces.Add(sprite);
+            }
+        if (pieces.Count == 0)
+            foreach (var sprite in Resources.LoadAll<Sprite>("Images/Obs_Crystals"))
+                if (sprite.name == "Obs_Crystals_8" || sprite.name == "Obs_Crystals_10" || sprite.name == "Obs_Crystals_0")
+                    pieces.Add(sprite);
         if (pieces.Count == 0) return;
         for (int i = 0; i < 12; i++)
         {
@@ -171,7 +201,9 @@ public class PrismArenaVisuals : MonoBehaviour
             float size = Random.Range(.7f, 1.4f);
             art.transform.localScale = Vector3.one * size / Mathf.Max(piece.bounds.size.y, .01f) / Mathf.Max(.001f, transform.lossyScale.x);
             art.color = new Color(.85f, .95f, 1f, .9f);
-            shards.Add(new Shard { art = art, radius = Random.Range(6.5f, 10f), speed = Random.Range(.18f, .35f),
+            // มุมบน: เสากลางกว้าง 12 หน่วย ให้โคจรนอกแท่น (รัศมี 7.5-9.5)
+            float orbitMin = topDown ? 7.5f : 6.5f, orbitMax = topDown ? 9.5f : 10f;
+            shards.Add(new Shard { art = art, radius = Random.Range(orbitMin, orbitMax), speed = Random.Range(.18f, .35f),
                 angle = i * Mathf.PI * 2f / 12f, spin = Random.Range(-40f, 40f), bob = Random.Range(0, 6f) });
         }
     }
@@ -187,6 +219,61 @@ public class PrismArenaVisuals : MonoBehaviour
                 / Mathf.Max(.001f, transform.lossyScale.x);
             mists.Add(new Mist { art = art, speed = Random.Range(.4f, .9f), alpha = Random.Range(.07f, .13f), phase = Random.Range(0, 6f) });
         }
+    }
+
+    // รุ่น 3: เปลี่ยนพื้นหลังเป็นเนบิวลามุมบน (Map_PrismNebula) ขยายให้คลุมสนาม + ขอบ 6 หน่วยทุกด้าน วางกลางสนาม
+    // คืน false ถ้าไม่มีภาพ/ไม่มี Background (จะใช้ภาพเดิมแทน)
+    private bool UseNebulaBackground(Vector2 min, Vector2 max)
+    {
+        var background = transform.Find("Background");
+        var art = background != null ? background.GetComponent<SpriteRenderer>() : null;
+        var sprite = Resources.Load<Sprite>(GameplayManager.PrismV3Background);
+        if (art == null || sprite == null) return false;
+        art.sprite = sprite;
+        art.drawMode = SpriteDrawMode.Simple;
+        art.flipX = art.flipY = false;
+        const float margin = 6f;
+        Vector2 cover = max - min + Vector2.one * margin * 2f;
+        Vector2 spriteSize = sprite.bounds.size;
+        float scale = Mathf.Max(cover.x / Mathf.Max(.01f, spriteSize.x), cover.y / Mathf.Max(.01f, spriteSize.y));
+        Vector3 parentScale = background.parent != null ? background.parent.lossyScale : Vector3.one;
+        background.localRotation = Quaternion.identity;
+        background.localScale = new Vector3(scale / Mathf.Max(.001f, parentScale.x), scale / Mathf.Max(.001f, parentScale.y), 1);
+        Bounds bounds = art.bounds;
+        background.position += new Vector3((min.x + max.x) * .5f - bounds.center.x, (min.y + max.y) * .5f - bounds.center.y, 0);
+        return true;
+    }
+
+    // รุ่น 3: ตกแต่งชิ้นที่มีเฉพาะมุมบน คืน true = จัดการแล้ว (ปริซึม Crystal_ ใช้ทางเดิมด้านล่าง)
+    // CentralCore = แสงที่ยอดโอเบลิสก์ + วงรูนเรือง, Cluster_ = แสงเรืองใต้กอง + ประกาย, WarpPad_ = ลายวนหมุน
+    private bool DecorateTopDown(Transform item, SpriteRenderer art, Bounds bounds)
+    {
+        if (item.name == "CentralCore")
+        {
+            var cyan = new Color(.45f, .95f, 1f);
+            var apex = PrismFx.CreateGlow(item, bounds.center, bounds.size.x * .32f, cyan, art.sortingOrder + 1);
+            pulses.Add(new Pulse { glow = apex, color = cyan, alpha = .55f, speed = 2.2f, phase = 0 });
+            var ring = PrismFx.CreateGlow(item, bounds.center, bounds.size.x * 1.15f, cyan, art.sortingOrder - 1);
+            pulses.Add(new Pulse { glow = ring, color = cyan, alpha = .22f, speed = 1.1f, phase = 1.5f });
+            sparkleTargets.Add(art);
+            return true;
+        }
+        if (item.name.StartsWith("Cluster_"))
+        {
+            sparkleTargets.Add(art);
+            // กองโทนม่วง (cluster_b, แนวสัน) เรืองม่วง ที่เหลือเรืองฟ้า
+            bool violet = art.sprite.name.Contains("cluster_b") || art.sprite.name.Contains("ridge");
+            var tint = violet ? new Color(.75f, .55f, 1f) : new Color(.45f, .9f, 1f);
+            var glow = PrismFx.CreateGlow(item, bounds.center, Mathf.Max(bounds.size.x, bounds.size.y) * 1.25f, tint, art.sortingOrder - 1);
+            pulses.Add(new Pulse { glow = glow, color = tint, alpha = .2f, speed = 1.3f, phase = item.position.x * .2f + item.position.y * .1f });
+            return true;
+        }
+        if (item.name.StartsWith("WarpPad_") && art.sprite.name == "pr_warp")
+        {
+            spinners.Add(new Spinner { item = art.transform, speed = -40f });
+            return true;
+        }
+        return false;
     }
 
     // ใช้ภาพพื้นหลังเดิม: ขยายให้ส่วนล่างของภาพ (GroundFraction) ครอบสนาม + ขอบ 1.5 หน่วย
@@ -289,6 +376,7 @@ public class PrismArenaVisuals : MonoBehaviour
         var art = artTransform != null ? artTransform.GetComponent<SpriteRenderer>() : null;
         if (art == null || art.sprite == null) return;
         Bounds bounds = art.bounds;
+        if (topDown && DecorateTopDown(item, art, bounds)) return;
         if (item.name.StartsWith("HangingCrystalRock_"))
         {
             bobs.Add(new Bob { item = item, origin = item.localPosition, phase = item.position.x * .2f + item.position.y });
@@ -300,7 +388,8 @@ public class PrismArenaVisuals : MonoBehaviour
             // เลย์เอาต์ที่บันทึกใน Scene ก่อนมีระบบสะท้อน: เติมให้
             if (art.GetComponent<PrismReflector>() == null && art.GetComponent<Collider2D>() != null)
                 art.gameObject.AddComponent<PrismReflector>();
-            var glow = PrismFx.CreateGlow(item, bounds.center, Mathf.Max(bounds.size.x, bounds.size.y) * 2f,
+            // มุมบน: ปริซึมเล็กกว่ารุ่นเดิม แสงเรือง 1.5 เท่าพอ (รุ่นเดิม 2 เท่า)
+            var glow = PrismFx.CreateGlow(item, bounds.center, Mathf.Max(bounds.size.x, bounds.size.y) * (topDown ? 1.5f : 2f),
                 PrismReflector.FlashColor, art.sortingOrder - 1);
             pulses.Add(new Pulse { glow = glow, color = PrismReflector.FlashColor, alpha = .45f, speed = 1.6f, phase = item.position.x });
         }

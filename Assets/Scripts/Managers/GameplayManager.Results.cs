@@ -56,7 +56,7 @@ public partial class GameplayManager
             // Campaign: ผ่านด่านแล้วกดเล่นต่อ = ไปด่านถัดไป
             if (MatchRules.GameMode(PhotonNetwork.CurrentRoom) == MatchRules.ModeCampaign)
             {
-                int stage = Campaign.NextStage;
+                int stage = CampaignReplayStage(); // ผ่าน = ด่านถัดไป, แพ้ = ด่านเดิม
                 replay[MatchRules.CampaignStageKey] = stage;
                 replay["MapIndex"] = Campaign.Get(stage).map;
                 replay[MatchRules.BotDifficultyKey] = Campaign.Get(stage).difficulty;

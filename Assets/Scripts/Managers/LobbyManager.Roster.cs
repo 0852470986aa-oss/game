@@ -10,8 +10,10 @@ using Photon.Realtime;
 using TMPro;
 using System.Collections.Generic;
 
+// ส่วนตารางนักบินในห้องรอของ LobbyManager (partial): แสดงผู้เล่นทุกคน จัดทีม และให้ Host เตะผู้เล่นออก
 public partial class LobbyManager
 {
+    // ข้อมูลอ้างอิง UI ของช่องนักบิน 1 ช่อง: พื้นหลัง, ชื่อผู้เล่น, รูปยาน, ชื่อยาน และสถานะ READY
     private sealed class RosterSlot
     {
         public Image panel;
@@ -73,10 +75,12 @@ public partial class LobbyManager
         if (pilotCardOne != null) pilotCardOne.SetActive(!multi);
         if (pilotCardTwo != null) pilotCardTwo.SetActive(!multi);
         System.Array.Clear(rosterSlotPlayers, 0, rosterSlotPlayers.Length);
-        if (!multi) return;
+        if (!multi) { PrepVersus(true); return; }
         bool teams = MatchRules.IsTeamRoom(room) && room.MaxPlayers >= 4;
+        PrepVersus(teams); // ป้าย VS ตรงกลาง (LobbyManager.NewLayout.cs)
         int teamSize = room.MaxPlayers / 2;
         if (teams) EnsureLocalTeam(players, teamSize);
+        LayoutRosterSlots(room.MaxPlayers, teams, teamSize); // จัดช่องให้อยู่กลางและพอดีจำนวนคน (LobbyManager.Polish.cs)
 
         // จัดคนลงช่อง: FFA เรียงตามลำดับ / ทีม: ใส่แถวของทีมตัวเอง (ถ้าเต็มไปช่องว่างแถวอื่น)
         if (!teams)
@@ -133,6 +137,8 @@ public partial class LobbyManager
         SetLocalTeam(count[0] <= count[1] ? 0 : 1);
     }
 
+    // ขอเข้าทีม (0 = BLUE, 1 = RED) โดยเขียนลง Custom Properties ของผู้เล่นตัวเอง
+    // และกันส่งคำขอซ้ำ 1 วินาทีระหว่างรอ Photon ยืนยัน
     private void SetLocalTeam(int team)
     {
         teamRequestUntil = Time.unscaledTime + 1f;
@@ -159,6 +165,7 @@ public partial class LobbyManager
     private float kickArmedUntil;
     private bool wasKicked;
 
+    // คืน true ถ้าผู้เล่นคนนี้ถูกแตะเตรียมเตะไว้แล้ว และยังไม่เกิน 3 วินาที (แตะซ้ำตอนนี้ = เตะจริง)
     private bool KickArmed(Player player)
         => player != null && player.ActorNumber == kickArmedActor && Time.unscaledTime < kickArmedUntil;
 
@@ -210,6 +217,7 @@ public partial class LobbyManager
         UpdateStatus(target.NickName + " was removed from the room.");
     }
 
+    // อ่านรายชื่อคนโดนเตะ ("#ActorNumber" และ Firebase UID) จาก Room Property "Kicked" ไม่มี = คืนอาร์เรย์ว่าง
     private static string[] KickedList()
     {
         var room = PhotonNetwork.CurrentRoom;

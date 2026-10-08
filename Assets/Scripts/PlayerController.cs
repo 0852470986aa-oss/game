@@ -154,9 +154,9 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
         if (IsLocalHuman)
         {
             // หา UIJoystick และ UIButton ในฉาก
-            joystick = FindObjectOfType<UIJoystick>();
+            joystick = FindFirstObjectByType<UIJoystick>();
             
-            UIButton[] buttons = FindObjectsOfType<UIButton>();
+            UIButton[] buttons = FindObjectsByType<UIButton>(FindObjectsSortMode.InstanceID);
             foreach (var btn in buttons)
             {
                 if (btn.buttonName == "Fire") fireButton = btn;
@@ -201,7 +201,8 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
         playerRigidbody.gravityScale = 0f;
         playerRigidbody.constraints |= RigidbodyConstraints2D.FreezeRotation;
         playerRigidbody.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-        playerRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+        // ยานคนอื่นขยับด้วย transform ตามค่าจากเน็ต: ถ้าเปิด Interpolate ด้วย ฟิสิกส์จะดึงภาพกลับไปมา (ยานสั่น) จึงปิดไว้
+        playerRigidbody.interpolation = locallyOwned || !FeatureFlags.SmoothShipRotation ? RigidbodyInterpolation2D.Interpolate : RigidbodyInterpolation2D.None;
     }
 
     // Coroutine กันตัวหลังเกิด: รอจนเริ่มแมตช์ได้ แล้วอมตะ 2 วินาที (เวลาจริง) พร้อมทำยานกระพริบ
@@ -355,6 +356,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     private void FixedUpdate()
     {
         if (!photonView.IsMine || playerRigidbody == null) return;
+        ApplyPendingFacing(); // มุมหัวยานจากการเล็ง (PlayerController.Movement.cs)
         if (matchEnded || isStunned || isDead || !BattleInputAllowed || (!IsBot && BattleSettingsPanel.IsOpen))
         {
             movementInput = Vector2.zero;
