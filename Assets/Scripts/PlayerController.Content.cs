@@ -10,7 +10,7 @@ using Photon.Pun;
 // ส่วนเนื้อหาเพิ่มเฟส 7 ของ PlayerController (partial): อาวุธหลักแบบต่าง ๆ, สกิลใหม่, ผลของ Power-up และรูปยานใหม่
 public partial class PlayerController
 {
-    public int WeaponType => BattleLoadoutCatalog.Ships[ShipIndex].weapon;
+    public int WeaponType => BattleLoadoutCatalog.Ships[ShipIndex].weapon; // ชนิดอาวุธหลักของยานนี้ (BLASTER / SCATTER / RAILGUN / GATLING)
 
     // ===== 1) อาวุธหลัก =====
     // มุมของแต่ละนัดตามชนิดอาวุธ (ทุกเครื่องคำนวณเหมือนกันจากมุมที่ส่งมา)
@@ -89,7 +89,7 @@ public partial class PlayerController
         if (photonView.IsMine) currentHp = Mathf.Min(maxHp, currentHp + maxHp * .35f);
         StartCoroutine(TintFlash(new Color(.4f, 1f, .5f)));
         PlayHealFx(); // รูปชุดใหม่: ประกายเขียว
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Heal"); // ปิด NewSounds = เสียงโดนโล่แบบเดิม
     }
 
     // Coroutine เปลี่ยนสียานเป็นสีที่กำหนด 0.35 วินาที แล้วคืนเป็นสีประจำยาน (ถ้าไม่ได้ติดสตัน)

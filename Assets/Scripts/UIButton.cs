@@ -21,6 +21,7 @@ public class UIButton : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, I
     public bool enableDragAim;
     // ทิศเล็ง (เวกเตอร์ยาว 1) และสถานะว่ามีทิศเล็งแล้วหรือยัง
     public Vector2 AimDirection { get; private set; }
+    // true = ผู้เล่นลากนิ้วเล็งทิศแล้ว
     public bool HasAim { get; private set; }
     // จุด handle ที่ขยับตามนิ้ว และระยะขยับสูงสุดเป็นสัดส่วนของขนาดปุ่ม (0.4 = 40%)
     public RectTransform aimHandle;

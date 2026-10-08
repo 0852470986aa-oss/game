@@ -13,7 +13,7 @@ public static class GameSettings
     // แจ้งเมื่อค่าใดๆ เปลี่ยน (GameplayManager ใช้จัดปุ่มบนจอใหม่ทันที)
     public static event System.Action Changed;
 
-    private static bool On => FeatureFlags.PlayerOptions;
+    private static bool On => FeatureFlags.PlayerOptions; // true = เปิดระบบค่าตั้งผู้เล่น (ปิดแล้วใช้ค่าเริ่มต้นทั้งหมด)
     // อ่านค่าเปิด/ปิดจาก PlayerPrefs (เก็บเป็น 1/0) ถ้ายังไม่เคยตั้งใช้ค่า fallback
     private static bool Flag(string key, bool fallback) => PlayerPrefs.GetInt(key, fallback ? 1 : 0) == 1;
 

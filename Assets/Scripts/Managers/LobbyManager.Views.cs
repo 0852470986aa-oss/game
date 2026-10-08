@@ -38,7 +38,7 @@ public partial class LobbyManager
         "Station ring in an asteroid field.\nEnergy gates guard the lanes.\nHazard: meteor strikes.",
         "Molten rocks burn on contact.\nOpen lava field, fast fights.\nHazard: falling lava asteroids."
     };
-    private readonly string[] mapShortNames = { "JELLYFISH CORE", "PRISM PLAINS", "MECH WARZONE", "ASTEROID STATION", "MOLTEN NEBULA" };
+    private readonly string[] mapShortNames = { "JELLYFISH CORE", "PRISM PLAINS", "MECH WARZONE", "ASTEROID STATION", "MOLTEN NEBULA" }; // ชื่อแม็พแบบสั้นบนปุ่มเลือกแม็พ
     // สีพื้น panel และสีเน้น (ฟ้า) ของ UI ล็อบบี้
     private readonly Color panelColor = new Color(0.035f, 0.065f, 0.12f, 0.97f);
     private readonly Color accentColor = new Color(0.23f, 0.82f, 0.92f);

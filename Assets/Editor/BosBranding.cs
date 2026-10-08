@@ -12,11 +12,11 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class BosBranding
 {
-    private const string AppName = "BOS";
-    private const string Folder = "Assets/Branding/";
-    private const string IconPath = Folder + "BOS_Icon.png";
-    private const string BackgroundPath = Folder + "BOS_IconBackground.png";
-    private const string ForegroundPath = Folder + "BOS_IconForeground.png";
+    private const string AppName = "BOS"; // ชื่อแอปที่จะตั้งใน Player Settings
+    private const string Folder = "Assets/Branding/"; // โฟลเดอร์เก็บรูปไอคอนแอป
+    private const string IconPath = Folder + "BOS_Icon.png"; // ไฟล์ไอคอนแอปแบบเต็ม
+    private const string BackgroundPath = Folder + "BOS_IconBackground.png"; // ไฟล์พื้นหลังไอคอน Adaptive ของ Android
+    private const string ForegroundPath = Folder + "BOS_IconForeground.png"; // ไฟล์ภาพหน้าไอคอน Adaptive ของ Android
 
     // Unity เรียกตอนเปิดโปรเจกต์/หลังคอมไพล์: รอให้ Editor พร้อมก่อนแล้วค่อยตรวจ
     static BosBranding()

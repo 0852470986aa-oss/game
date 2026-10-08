@@ -12,12 +12,12 @@ using TMPro;
 // ส่วนจัดหน้าตั้งค่าแบบหน้าเดียวของ BattleSettingsPanel (partial): รวมแถบเลื่อนและแถว MORE OPTIONS ไว้ใน ScrollRect เดียว
 public partial class BattleSettingsPanel
 {
-    private ScrollRect unifiedScroll;
-    private readonly List<KeyValuePair<string, float>> unifiedSections = new List<KeyValuePair<string, float>>();
-    private float unifiedHeight;
+    private ScrollRect unifiedScroll; // ScrollRect ของหน้าตั้งค่าแบบหน้าเดียว ใช้เลื่อนขึ้นลงและกระโดดไปหมวด
+    private readonly List<KeyValuePair<string, float>> unifiedSections = new List<KeyValuePair<string, float>>(); // ชื่อหัวหมวดคู่กับตำแหน่ง y ในหน้า ใช้ให้แท็บด้านบนเลื่อนไปหมวดนั้น
+    private float unifiedHeight; // ความสูงรวมของเนื้อหาทั้งหน้า ใช้คำนวณระยะเลื่อน
 
-    private static readonly Color UnifiedRowColor = new Color(.08f, .2f, .3f);
-    private static readonly Color UnifiedHeadColor = new Color(.37f, .89f, .89f);
+    private static readonly Color UnifiedRowColor = new Color(.08f, .2f, .3f); // สีพื้นหลังของแถวตั้งค่าแต่ละแถว
+    private static readonly Color UnifiedHeadColor = new Color(.37f, .89f, .89f); // สีตัวอักษรหัวหมวด (ฟ้าอมเขียว)
 
     // หมวด: ชื่อหัวข้อ, ชื่อแถบเลื่อนเดิม, ชื่อแถวตั้งค่าเดิม
     private static readonly string[][] UnifiedLayout =
@@ -27,7 +27,7 @@ public partial class BattleSettingsPanel
         new[] { "DISPLAY", "GRAPHICS", "FPS LIMIT", "SHOW FPS", "CAMERA SHAKE", "DAMAGE NUMBERS" },
         new[] { "GENERAL", "LANGUAGE", "KILL FEED", "EMOTES" },
     };
-    private static readonly HashSet<string> SliderTitles = new HashSet<string> { "MASTER", "MUSIC", "EFFECTS", "AIM SPEED" };
+    private static readonly HashSet<string> SliderTitles = new HashSet<string> { "MASTER", "MUSIC", "EFFECTS", "AIM SPEED" }; // ชื่อรายการที่เป็นแถบเลื่อนเดิม (ย้ายแถบเลื่อน ไม่ใช่แถวตั้งค่า)
 
     // เรียกจาก Show หลังสร้าง/ผูกหน้าตั้งค่าเสร็จ: จัดเป็นหน้าเดียว (ถ้าเปิด FeatureFlags) ถ้าจัดไม่สำเร็จจะ log เตือนแล้วใช้หน้าแบบเดิม
     private void MakeUnified()

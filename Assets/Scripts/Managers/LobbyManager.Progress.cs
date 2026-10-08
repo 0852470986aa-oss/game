@@ -11,18 +11,18 @@ using TMPro;
 // ส่วนหน้าจอความก้าวหน้าของ LobbyManager: ป้ายเลเวล/แถบ XP, หน้า MISSIONS และหน้า PROFILE
 public partial class LobbyManager
 {
-    private Button missionsButton, profileButton;
-    private TMP_Text levelBadgeText, missionsBadge;
-    private Image xpFill;
-    private Image progressOverlay;
-    private RectTransform progressWindow;
-    private RectTransform progressPage;
-    private bool progressSubscribed;
-    private bool loginPopupShown;
-    private int pageSerial;
+    private Button missionsButton, profileButton; // ปุ่มเปิดหน้า MISSIONS และหน้า PROFILE
+    private TMP_Text levelBadgeText, missionsBadge; // ข้อความเลเวลบนป้าย และตัวเลขภารกิจที่รับรางวัลได้
+    private Image xpFill; // แถบ XP บนหน้าหลัก (ยืดตามสัดส่วน XP)
+    private Image progressOverlay; // พื้นหลังมืดเต็มจอของหน้าต่างความก้าวหน้า
+    private RectTransform progressWindow; // กรอบหน้าต่าง MISSIONS/PROFILE
+    private RectTransform progressPage; // เนื้อหาหน้าปัจจุบัน (สร้างใหม่ทุกครั้งที่เปิดหน้า)
+    private bool progressSubscribed; // true = สมัครรับ Progression.Changed แล้ว
+    private bool loginPopupShown; // true = แสดงป๊อปอัปรางวัลล็อกอินไปแล้ว
+    private int pageSerial; // เลขต่อท้ายชื่อหน้าที่สร้างใหม่ กันชื่อซ้ำ
     // หน้าที่เปิดอยู่ในหน้าต่างความก้าวหน้า (None = ปิดอยู่)
     private enum ProgressPage { None, Missions, Profile }
-    private ProgressPage openPage;
+    private ProgressPage openPage; // หน้าที่เปิดอยู่ตอนนี้
 
     // สร้างส่วนเลเวลบนหน้าหลัก (เรียกจาก BuildHomeScreen)
     private void BuildProgressUI(RectTransform root)

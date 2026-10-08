@@ -11,11 +11,11 @@ using Photon.Realtime;
 // ส่วนเล่นคนเดียวของ LobbyManager (partial): ปุ่มเลือกโหมด/ความยากของบอท และเริ่มแมตช์ Offline Mode
 public partial class LobbyManager
 {
-    private Button soloDifficultyButton;
-    private Button soloPlayButton;
-    private Button trainingButton;
-    private Button soloBotsButton;
-    private const string SoloModePrefs = "SoloModeIndex";
+    private Button soloDifficultyButton; // ปุ่มเลือกความยากของบอท (EASY / NORMAL / HARD)
+    private Button soloPlayButton; // ปุ่มเริ่มเล่นกับบอทแบบ Offline
+    private Button trainingButton; // ปุ่มเข้าโหมดฝึกซ้อมกับบอทเป้าซ้อม
+    private Button soloBotsButton; // ปุ่มวนเลือกโหมดเล่นคนเดียว (จำนวนบอท/โหมดเกม)
+    private const string SoloModePrefs = "SoloModeIndex"; // คีย์ PlayerPrefs เก็บโหมดเล่นคนเดียวที่เลือกไว้
     // โหมดเล่นคนเดียว: จำนวนบอท / เป็นโหมดทีมไหม / ชื่อบนปุ่ม (1 BOT = 1 VS 1, หลายตัว = FFA, TEAM = เราอยู่ทีม BLUE กับบอท)
     // เฟส 7B: เพิ่มโหมดเกม SURVIVAL / KOTH / STARS / ROYALE / CAMPAIGN (SoloModeGame = MatchRules.Mode*)
     private static readonly int[] SoloModeBots = { 1, 3, 5, 9, 3, 5, 9, 0, 3, 3, 9, 0 };
@@ -23,6 +23,7 @@ public partial class LobbyManager
     private static readonly int[] SoloModeGame = { 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 5 };
     private static readonly string[] SoloModeLabels = { "1 BOT", "3 BOTS", "5 BOTS", "9 BOTS", "TEAM 2v2", "TEAM 3v3", "TEAM 5v5",
         "SURVIVAL", "HILL 4P", "STARS 4P", "ROYALE 10", "CAMPAIGN" };
+    // โหมดเล่นคนเดียวที่เลือกไว้ (จำใน PlayerPrefs) ถ้าโหมดถูกปิดด้วย FeatureFlags จะกลับเป็น 0
     private int SoloMode
     {
         get
@@ -35,10 +36,10 @@ public partial class LobbyManager
         }
         set { PlayerPrefs.SetInt(SoloModePrefs, value); PlayerPrefs.Save(); }
     }
-    private int SoloBots => SoloModeBots[SoloMode];
-    private bool pendingSolo;
-    private bool pendingTraining;
-    private const string SoloDifficultyPrefs = "SoloBotDifficulty";
+    private int SoloBots => SoloModeBots[SoloMode]; // จำนวนบอทของโหมดเล่นคนเดียวที่เลือก
+    private bool pendingSolo; // รอเข้า Offline Mode เพื่อสร้างห้องเล่นคนเดียว
+    private bool pendingTraining; // รอเข้า Offline Mode เพื่อเริ่มโหมดฝึกซ้อม
+    private const string SoloDifficultyPrefs = "SoloBotDifficulty"; // คีย์ PlayerPrefs เก็บความยากบอทที่เลือกไว้
     // ความยากที่เลือกไว้ (1 ง่าย, 2 กลาง, 3 ยาก) จำไว้ในเครื่อง
     private int SoloDifficulty
     {

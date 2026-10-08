@@ -183,7 +183,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
 {
     // ชนิดสกิล ตั้งไว้ใน Prefab แต่ละตัว
     public enum SkillBehavior { StunWave, NovaBlast, SeekerMissile }
-    public SkillBehavior behavior;
+    public SkillBehavior behavior; // ชนิดสกิลของ Prefab นี้ กำหนดวิธีเคลื่อนที่และเอฟเฟกต์
     // damage = ดาเมจต่อครั้ง (ถูกแทนด้วยค่าที่ส่งมาตอนสร้าง), speed = ความเร็ว (หน่วย/วินาที), lifeTime = อายุ (วินาที)
     public float damage = 10f;
     public float speed = 10f;
@@ -314,7 +314,7 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
     private void DetonateNova()
     {
         novaArmed = true;
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Explosion");
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Nova"); // ปิด NewSounds = เสียงระเบิดแบบเดิม
         if (visual == null)
         {
             var prefab = GameplayManager.GetPrefab("DeathExplosion");
@@ -392,7 +392,9 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
             System.Array.Copy(frames, start, impacts, 0, impacts.Length);
             SkillSheetVisual.Create(impacts, null, position, 3f, .35f);
         }
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Hit");
+        // มิสไซล์ = ระเบิดเล็ก (ปิด NewSounds = เสียงโดนยิงแบบเดิม) / คลื่นสตัน = เสียงโดนยิง
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.PlaySFX(behavior == SkillBehavior.SeekerMissile ? "SFX_MissileHit" : "SFX_Hit");
     }
 
     // ทำลายสกิล (เฉพาะเจ้าของ ครั้งเดียว): ซ่อนภาพ ปิด Collider หยุดความเร็ว แล้วค่อยลบผ่านเครือข่าย

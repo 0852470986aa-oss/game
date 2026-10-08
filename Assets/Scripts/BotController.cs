@@ -11,9 +11,9 @@ public class BotController : MonoBehaviour
     // สถานะของบอท: ไล่เป้า / สู้ในระยะ / ถอยหนีเมื่อเลือดน้อย / หลบออกจากพื้นที่อันตราย
     private enum State { Chase, Fight, Retreat, Evade }
 
-    private PlayerController ship;
-    private PlayerController target;
-    private State state = State.Chase;
+    private PlayerController ship; // ยานบอทที่สคริปต์นี้ควบคุม (PlayerController บน GameObject เดียวกัน)
+    private PlayerController target; // ยานศัตรูที่บอทเลือกเป็นเป้าอยู่ตอนนี้
+    private State state = State.Chase; // สถานะปัจจุบันของ State Machine (เริ่มที่ไล่เป้า)
 
     // ค่าตามความยาก (ตั้งใน Start)
     private float thinkInterval;    // คิดใหม่ทุกกี่วินาที (ยิ่งน้อยยิ่งตอบสนองไว)
@@ -22,14 +22,14 @@ public class BotController : MonoBehaviour
     private float skillChance;      // โอกาสใช้สกิลเมื่อสถานการณ์เหมาะ
     private float preferredRange;   // ระยะที่ชอบยืนยิง
 
-    private float nextThink;
-    private float strafeSign = 1f;
-    private float nextStrafeSwap;
-    private float aimOffset;
-    private Vector2 lastTargetPos;
-    private Vector2 targetVelocity;
-    private float lastDamagedAt = -10f;
-    private float wanderAngle;
+    private float nextThink; // เวลาที่บอทจะคิดตัดสินใจรอบถัดไป
+    private float strafeSign = 1f; // ทิศส่ายหลบซ้าย/ขวา (1 หรือ -1) ใช้ตอนสู้และเลี่ยงกำแพง
+    private float nextStrafeSwap; // เวลาที่จะสุ่มสลับทิศส่ายหลบครั้งถัดไป
+    private float aimOffset; // มุมเล็งพลาด (องศา) ที่สุ่มใหม่ทุกรอบคิด ตาม aimError
+    private Vector2 lastTargetPos; // ตำแหน่งเป้าเฟรมก่อน ใช้คำนวณความเร็วเป้า
+    private Vector2 targetVelocity; // ความเร็วเป้าโดยประมาณ (เฉลี่ยแบบนุ่ม) ใช้เล็งดักทาง
+    private float lastDamagedAt = -10f; // เวลาที่บอทโดนยิงล่าสุด ใช้ตัดสินใจกดสกิลโล่
+    private float wanderAngle; // มุมเดินสุ่ม (องศา) ตอนไม่มีเป้าหรือเดินลอยไปมา
 
     // เริ่มต้น: ดึง PlayerController ของยาน แล้วตั้งค่าความไวในการคิด ความแม่นการเล็ง และการใช้สกิลตามระดับความยาก
     private void Start()

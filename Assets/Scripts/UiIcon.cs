@@ -11,10 +11,10 @@ using TMPro;
 // คอมโพเนนต์ไอคอนที่เกาะหน้าข้อความ (วางตำแหน่งตามตัวหนังสือทุกเฟรม)
 public class UiIcon : MonoBehaviour
 {
-    private static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
-    private TMP_Text label;
-    private Image image;
-    private float size, gap;
+    private static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>(); // แคชรูปไอคอนตามชื่อ ไม่โหลดซ้ำ
+    private TMP_Text label; // ข้อความที่ไอคอนเกาะอยู่
+    private Image image; // Image ที่แสดงรูปไอคอน
+    private float size, gap; // ขนาดไอคอน และระยะห่างจากตัวหนังสือ
 
     // โหลดรูปไอคอน (จำไว้ ไม่โหลดซ้ำ) ไม่มีรูปคืน null
     public static Sprite Load(string name)

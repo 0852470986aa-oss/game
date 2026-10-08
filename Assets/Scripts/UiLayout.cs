@@ -19,9 +19,9 @@ public static class UiLayout
     [System.Serializable]
     private class Entry
     {
-        public string path;
-        public Vector2 position, size, anchorMin, anchorMax, pivot;
-        public float scale = 1f;
+        public string path; // ที่อยู่ของ UI ในรูป "ชื่อฉาก:ชื่อวัตถุ/ลูก" ใช้หาวัตถุตอนโหลด
+        public Vector2 position, size, anchorMin, anchorMax, pivot; // ค่า RectTransform ที่บันทึก: ตำแหน่ง ขนาด anchor และ pivot
+        public float scale = 1f; // สเกลของ UI ชิ้นนั้น (1 = ขนาดเดิม)
     }
     // รูปแบบไฟล์ JSON (JsonUtility อ่าน List ตรง ๆ ไม่ได้ จึงห่อไว้)
     [System.Serializable]

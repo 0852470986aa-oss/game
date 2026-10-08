@@ -8,9 +8,9 @@ using TMPro;
 // ส่วนบอทของ GameplayManager: Master สร้างยานบอทตามค่าห้อง และระบบบทสอนเล่น
 public partial class GameplayManager
 {
-    private bool botsSpawned;
-    private bool botsPresent;
-    private static readonly string[] BotNames = { "NOVA-7", "ORION", "VEGA", "LYRA", "ATLAS", "RIGEL", "SIRIUS", "ZETA", "KAIRO", "ALTAIR", "DENEB", "POLARIS" };
+    private bool botsSpawned; // Master สร้างบอทของแมตช์นี้ไปแล้วหรือยัง (กันสร้างซ้ำ)
+    private bool botsPresent; // จำนวนบอทในฉากครบตามค่าห้องแล้ว (ใช้รอก่อนเริ่มแมตช์)
+    private static readonly string[] BotNames = { "NOVA-7", "ORION", "VEGA", "LYRA", "ATLAS", "RIGEL", "SIRIUS", "ZETA", "KAIRO", "ALTAIR", "DENEB", "POLARIS" }; // ชื่อที่สุ่มใช้ตั้งให้ยานบอทแต่ละลำ
 
     // นับยานบอทที่มีอยู่ในฉาก
     private static int CountBots()

@@ -299,9 +299,9 @@ public partial class GameplayManager
 
     // ===== Kill Feed =====
     private sealed class FeedLine { public string text; public Color color; public float until; }
-    private readonly List<FeedLine> killFeed = new List<FeedLine>();
-    private TMP_Text[] killFeedLabels;
-    private const int KillFeedLines = 5;
+    private readonly List<FeedLine> killFeed = new List<FeedLine>(); // รายการข้อความใครฆ่าใครที่แสดงอยู่ พร้อมเวลาหายไป
+    private TMP_Text[] killFeedLabels; // ป้ายข้อความ Kill Feed มุมจอ (หนึ่งป้ายต่อหนึ่งบรรทัด)
+    private const int KillFeedLines = 5; // จำนวนบรรทัด Kill Feed สูงสุดที่แสดงพร้อมกัน
 
     // เรียกจาก PlayerController.OnPlayerDiedRPC (ทุกเครื่อง) เมื่อยานลำหนึ่งตาย
     public void OnCombatantDied(int killerId, PlayerController victim)
@@ -418,7 +418,7 @@ public partial class GameplayManager
     // ตัดข้อความให้ยาวไม่เกิน max ตัวอักษร (เกินจะตัดแล้วต่อท้ายด้วย ".")
     private static string Shorten(string text, int max) => text.Length <= max ? text : text.Substring(0, max - 1) + ".";
 
-    private bool miniBoardPlaced;
+    private bool miniBoardPlaced; // true = จัดตำแหน่งตารางย่อไม่ให้ทับปุ่มตั้งค่าแล้ว
 
     // ตารางย่อห้ามทับปุ่มตั้งค่า (Btn_Exit ที่วางไว้ใน Scene): ถ้าทับกัน เลื่อนตารางลงไปใต้ปุ่ม
     private void AvoidSettingsButton()

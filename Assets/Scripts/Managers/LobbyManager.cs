@@ -34,77 +34,77 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     // ช่อง UI ด้านล่างหลายช่องถูกสร้าง/ผูกใหม่ตอนรันใน BuildLobbyUI (LobbyManager.Views.cs)
     [Header("=== Main Lobby UI ===")]
     public TMP_Text statusText;
-    public TMP_Text playerNameText;
-    public TMP_Text coinText;
-    public TMP_Text winsText;
-    public TMP_Text playersOnlineText;
-    public TMP_Text shipNameText;
-    public TMP_Text shipHPText;
-    public TMP_Text shipATKText;
-    public TMP_Text shipSPDText;
-    public TMP_Text shipSkillText;
-    public Image shipImage;
-    public Button playButton;
-    public Button createRoomButton;
-    public Button inventoryButton;
-    public Button settingsButton;
-    public Button logoutButton;
+    public TMP_Text playerNameText; // ชื่อผู้เล่นบนหน้าหลัก
+    public TMP_Text coinText; // จำนวนเหรียญของผู้เล่น
+    public TMP_Text winsText; // จำนวนครั้งที่ชนะ
+    public TMP_Text playersOnlineText; // จำนวนผู้เล่นที่ออนไลน์อยู่ใน Photon
+    public TMP_Text shipNameText; // ชื่อยานที่ใส่อยู่
+    public TMP_Text shipHPText; // ค่า HP ของยานที่ใส่อยู่
+    public TMP_Text shipATKText; // ค่าพลังโจมตี (ATK) ของยานที่ใส่อยู่
+    public TMP_Text shipSPDText; // ค่าความเร็ว (SPD) ของยานที่ใส่อยู่
+    public TMP_Text shipSkillText; // ชื่อสกิลที่ติดตั้งอยู่
+    public Image shipImage; // รูปยานที่ใส่อยู่บนหน้าหลัก
+    public Button playButton; // ปุ่มหาแมตช์ด่วน (Quick Match)
+    public Button createRoomButton; // ปุ่มเปิดหน้าสร้าง/ค้นหาห้อง
+    public Button inventoryButton; // ปุ่มเปิดคลังยานและสกิล
+    public Button settingsButton; // ปุ่มเปิดหน้าตั้งค่า
+    public Button logoutButton; // ปุ่มออกจากระบบกลับหน้า Login
 
     [Header("=== Panels ===")]
-    public GameObject mainPanel;
-    public GameObject inventoryPanel;
-    public GameObject roomPanel;
-    public GameObject settingsPanel;
-    public GameObject waitingRoomPanel;
-    public GameObject tutorialPanel;
+    public GameObject mainPanel; // หน้าหลักของล็อบบี้
+    public GameObject inventoryPanel; // หน้าคลังยาน/สกิล
+    public GameObject roomPanel; // หน้าสร้างและค้นหาห้อง
+    public GameObject settingsPanel; // หน้าตั้งค่าเสียง
+    public GameObject waitingRoomPanel; // หน้าห้องรอก่อนเริ่มแมตช์
+    public GameObject tutorialPanel; // หน้าสอนวิธีเล่น
 
     [Header("=== Inventory UI ===")]
-    public Button[] shipButtons;
-    public TMP_Text inventoryShipName;
-    public TMP_Text inventoryShipHP;
-    public TMP_Text inventoryShipATK;
-    public TMP_Text inventoryShipSPD;
-    public TMP_Text inventoryShipSkill;
-    public Image inventoryShipImage;
-    public Button inventoryActionButton;
-    public TMP_Text inventoryActionText;
-    public Button backFromInventoryButton;
+    public Button[] shipButtons; // ปุ่มเลือกยานแต่ละลำในคลัง (เรียงตาม index ยาน)
+    public TMP_Text inventoryShipName; // ชื่อยานที่กำลังดูในคลัง
+    public TMP_Text inventoryShipHP; // ค่า HP ของยานที่กำลังดู
+    public TMP_Text inventoryShipATK; // ค่า ATK ของยานที่กำลังดู
+    public TMP_Text inventoryShipSPD; // ค่า SPD ของยานที่กำลังดู
+    public TMP_Text inventoryShipSkill; // สกิลประจำ/คำอธิบายของยานที่กำลังดู
+    public Image inventoryShipImage; // รูปยานที่กำลังดูในคลัง
+    public Button inventoryActionButton; // ปุ่มซื้อหรือใส่ยานที่กำลังดู
+    public TMP_Text inventoryActionText; // ข้อความบนปุ่ม (เช่น BUY / EQUIP / EQUIPPED)
+    public Button backFromInventoryButton; // ปุ่มกลับจากคลังไปหน้าหลัก
 
     [Header("=== Room UI ===")]
-    public TMP_Text roomNumberText;
-    public TMP_Text roomModeText;
-    public UnityEngine.UI.InputField roomSearchInput;
-    public Button searchRoomButton;
-    public Button createRoomConfirmButton;
-    public Button backFromRoomButton;
-    public Transform roomListContent;
-    public GameObject roomItemPrefab;
+    public TMP_Text roomNumberText; // ข้อความเลขห้องที่จะสร้าง
+    public TMP_Text roomModeText; // ข้อความโหมดของห้องที่จะสร้าง
+    public UnityEngine.UI.InputField roomSearchInput; // ช่องพิมพ์เลขห้องที่ต้องการค้นหา
+    public Button searchRoomButton; // ปุ่มค้นหา/เข้าห้องตามเลขที่พิมพ์
+    public Button createRoomConfirmButton; // ปุ่มยืนยันสร้างห้องใหม่
+    public Button backFromRoomButton; // ปุ่มกลับจากหน้าห้องไปหน้าหลัก
+    public Transform roomListContent; // พื้นที่วางรายการห้องที่เปิดอยู่
+    public GameObject roomItemPrefab; // Prefab แถวรายการห้อง 1 ห้อง
 
     [Header("=== Settings UI ===")]
-    public Button closeSettingsButton;
-    public UnityEngine.UI.Slider volumeSlider;
-    public UnityEngine.UI.Slider musicSlider;
-    public UnityEngine.UI.Slider sfxSlider;
+    public Button closeSettingsButton; // ปุ่มปิดหน้าตั้งค่า
+    public UnityEngine.UI.Slider volumeSlider; // สไลเดอร์ระดับเสียงรวม
+    public UnityEngine.UI.Slider musicSlider; // สไลเดอร์ระดับเสียงเพลง
+    public UnityEngine.UI.Slider sfxSlider; // สไลเดอร์ระดับเสียงเอฟเฟกต์
 
     [Header("=== Waiting Room UI ===")]
-    public TMP_Text waitRoomNumberText;
-    public TMP_Text waitP1NameText;
-    public TMP_Text waitP1ShipNameText;
-    public TMP_Text waitP1StatsText;
-    public TMP_Text waitP1SkillText;
-    public Image waitP1ShipImage;
-    public TMP_Text waitP1ReadyText;
-    public TMP_Text waitP2NameText;
-    public TMP_Text waitP2ShipNameText;
-    public TMP_Text waitP2StatsText;
-    public TMP_Text waitP2SkillText;
-    public Image waitP2ShipImage;
-    public TMP_Text waitP2ReadyText;
-    public Button waitReadyButton;
-    public Button waitCancelButton;
-    public Button waitStartButton;
-    public TMP_Text waitMapNameText;
-    public Image waitMapImage;
+    public TMP_Text waitRoomNumberText; // ข้อความเลขห้องในห้องรอ
+    public TMP_Text waitP1NameText; // ชื่อผู้เล่นคนที่ 1 (Host)
+    public TMP_Text waitP1ShipNameText; // ชื่อยานของผู้เล่นคนที่ 1
+    public TMP_Text waitP1StatsText; // ค่าสถานะยานของผู้เล่นคนที่ 1
+    public TMP_Text waitP1SkillText; // สกิลที่ผู้เล่นคนที่ 1 ติดตั้ง
+    public Image waitP1ShipImage; // รูปยานของผู้เล่นคนที่ 1
+    public TMP_Text waitP1ReadyText; // สถานะพร้อม (READY) ของผู้เล่นคนที่ 1
+    public TMP_Text waitP2NameText; // ชื่อผู้เล่นคนที่ 2
+    public TMP_Text waitP2ShipNameText; // ชื่อยานของผู้เล่นคนที่ 2
+    public TMP_Text waitP2StatsText; // ค่าสถานะยานของผู้เล่นคนที่ 2
+    public TMP_Text waitP2SkillText; // สกิลที่ผู้เล่นคนที่ 2 ติดตั้ง
+    public Image waitP2ShipImage; // รูปยานของผู้เล่นคนที่ 2
+    public TMP_Text waitP2ReadyText; // สถานะพร้อม (READY) ของผู้เล่นคนที่ 2
+    public Button waitReadyButton; // ปุ่มกด READY / ยกเลิกพร้อม
+    public Button waitCancelButton; // ปุ่มออกจากห้องรอ
+    public Button waitStartButton; // ปุ่มเริ่มแมตช์ (Host เท่านั้น)
+    public TMP_Text waitMapNameText; // ชื่อแม็พที่เลือกในห้องรอ
+    public Image waitMapImage; // รูปตัวอย่างแม็พที่เลือกในห้องรอ
 
     // ข้อมูลแผนที่ (Map)
     public TMP_Text createRoomMapNameText;
@@ -134,9 +134,9 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     private SkillData[] skills = BattleLoadoutCatalog.Skills;
 
     [Header("=== Skill UI ===")]
-    public TMP_Text skillDescText;
-    public Button installSkillButton;
-    public TMP_Text installSkillText;
+    public TMP_Text skillDescText; // คำอธิบายสกิลที่กำลังดูในคลัง
+    public Button installSkillButton; // ปุ่มติดตั้งสกิลที่กำลังดู
+    public TMP_Text installSkillText; // ข้อความบนปุ่มติดตั้งสกิล (เช่น INSTALL / INSTALLED)
 
     // Unity เรียกก่อน Start: เปิด AutomaticallySyncScene ให้เมื่อ Master สั่ง LoadLevel ทุกเครื่องในห้องโหลด Scene ตาม
     // แล้วสร้าง UI ล็อบบี้ทั้งหมดด้วยโค้ด

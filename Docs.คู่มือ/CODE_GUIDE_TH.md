@@ -28,7 +28,9 @@ C:\Users\08524\Documents\BattlefieldOfTheStarsprojactGame\My project\Assets\Scri
 | `Assets/Scripts/` | โค้ดเกมที่ทีมเขียนเอง |
 | `Assets/Scripts/Managers/` | ตัวจัดการล็อกอิน ล็อบบี้ เกม เสียง Firebase และอันตรายบนแม็พ |
 | `Assets/Resources/` | Prefab/ภาพ/เสียงที่โค้ดโหลดด้วย `Resources.Load` หรือ Photon สร้างผ่านชื่อ Prefab |
-| `Assets/Resources/Images/` | ภาพ UI ยาน ฉาก และเอฟเฟกต์ |
+| `Assets/Resources/Images/` | ภาพ UI ยาน ฉาก และเอฟเฟกต์ (`Maps/Prism/` ชิ้นส่วนแม็พปริซึมรุ่น 3, `Modes/` รูปการ์ดเลือกโหมด) |
+| `Assets/Resources/Audio/BOS/` | ไฟล์เสียงชุดใหม่ `SFX_*.wav` 21 ไฟล์ + เพลง `BGM_*.ogg` 6 เพลง (วางไฟล์ชื่อเดียวกันใน `Assets/Resources/Audio/` = ทับเสียงนั้นเอง) |
+| `Assets/Branding/` | ไอคอนแอป BOS (ใช้โดย `Assets/Editor/BosBranding.cs`) |
 | `Assets/Editor/` | เครื่องมือสำหรับ Unity Editor เท่านั้น ไม่ใช่ระบบที่รันในเกม |
 | `Docs.คู่มือ/` | คู่มือโค้ด แผนแบ่งอ่านเตรียมสอบ แผนงาน และบันทึกการตรวจสอบ/ทดสอบ |
 | `ProjectSettings/` | การตั้งค่าของโปรเจกต์ Unity และแพลตฟอร์ม |
@@ -69,17 +71,17 @@ Scene หลัก:
 | ต้องการแก้ | ไฟล์จากโฟลเดอร์หลัก | จุดเริ่มอ่าน/หน้าที่ |
 |---|---|---|
 | เลือก Layout, ขอบสนาม, จุดเกิดปลอดภัย | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | `GetCurrentMapIndex`, `GetArenaMin/Max`, `TryFindSafeSpawn` |
-| ตำแหน่งเสาปริซึม/หินและสิ่งกำบัง | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | `DecoratePrism`, `PrepareMechCover` |
-| คริสตัลสะท้อนกระสุน (แม็พปริซึม) | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `Assets/Scripts/PrismReflector.cs` | กลุ่ม `Crystal_*` ได้ Component `PrismReflector` (`MaxBounces = 2`) |
+| ตำแหน่งเสาปริซึม/หินและสิ่งกำบัง | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `Assets/Scripts/Managers/GameplayManager.PrismV3.cs` | `DecoratePrism` (เปิด `PrismMapV3` จะไปใช้ตาราง `PrismV3Layout` ใน `GameplayManager.PrismV3.cs`), `PrepareMechCover` |
+| คริสตัลสะท้อนกระสุน (แม็พปริซึม) | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `GameplayManager.PrismV3.cs`, `Assets/Scripts/PrismReflector.cs` | กลุ่ม `Crystal_*` ได้ Component `PrismReflector` (`MaxBounces = 2`); รุ่น 3 คือปริซึม `pr_prism` 8 ชิ้น |
 | แท่นวาร์ป 4 แท่น (2 คู่) | `Assets/Scripts/Managers/GameplayManager.Maps.cs`, `Assets/Scripts/WarpPad.cs` | `AddWarpPads`, `CreateWarpPad`; คู่ A ฟ้า (-40,-30)↔(40,30), คู่ B ชมพู (40,-30)↔(-40,30) |
-| ภาพบรรยากาศแม็พปริซึม (ภาพล้วน ไม่มีตัวชน) | `Assets/Scripts/PrismArenaVisuals.cs` | พื้นหลังเดิมวางแถวพื้น (`GroundFraction`), ละอองแสง หมอก เศษคริสตัลหมุน แสงเรือง; มีคลาส `PrismFx` สำหรับเอฟเฟกต์แสงวาบ |
+| ภาพบรรยากาศแม็พปริซึม (ภาพล้วน ไม่มีตัวชน) | `Assets/Scripts/PrismArenaVisuals.cs`, `Assets/Scripts/MapAmbience.cs` | รุ่น 3: พื้นหลังเนบิวลา (`UseNebulaBackground`), แสงเรืองบนชิ้นส่วน (`DecorateTopDown`), ลำแสงหมุน (`MapAmbience.BuildPrism`) / รุ่น 2: พื้นหลังวางแถวพื้น (`GroundFraction`); มีคลาส `PrismFx` สำหรับเอฟเฟกต์แสงวาบ |
 | แสงวาบสั้น ๆ (ตอนเด้ง/วาร์ป) | `Assets/Scripts/PrismBurst.cs` | `Begin` ขยายแล้วจางหาย |
 | แมงกะพรุน แกนกลาง ภาพฉาก และเอฟเฟกต์ดูด | `Assets/Scripts/Managers/MapHazardManager.cs` | `JellyArenaVisuals`, `MapHazardManager`, `Start`, ฟังก์ชันสร้าง/สุ่ม Hazard |
 | หินลาวา อุกกาบาต สายฟ้า บึง และการชน | `Assets/Scripts/Managers/HazardController.cs` | `MoltenContactSurface`, `HazardController`, `HazardRoutine`, `OnTriggerEnter2D` |
 | ค่าเสียหายและช่วงเวลาของอันตราย | `Assets/Scripts/BattleBalance.cs` | ปรับค่ากลางร่วม; พฤติกรรม/ภาพให้แก้ในไฟล์ Hazard ที่เกี่ยวข้องด้วย |
 | Prefab อันตรายที่ถูกสร้างขณะเล่น | `Assets/Resources/Hazard_*.prefab` | ตรวจ Component/Collider/ภาพของ Prefab; อย่าลบ `.meta` |
 
-**ลำดับแม็พในโค้ด:** `0 = แมงกะพรุน`, `1 = ปริซึม`, `2 = หุ่นยนต์` อย่าสลับ index เพราะถูกส่งผ่านข้อมูลห้อง/เกมและอาจไม่ตรงกับลำดับในรายงาน
+**ลำดับแม็พในโค้ด:** `0 = แมงกะพรุน`, `1 = ปริซึม`, `2 = หุ่นยนต์`, `3 = สถานีอวกาศ`, `4 = เนบิวลาลาวา` (แม็พ 3/4 อยู่ `GameplayManager.NewMaps.cs`) อย่าสลับ index เพราะถูกส่งผ่านข้อมูลห้อง/เกมและอาจไม่ตรงกับลำดับในรายงาน
 
 ### ล็อกอิน ล็อบบี้ ห้อง และข้อมูลผู้เล่น
 
@@ -116,7 +118,10 @@ Scene หลัก:
 | ต้องการแก้ | ไฟล์/โฟลเดอร์จากโฟลเดอร์หลัก | หมายเหตุ |
 |---|---|---|
 | ไอคอนเหรียญ/ภาพบึงที่ครอปขณะรัน | `Assets/Scripts/PolishSprites.cs` | `Coin`, `Swamp`, `AddCoinIcon`; แหล่งภาพอยู่ `Assets/Resources/Images/` |
-| เสียง เพลง และระดับเสียง | `Assets/Scripts/Managers/AudioManager.cs` | `PlayBGM`, `PlaySFX`, `SetMasterVolume`, `SetMusicVolume`, `SetSFXVolume` |
+| เสียง เพลง และระดับเสียง | `Assets/Scripts/Managers/AudioManager.cs` | `PlayBGM`, `PlaySFX`, `SetMasterVolume`, `SetMusicVolume`, `SetSFXVolume`; หาไฟล์ตามลำดับ `Resources/Audio/<ชื่อ>` → `Resources/Audio/BOS/<ชื่อ>` → เสียงสังเคราะห์ในโค้ด |
+| ค่านำเข้าเสียง / ชื่อแอปและไอคอน | `Assets/Editor/BosAudioImport.cs`, `Assets/Editor/BosBranding.cs` | เมนู **Tools > BOS** |
+| ของขยับบนพื้นหลังแม็พ (ภาพล้วน) | `Assets/Scripts/MapAmbience.cs` | `BuildPrism`, `BuildStation`, `BuildLava` |
+| บันทึกตำแหน่ง UI ที่ลากเองตอนกด Play | `Assets/Scripts/UiLayout.cs` | เมนูคลิกขวา **UI Layout > Save Position** |
 | กล้องตามยาน/สั่น | `Assets/Scripts/CameraFollow.cs`, `Assets/Scripts/CameraShake.cs` | แยกจากระบบต่อสู้หลัก |
 | เครื่องมือจัด Layout แม็พ | `Assets/Editor/MapLayoutSetup.cs` | ใช้ใน Unity Editor เพื่อสร้าง/จัดฉาก ไม่ใช่โค้ดที่รันทุกแมตช์โดยตรง |
 | เครื่องมือจัด Scene/Prefab | `Assets/Editor/SceneSetupTool.cs`, `Assets/Editor/PrefabSetupTool.cs` | อย่ากด Setup/Generate โดยไม่ทราบว่าจะเขียนทับหรือสร้างอะไร |
@@ -185,14 +190,74 @@ Scene หลัก:
 
 สวิตช์ใน `FeatureFlags.cs`: `UnifiedSettings`, `NewLobbyLayout`, `CrateAnimation`, `WinRules`, `UiIcons`, `PostMatchStats`, `Celebrations` (ปิด = กลับแบบเดิม) รายละเอียดและเช็คลิสต์ทดสอบอยู่ `PHASE_LOG_TH.md` หัวข้อ "ปรับ UI และภาษาไทย"
 
+## สิ่งที่เพิ่มเมื่อ 8–9 ต.ค. 2026
+
+รายละเอียด เหตุผล และเช็คลิสต์ทดสอบของแต่ละข้ออยู่ใน `PHASE_LOG_TH.md` (หัวข้อวันที่ 8–9 ต.ค.) ตารางนี้บอกแค่ว่าต้องเปิดไฟล์ไหน
+
+**เล่นออนไลน์ / ห้อง / แรงค์**
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ | สวิตช์ |
+|---|---|---|---|
+| ล็อก region ของ Photon (จอยด้วยเลขห้องข้ามเครื่องได้) | `Assets/Scripts/PhotonRegion.cs` | `Apply` ตั้ง region เป็น asia ก่อนต่อเน็ต | `FixedRegion` |
+| ขั้นแรงค์ / คะแนนต่อแมตช์ | `Assets/Scripts/Ranked.cs` | `HardTierMin` (MMR ขั้นต่ำแต่ละแรงค์), `KFactor` (คะแนนต่อแมตช์) | `HardRanked` |
+| ห้องแรงค์ชวนเพื่อน/จอยด้วยรหัสไม่ได้ | `LobbyManager.Ranked.cs`, `LobbyManager.Rooms.cs`, `LobbyManager.Social.cs`, `Social.cs` | ซ่อนปุ่มชวน/คัดลอกรหัสในห้องแรงค์ และทิ้งคำชวนเข้าห้องแรงค์ | `RankedNoInvite` |
+| ตารางอันดับ Top 20 | `Assets/Scripts/Managers/FirebaseManager.cs`, `Ranked.cs` | อ่าน `leaderboard/` และ `users/` แล้วรวมกัน | `Leaderboard` |
+| เล่นกับบอทกดครั้งแรกแล้วเข้าเกมทันที | `Assets/Scripts/Managers/LobbyManager.Solo.cs` | `StartSolo`, `EnterOfflineSoloNextFrame` (รอ 1 เฟรมหลังตัดเน็ต), `CheckSoloTimeout` (ค้างเกิน 8 วิ กดใหม่ได้) | `SoloStartFix` |
+
+**สังคม / แชท**
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ | สวิตช์ |
+|---|---|---|---|
+| แชทเก็บ 50 ข้อความ + แชทรวมหายใน 2 นาที | `Assets/Scripts/Social.cs` | ส่วนที่ลบข้อความเก่าเมื่อส่ง | `ChatLimits` |
+| แชทส่วนตัวกับเพื่อน (ปุ่ม CHAT) | `Social.cs`, `LobbyManager.Social.cs` | ข้อมูลอยู่ `chat/dm_{uid}_{uid}` และ `dm_notify/` | `FriendChat` |
+| แท็กกิลด์สร้างจากชื่ออัตโนมัติ | `Social.cs`, `LobbyManager.Social.cs` | ตัวแรกของแต่ละคำในชื่อกิลด์ | `AutoGuildTag` |
+
+**ยาน / ไอเท็ม / ร้านค้า**
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ | สวิตช์ |
+|---|---|---|---|
+| สกิลปลดล็อกตามเลเวล | `Assets/Scripts/SkillUnlock.cs` | `RequiredLevels` (STUN/SHIELD/NOVA ฟรี, SEEKER 3, BLINK 5, HEAL 7, CLOAK 9), `RequiredLevel`, `Unlocked` | `SkillLevelLock` |
+| ค่าพลังในล็อบบี้ = ค่าที่ใช้รบจริง (แยกสีเขียว/ม่วง) และเห็นค่าของคู่แข่ง | `Assets/Scripts/Managers/LobbyManager.UpgradeStats.cs` | ส่งโบนัสผ่าน Photon property `StatBonus` | `ItemStatColor`, `ShowRivalStats` |
+| ขายไอเท็ม | `Assets/Scripts/Economy.cs`, `LobbyManager.Workshop.cs` | `Economy.SellPrice` (40% ของมูลค่า + 25% ค่าตีบวก) | `SellItems` |
+| ร้านค้ารายวัน 4 ช่อง รีเซ็ตเที่ยงคืน | `Economy.cs`, `LobbyManager.Workshop.cs` | `DailyRarityOdds`, `DailyPrice`, `DailyShopSlots` | `DailyShop` |
+| การ์ดยานในแท็บไอเท็ม + ปุ่ม "ไอเท็มทั้งหมด" | `LobbyManager.Workshop.cs` | หน้าต่างรายการไอเท็มเรียงจากหายากสุด | `ItemsShipCard`, `ItemCatalog` |
+| ยานสั่นตอนเล็ง/ยิง | `Assets/Scripts/PlayerController.Movement.cs` | `SetFacing` เก็บมุม แล้ว `ApplyPendingFacing` ตั้ง `Rigidbody2D.rotation` ใน FixedUpdate | `SmoothShipRotation` |
+| ภาพสกิลล่องหน (ออร่าระหว่างล่องหน / แสงวาบตอนเริ่มและหลุด) | `Assets/Scripts/PlayerController.Fx.cs`, `PlayerController.Content.cs` | รูป `Resources/Images/VFX/VFX_CloakLoop.png`, `VFX_CloakReveal.png` (8 เฟรมเรียงแนวนอน) | `CloakFx` |
+
+**แม็พ / ภาพ / เสียง**
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ | สวิตช์ |
+|---|---|---|---|
+| แม็พปริซึมรุ่น 3: ตำแหน่ง/ขนาด/ตัวชนของเสา คริสตัล ปริซึม | `Assets/Scripts/Managers/GameplayManager.PrismV3.cs` | ตาราง `PrismV3Layout` (21 ชิ้น สมมาตร 180°), `DecoratePrismV3`, `AddPrismPiece`; รูปอยู่ `Resources/Images/Maps/Prism/pr_*.png` | `PrismMapV3` |
+| พื้นหลังเนบิวลา + แสงเรืองบนเสา/คริสตัล/แท่นวาร์ป (แม็พปริซึม) | `Assets/Scripts/PrismArenaVisuals.cs` | `UseNebulaBackground`, `DecorateTopDown`; รูป `Resources/Images/Map_PrismNebula.png` | `PrismMapV3` |
+| ของขยับบนพื้นหลัง (ลำแสงหมุนปริซึม / เศษหิน-ไฟกะพริบสถานี / ประกายไฟลาวา) | `Assets/Scripts/MapAmbience.cs` | `BuildPrism`, `BuildStation`, `BuildLava` (ปรับจำนวน/ความเร็ว/สีที่นี่) | `MapAmbience` |
+| ดาวพื้นหลังกระจายทั่วทุกแม็พ | `Assets/Scripts/Managers/GameplayManager.Maps.cs` | ส่วนที่ตั้งดาวตามขนาดสนาม | `FullStarfield` |
+| แม็พแมงกะพรุนใช้ภาพที่ตัดใหม่ | `Assets/Scripts/Managers/MapHazardManager.cs` | คลาส `JellyArenaVisuals`; รูป `Resources/Images/Maps/Jelly/` | `CleanJellyArt` |
+| รูปการ์ดแม็พในล็อบบี้ | `Assets/Scripts/Managers/LobbyManager.cs` | `MapImage(map)` (แม็พปริซึมใช้ `Map_PrismNebula_Preview`) | `PrismMapV3` |
+| รูปการ์ดหน้าเลือกโหมด | `Assets/Scripts/Managers/LobbyManager.NewLayout.cs` | `CardArt` โหลด `Resources/Images/Modes/mode_<ชื่อ>.png` (ไม่มีไฟล์ = ใช้รูปแผนที่แทน) | — |
+| เสียงชุดใหม่ (เสียงเอฟเฟกต์ 21 + เพลง 6) | `Assets/Scripts/Managers/AudioManager.cs` | `PackFolder` (`Resources/Audio/BOS/`), `LegacyNames` (ชื่อใหม่ → เสียงเดิมเมื่อปิดสวิตช์), `VariedPitch` (เสียงที่สุ่มระดับเสียง ±5%) | `NewSounds` |
+| ตัวรับเสียง (AudioListener) | `Assets/Scripts/Managers/AudioManager.cs` | `Awake` สร้าง AudioListener บน AudioManager เมื่อในฉากไม่มีตัวรับเสียง (ทั้ง 3 ฉากไม่มีไว้) | `AudioListenerGuard` |
+| ค่านำเข้าไฟล์เสียง | `Assets/Editor/BosAudioImport.cs` | เพลง = Streaming, เสียงเอฟเฟกต์ = ADPCM / เมนู **Tools > BOS > Reimport New Sounds** | — |
+| ชื่อแอป BOS + ไอคอนแอป | `Assets/Editor/BosBranding.cs` | รูปที่ `Assets/Branding/BOS_*.png` / เมนู **Tools > BOS > Apply App Name and Icon** | `AppBranding` |
+
+**UI / เครื่องมือทดสอบ**
+
+| ต้องการแก้ | ไฟล์ | จุดเริ่มอ่าน/หน้าที่ | สวิตช์ |
+|---|---|---|---|
+| ปุ่มตั้งค่า + อีโมตในสนาม (แถวเดียวมุมขวาบน) | `Assets/Scripts/Managers/GameplayManager.TopButtons.cs` | `TopButtonY`, `TopButtonW`, `TopButtonRight` | `TidyBattleButtons` |
+| ลาก UI ตอนกด Play แล้วบันทึกตำแหน่ง | `Assets/Scripts/UiLayout.cs` | คลิกขวาใน Hierarchy → **UI Layout > Save Position** เก็บลง `Assets/Resources/UILayoutOverrides.json` (วิธีใช้ใน `EDITABLE_UI_TH.md`) | `SavedUiLayout` |
+| เมนูทดสอบตั้งเลเวล (เฉพาะ Unity Editor) | `Assets/Scripts/Managers/LobbyManager.TestTools.cs`, `Progression.cs` | Inspector ของ LobbyManager → ⋮ → **Test/**, เรียก `Progression.SetLevelForTesting` | `TestTools` |
+
+**คอมเมนต์ในโค้ด (9 ต.ค.)**: ทุกเมธอด ทุกตัวแปร/ฟิลด์ และพร็อพเพอร์ตีในคลาส มีคอมเมนต์ภาษาไทยอธิบายหน้าที่แล้ว (ตัวแปรเขียนท้ายบรรทัด `// ...`, เมธอด/พร็อพเพอร์ตีเขียนบรรทัดบน) รวมสคริปต์ใน `Assets/Editor/` ด้วย ไฟล์ก่อนเติมคอมเมนต์สำรองไว้ที่ `Backup-before-fieldcomments-20261009` ถ้าเพิ่มโค้ดใหม่ ให้เขียนคอมเมนต์แบบเดียวกัน
+
 ## วิธีแบ่งงานกับเพื่อนให้ไม่ชนกัน
 
 ตัวอย่างการแบ่งที่ชัดเจน:
 
 | ผู้รับผิดชอบ | ไฟล์หลักที่รับได้ | ขอบเขต |
 |---|---|---|
-| คนที่ดูแล Gameplay/แม็พ | `PlayerController*.cs`, `SkillController.cs`, `BulletController.cs`, `AutoTurret.cs`, `BattleBalance.cs`, `Managers/GameplayManager.Maps.cs`, `Managers/MapHazardManager.cs`, `Managers/HazardController.cs`, `PrismReflector.cs`, `WarpPad.cs`, `PrismArenaVisuals.cs`, `PrismBurst.cs` | การเล่น ยาน สกิล กระสุน แม็พ วาร์ป และคริสตัลสะท้อน |
-| คนที่ดูแลเมนู/บัญชี/เสียง | `Managers/LoginManager.cs`, `Managers/LobbyManager*.cs`, `Managers/FirebaseManager.cs`, `BattleSettingsPanel.cs`, `Managers/AudioManager.cs`, `PolishSprites.cs`, `Managers/GameplayManager.HUD.cs` (อีโมต), `FloatingText.cs`, `EditableTemplate.cs` | ล็อกอิน/ออกจากระบบ Lobby คลัง สียาน อีโมต HUD การตั้งค่า เหรียญ และเสียง |
+| คนที่ดูแล Gameplay/แม็พ | `PlayerController*.cs`, `SkillController.cs`, `BulletController.cs`, `AutoTurret.cs`, `BattleBalance.cs`, `Managers/GameplayManager.Maps.cs`, `Managers/MapHazardManager.cs`, `Managers/HazardController.cs`, `PrismReflector.cs`, `WarpPad.cs`, `PrismArenaVisuals.cs`, `PrismBurst.cs`, `Managers/GameplayManager.PrismV3.cs`, `Managers/GameplayManager.NewMaps.cs`, `MapAmbience.cs`, `SkillUnlock.cs` | การเล่น ยาน สกิล กระสุน แม็พ วาร์ป และคริสตัลสะท้อน |
+| คนที่ดูแลเมนู/บัญชี/เสียง | `Managers/LoginManager.cs`, `Managers/LobbyManager*.cs`, `Managers/FirebaseManager.cs`, `BattleSettingsPanel.cs`, `Managers/AudioManager.cs`, `PolishSprites.cs`, `Managers/GameplayManager.HUD.cs` (อีโมต), `FloatingText.cs`, `EditableTemplate.cs`, `UiLayout.cs`, `Economy.cs`, `Social.cs`, `Ranked.cs`, `Assets/Editor/BosAudioImport.cs`, `Assets/Editor/BosBranding.cs` | ล็อกอิน/ออกจากระบบ Lobby คลัง ร้านค้า แรงค์ สังคม สียาน อีโมต HUD การตั้งค่า เหรียญ และเสียง |
 | คนที่ทดสอบ | ไม่จำเป็นต้องแก้โค้ด | ทดสอบสองเครื่อง/มือถือ ทำรายการขั้นตอนและส่งภาพ/อาการที่พบ |
 
 ก่อนเริ่มตกลงกันว่าใครแก้ไฟล์เชื่อมระบบ เช่น `Managers/GameplayManager.cs`, `PlayerController.cs`, `BattleLoadoutCatalog.cs` และ `Managers/GameplayManager.HUD.cs` เพราะหลายระบบอ่าน/เรียกใช้ร่วมกัน หากทำคนละเครื่องให้ส่งไฟล์/ใช้ Git branch แล้วรวมทีละชุด อย่าให้สองคนส่งทับไฟล์เดียวกัน
@@ -209,6 +274,10 @@ Scene หลัก:
 - “เพิ่ม/ลดบึงบนแผนที่ปริซึม” → การสุ่ม/ตำแหน่งที่ `Managers/MapHazardManager.cs`; การทำงานเมื่อชน/อยู่ในเขตที่ `Managers/HazardController.cs`
 - “ย้ายหินหรือเสา” → `Managers/GameplayManager.Maps.cs`; หากเป็นตำแหน่งที่สร้างไว้ใน Editor ให้ตรวจ `Assets/Editor/MapLayoutSetup.cs` ด้วย
 - “ให้กระสุนเด้งคริสตัลได้ 3 ครั้ง” → `PrismReflector.MaxBounces` ใน `Assets/Scripts/PrismReflector.cs`
+- “ย้ายคริสตัล/เสากลางแม็พปริซึม” → แก้ตัวเลข x, y, ขนาด ในตาราง `PrismV3Layout` ไฟล์ `Managers/GameplayManager.PrismV3.cs` (ใส่เป็นคู่สมมาตร (x,y) กับ (−x,−y) ให้สองฝั่งเท่ากัน)
+- “เปลี่ยนเสียงยิง/เพลงในแม็พ” → วางไฟล์ชื่อเดิม (เช่น `SFX_Laser.wav`, `BGM_Battle_1.ogg`) ทับใน `Assets/Resources/Audio/BOS/` หรือวางใน `Assets/Resources/Audio/` เพื่อทับโดยไม่แตะชุดเดิม
+- “เปลี่ยนรูปการ์ดโหมด/การ์ดแม็พ” → วางรูปชื่อเดิมใน `Assets/Resources/Images/Modes/` (การ์ดโหมด) หรือแก้ `MapImage` ใน `LobbyManager.cs` (การ์ดแม็พ)
+- “ให้สกิลปลดล็อกเร็วขึ้น” → `RequiredLevels` ใน `Assets/Scripts/SkillUnlock.cs`
 - “ย้ายแท่นวาร์ป/เปลี่ยนคูลดาวน์วาร์ป” → ตำแหน่งที่ `AddWarpPads` ใน `Managers/GameplayManager.Maps.cs`; คูลดาวน์ `WarpCooldown` ใน `PlayerController.Warp.cs`
 - “เพิ่มสียาน/ข้อความอีโมต” → `ShipPaint.Names/Colors` ใน `BattleLoadoutCatalog.cs` และ `Emotes` ใน `PlayerController.Cosmetics.cs` (เพิ่มต่อท้ายเท่านั้น ห้ามสลับลำดับ)
 - “แก้ปุ่มบนหน้าเล่น” → UI ถูกสร้าง/จัดตำแหน่งใน `Managers/GameplayManager.HUD.cs`; การรับ pointer/ลากของปุ่มยิงอยู่ `UIButton.cs`
@@ -231,5 +300,7 @@ Scene หลัก:
 - บันทึกการตรวจ Lobby: `Docs.คู่มือ/Lobby-validation.md` (ลงวันที่ 5 ก.ย. 2026; รายการทดสอบในเอกสารอาจเก่ากว่าการทดสอบรอบล่าสุด)
 - วิธีแก้ HUD/แม็พในหน้า Edit: `Docs.คู่มือ/EDITABLE_UI_TH.md`
 - เจ้าของโปรเจกต์แจ้งเมื่อ 3 ต.ค. 2026 ว่าทดสอบเกมทั้งหมดแล้วและผ่าน; ระบบที่เพิ่มเมื่อ 6 ต.ค. 2026 ตรวจ compile แล้ว ต้องทดสอบเล่นจริงอีกรอบ
+- 9 ต.ค. 2026 เปิดเกมใน Unity Editor ทดสอบแล้ว: ไม่มี compile error, Login (Guest) → Lobby → หน้าเลือกโหมด (รูปการ์ดขึ้นครบ) → สร้างห้องเลือกแม็พปริซึม → เล่นกับบอทกดครั้งแรกเข้าได้ → แม็พปริซึมรุ่น 3 แสดงครบ; ยังไม่ได้ทดสอบ: ฟังเสียงชุดใหม่ในเกม, กระสุนเด้งปริซึมรุ่น 3, เล่นสองเครื่อง
+- Console ที่ยังเห็นได้ (ของเดิม ไม่กระทบการเล่น): "Script ... is missing" ใน `PlayerShip.prefab`, `Bullet.prefab`, `LoginScene` (TitleLine1/2) และ "This platform is not supported" ของ Firebase เมื่อรันใน Editor
 
 ก่อนส่งงาน/หลังแก้โค้ด ให้เปิด Unity รอ compile แล้วตรวจ Console ว่าไม่มี error หรือ Missing Script จากนั้นทดลองส่วนที่แก้จริง หากเปลี่ยน Photon/Firebase/UI ให้ทดสอบสองเครื่องและมือถือเมื่อเกี่ยวข้อง การ compile ผ่านเพียงอย่างเดียวไม่ยืนยันว่าการเล่นจริงถูกต้อง

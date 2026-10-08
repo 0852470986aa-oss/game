@@ -6,9 +6,9 @@ using UnityEngine;
 // คอมโพเนนต์ติดกับ Sprite แสงวาบ: ขยายจาก 40% เป็น 100% และจางหายภายใน 0.3 วิ แล้วลบตัวเอง
 public class PrismBurst : MonoBehaviour
 {
-    private SpriteRenderer art;
-    private Color color;
-    private float size, age;
+    private SpriteRenderer art; // SpriteRenderer ของแสงวาบ ใช้ปรับสีและความจาง
+    private Color color; // สีตั้งต้นของแสงวาบ
+    private float size, age; // ขนาดเต็มของแสง (หน่วยโลก) และเวลาที่ผ่านไปตั้งแต่เริ่ม
     // อายุของแสงวาบ (วินาที)
     private const float Life = .3f;
 

@@ -106,9 +106,9 @@ public class MapLayoutSetup : EditorWindow
     // ข้อมูลการวางสิ่งกีดขวาง 1 ชิ้น: ตำแหน่ง (x, y), ขนาดที่ต้องการ (กว้าง, สูง หน่วย Unity), มุมหมุน (องศา)
     private struct RockPlacement
     {
-        public Vector2 position;
-        public Vector2 collisionSize;
-        public float rotation;
+        public Vector2 position; // ตำแหน่งวางสิ่งกีดขวาง (x, y)
+        public Vector2 collisionSize; // ขนาดตัวชนที่ต้องการ (กว้าง, สูง)
+        public float rotation; // มุมหมุน (องศา)
 
         // Constructor: รับ x, y, กว้าง, สูง, มุม
         public RockPlacement(float x, float y, float width, float height, float angle)
@@ -688,7 +688,7 @@ public static class MechThrusterPreview
         RenderTexture target = null;
         Texture2D pixels = null;
         RenderTexture previous = RenderTexture.active;
-        const string output = "Library/MechValidation/thrusters.png";
+        const string output = "Library/MechValidation/thrusters.png"; // ไฟล์รูปผลลัพธ์ภาพไอพ่นยาน
         try
         {
             // 1) สร้าง container ที่ปิดไว้ แล้วโหลดยานทั้ง 3 ลำมาไว้ข้างใน (ปิดทุก Behaviour/ฟิสิกส์/Particle/Renderer)

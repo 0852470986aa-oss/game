@@ -30,7 +30,7 @@ public partial class GameplayManager
         if (hudSettingsButton != null && hudSettingsButton.isActiveAndEnabled) hudSettingsButton.onClick.Invoke();
         else BattleSettingsPanel.Show(LeaveRoom);
     }
-    private float fpsSmoothed, nextFpsText;
+    private float fpsSmoothed, nextFpsText; // ค่า FPS เฉลี่ยแบบนุ่ม และเวลาที่จะอัปเดตข้อความ FPS ครั้งถัดไป (ทุก 0.5 วิ)
 
     // เรียกจาก FitBattleHUD ทุกเฟรม: ทำงานจริงเฉพาะตอนค่าตั้งเปลี่ยน
     private void ApplyControlLayout()

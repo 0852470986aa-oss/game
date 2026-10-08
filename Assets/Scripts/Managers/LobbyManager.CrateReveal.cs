@@ -13,8 +13,8 @@ using TMPro;
 // ส่วนแอนิเมชันเปิดกล่องของ LobbyManager (partial)
 public partial class LobbyManager
 {
-    private RectTransform crateRevealRoot;
-    private bool crateRevealSkip, crateRevealCanClose;
+    private RectTransform crateRevealRoot; // กรอบหลักของหน้าจออนิเมชันเปิดกล่อง (ลบทิ้งเมื่อปิด)
+    private bool crateRevealSkip, crateRevealCanClose; // กดข้ามอนิเมชันแล้วหรือยัง / อนิเมชันจบพร้อมให้กดปิดแล้วหรือยัง
 
     // เริ่มอนิเมชัน (เรียกหลังเปิดกล่องสำเร็จ)
     private void PlayCrateReveal()
@@ -98,7 +98,7 @@ public partial class LobbyManager
             glow.a = .05f + .3f * k;
             foreach (var ray in rayImages) ray.color = glow;
             rays.localRotation = Quaternion.Euler(0, 0, t * 25f);
-            if (t >= nextTick) { nextTick = t + Mathf.Lerp(.28f, .09f, k); AudioManager.Instance?.PlaySFX("SFX_Click"); }
+            if (t >= nextTick) { nextTick = t + Mathf.Lerp(.28f, .09f, k); AudioManager.Instance?.PlaySFX("SFX_CrateTick"); }
             yield return null;
         }
 
@@ -106,7 +106,7 @@ public partial class LobbyManager
         // 3) แสงวาบ กล่องหาย
         crate.gameObject.SetActive(false);
         title.gameObject.SetActive(false);
-        AudioManager.Instance?.PlaySFX(epic ? "SFX_Explosion" : "SFX_ShieldBreak");
+        AudioManager.Instance?.PlaySFX(epic ? "SFX_CrateEpic" : "SFX_CrateOpen"); // ปิด NewSounds = ระเบิด/โล่แตกแบบเดิม
         var flash = RevealImage("Flash", root, Vector2.zero, Vector2.zero, Color.white);
         Stretch(flash.rectTransform);
         flash.raycastTarget = false;
@@ -213,7 +213,7 @@ public partial class LobbyManager
     // เด้งเกินนิดแล้วกลับ (0..1)
     private static float EaseOutBack(float k)
     {
-        const float c1 = 1.70158f, c3 = c1 + 1f;
+        const float c1 = 1.70158f, c3 = c1 + 1f; // ค่าคงที่ของสูตร easeOutBack กำหนดระยะเด้งเกิน
         float x = k - 1f;
         return 1f + c3 * x * x * x + c1 * x * x;
     }

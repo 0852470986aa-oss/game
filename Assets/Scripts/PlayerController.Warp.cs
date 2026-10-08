@@ -37,7 +37,7 @@ public partial class PlayerController
             Vector2 padPosition = pad.transform.position;
             if ((padPosition - from).sqrMagnitude < 1f || (pad.ExitPoint() - to).sqrMagnitude < 1f) pad.Flash();
         }
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Warp"); // ปิด NewSounds = เสียงโดนโล่แบบเดิม
         if (IsLocalHuman)
         {
             var follow = Camera.main != null ? Camera.main.GetComponent<CameraFollow>() : null;

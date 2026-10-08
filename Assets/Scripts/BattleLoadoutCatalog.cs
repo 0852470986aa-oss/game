@@ -9,14 +9,14 @@
 [System.Serializable]
 public class ShipData
 {
-    public string name;
-    public int hp;
-    public float atk;
-    public float spd;
-    public string skill;
-    public int price;
-    public string spritePath;
-    public float shotInterval, acceleration, turnSpeed;
+    public string name; // ชื่อยานที่แสดงในหน้าคลังและสนามรบ
+    public int hp; // HP สูงสุดของยานตอนเริ่มเกิด
+    public float atk; // ดาเมจต่อกระสุนหนึ่งนัด
+    public float spd; // ความเร็วเคลื่อนที่ (หน่วยโลกต่อวินาที)
+    public string skill; // ชื่อสกิลประจำยาน ใช้จับคู่กับ SkillData
+    public int price; // ราคาซื้อยานในร้านค้า
+    public string spritePath; // path รูปยานใน Resources
+    public float shotInterval, acceleration, turnSpeed; // วินาทีระหว่างนัด, อัตราเร่งการขยับ, ความไวการหมุนตอนเล็ง
     // เฟส 7: ชนิดอาวุธหลัก (BattleLoadoutCatalog.Weapon*), Prefab ที่ใช้ (ยานใหม่ใช้ Prefab ของยานเดิม), ภาพสำรองเมื่อยังไม่มีรูปใหม่, สีย้อมประจำยาน
     public int weapon;
     public int prefab;
@@ -55,10 +55,10 @@ public class ShipData
 [System.Serializable]
 public class SkillData
 {
-    public string name;
-    public string description;
-    public string iconPath;
-    public float cooldown;
+    public string name; // ชื่อสกิลที่แสดงบนปุ่มและหน้าคลัง
+    public string description; // คำอธิบายสกิล (ต่อท้ายเวลาคูลดาวน์แล้ว)
+    public string iconPath; // path ไอคอนสกิลใน Resources
+    public float cooldown; // เวลารอใช้สกิลซ้ำ (วินาที)
 
     // constructor: สร้างคำอธิบายเป็น "<desc>\nCooldown X sec" โดยใช้ InvariantCulture ให้ทศนิยมเป็นจุดเสมอ
     public SkillData(string name, string desc, string iconPath, float cooldown = 10f)

@@ -146,7 +146,7 @@ public class HazardController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             Vector3 viewport = camera.WorldToViewportPoint(position);
             if (viewport.z > 0 && viewport.x >= 0 && viewport.x <= 1 && viewport.y >= 0 && viewport.y <= 1)
             {
-                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Explosion");
+                if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Meteor"); // ปิด NewSounds = เสียงระเบิดแบบเดิม
                 if (CameraShake.Instance != null) CameraShake.Instance.TriggerShake(.15f, .12f);
             }
         }

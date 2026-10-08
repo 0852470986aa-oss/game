@@ -13,11 +13,11 @@ using TMPro;
 // ส่วนจัดหน้าใหม่แบบเกม MOBA มือถือของ LobbyManager (partial): หน้าเลือกวิธีเล่นแบบการ์ดและหน้าเตรียมพร้อมรบ
 public partial class LobbyManager
 {
-    private static readonly Color CardFrame = new Color(.08f, .26f, .36f);
-    private static readonly Color StartGold = new Color(.86f, .64f, .2f);
-    private RectTransform[] modeCategories;
-    private Button[] modeCategoryTabs;
-    private int modeCategory;
+    private static readonly Color CardFrame = new Color(.08f, .26f, .36f); // สีกรอบการ์ดโหมดในหน้าเลือกวิธีเล่น
+    private static readonly Color StartGold = new Color(.86f, .64f, .2f); // สีทองของปุ่มเริ่มเกมและตัวอักษร VS
+    private RectTransform[] modeCategories; // ภาชนะการ์ดของแต่ละหมวดโหมด (BATTLE / SPECIAL / PRACTICE)
+    private Button[] modeCategoryTabs; // ปุ่มแท็บเลือกหมวดโหมดด้านซ้าย
+    private int modeCategory; // หมวดโหมดที่เลือกอยู่
 
     // หาปุ่มการ์ดโหมด (อยู่ลึกในหมวดได้)
     private Transform FindModeCard(int index)
@@ -303,7 +303,7 @@ public partial class LobbyManager
     private void PrepPilotCard(Transform card, float x)
     {
         if (card == null) return;
-        const float w = 330f, h = 400f;
+        const float w = 330f, h = 400f; // ความกว้างและสูงของการ์ดนักบิน 1v1
         Place(card, x, PrepY, w, h);
         Place(card.Find("Accent"), 0, h * .5f - 2, w - 6, 4);
         Place(card.Find("PilotName"), 0, 168, w - 20, 36);
@@ -334,7 +334,7 @@ public partial class LobbyManager
         if (!prepLayout || rosterSlots == null) return false;
         int rows = teams ? 2 : (maxPlayers <= 5 ? 1 : 2);
         int cols = teams ? teamSize : Mathf.CeilToInt(maxPlayers / (float)rows);
-        const float gap = 14f;
+        const float gap = 14f; // ระยะห่างระหว่างช่องนักบิน
         float w = Mathf.Min(260f, (PrepW - gap * (cols - 1)) / cols);
         float h = rows == 1 ? 300f : teams ? 168f : 196f;
         float rowY = teams ? 116f : 104f;

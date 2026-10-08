@@ -13,11 +13,11 @@ public class CelebrationOverlay : MonoBehaviour
     // หนึ่งฉาก: หัวข้อ, บรรทัดรอง, รายละเอียด, รูป, สีหลัก
     private struct Scene { public string title, subtitle, detail; public Sprite sprite; public Color color; }
 
-    private static CelebrationOverlay instance;
-    private readonly Queue<Scene> queue = new Queue<Scene>();
-    private Transform canvas;
-    private TMP_FontAsset font;
-    private bool playing, tapped;
+    private static CelebrationOverlay instance; // ตัวเล่นฉากฉลองตัวเดียวของเกม (สร้างตอน Show ครั้งแรก)
+    private readonly Queue<Scene> queue = new Queue<Scene>(); // คิวฉากฉลองที่รอแสดงทีละฉาก
+    private Transform canvas; // Canvas ที่ใช้วางฉากฉลอง
+    private TMP_FontAsset font; // ฟอนต์ของข้อความในฉากฉลอง
+    private bool playing, tapped; // playing = กำลังเล่นคิวอยู่, tapped = ผู้เล่นแตะเพื่อไปต่อแล้ว
     private RectTransform current; // ฉากที่กำลังแสดง (null = ไม่มี)
 
     // เพิ่มฉากฉลองเข้าคิว (canvas = Canvas ที่จะแสดง, font = ฟอนต์ที่ใช้)
@@ -96,7 +96,7 @@ public class CelebrationOverlay : MonoBehaviour
             spark.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
             sparks.Add(new KeyValuePair<Image, Vector2>(spark, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Random.Range(280f, 620f)));
         }
-        AudioManager.Instance?.PlaySFX("SFX_ShieldBreak");
+        AudioManager.Instance?.PlaySFX("SFX_Celebrate"); // ปิด NewSounds = เสียงโล่แตกแบบเดิม
 
         // เด้งเข้า (1 วิ) — แตะเพื่อข้ามได้
         for (float t = 0; t < 1f && !tapped && root != null; t += Time.unscaledDeltaTime)
@@ -177,7 +177,7 @@ public class CelebrationOverlay : MonoBehaviour
     // สูตรเด้งเกินแล้วกลับ (ease out back) k 0-1 คืนสเกล
     private static float EaseOutBack(float k)
     {
-        const float c1 = 1.70158f, c3 = c1 + 1f;
+        const float c1 = 1.70158f, c3 = c1 + 1f; // ค่าคงที่ของสูตร ease out back (ระดับการเด้งเกิน)
         float x = k - 1f;
         return 1f + c3 * x * x * x + c1 * x * x;
     }

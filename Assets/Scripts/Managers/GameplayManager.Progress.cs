@@ -7,7 +7,7 @@ using TMPro;
 // ส่วนความก้าวหน้าของ GameplayManager: ส่งผลแมตช์ไปคิด XP/ภารกิจ/Achievement และแสดงผลในหน้าสรุป
 public partial class GameplayManager
 {
-    private bool progressReported;
+    private bool progressReported; // true = ส่งผลแมตช์นี้เข้าระบบความก้าวหน้าแล้ว กันนับซ้ำ
     // แรงค์ที่เพิ่งขึ้นในแมตช์นี้ (-1 = ไม่ได้ขึ้น) ใช้แสดงฉากฉลอง
     private int rankUpTier = -1;
 

@@ -1897,7 +1897,7 @@ public static class MechCollisionValidation
     // แล้วลองดันยาน Ship1-3 เข้าหากำบัง ถ้าผิดเงื่อนไขจะ throw; เขียนผล PASS/FAIL ลง Library/MechCollisionValidation.txt (ไม่ save Scene)
     public static void Validate()
     {
-        const string reportPath = "Library/MechCollisionValidation.txt";
+        const string reportPath = "Library/MechCollisionValidation.txt"; // ไฟล์ผลตรวจ PASS/FAIL ของการชนกำบังแม็พหุ่นยนต์
         var report = new System.Text.StringBuilder();
         var previousScene = SceneManager.GetActiveScene();
         var source = EditorSceneManager.OpenPreviewScene("Assets/Scenes/SampleScene.unity");

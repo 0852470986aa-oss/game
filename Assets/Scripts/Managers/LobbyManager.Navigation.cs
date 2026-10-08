@@ -5,8 +5,8 @@ using TMPro;
 // ส่วนนำทางของล็อบบี้ (partial): หน้าต่างเลือกวิธีเล่น (PlayMenu), หน้าตั้งค่าห้อง (RoomRulesMenu) และแท็บใน Hangar
 public partial class LobbyManager
 {
-    private RectTransform playMenu, roomRulesMenu;
-    private TMP_Text soloSelection;
+    private RectTransform playMenu, roomRulesMenu; // หน้าต่างเลือกวิธีเล่น และหน้าตั้งค่ากติกาห้อง
+    private TMP_Text soloSelection; // ข้อความบอกโหมดเล่นคนเดียวที่เลือกอยู่
 
     // Only these existing controls move into a navigation window. Find them again
     // on rebuild so scene-authored controls and their positions are reused.

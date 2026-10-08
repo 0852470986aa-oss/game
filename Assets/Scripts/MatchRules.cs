@@ -8,16 +8,16 @@ using Photon.Realtime;
 // ตัวช่วยอ่านกติกาห้อง/โหมด/ทีม และนับคะแนนจาก Photon Custom Properties (static ทั้งคลาส)
 public static partial class MatchRules
 {
-    public const string KillTargetKey = "KillTarget";
-    public const string MatchSecondsKey = "MatchSeconds";
-    public const string HazardsKey = "Hazards";
+    public const string KillTargetKey = "KillTarget"; // key ค่าตั้งห้อง: จำนวน Kill ที่ต้องได้เพื่อชนะ
+    public const string MatchSecondsKey = "MatchSeconds"; // key ค่าตั้งห้อง: เวลาแมตช์ (วินาที)
+    public const string HazardsKey = "Hazards"; // key ค่าตั้งห้อง: เปิด/ปิดอันตรายในแม็พ
 
     // ตัวเลือกที่ Host กดวนได้ในห้องรอ
     public static readonly int[] KillOptions = { 3, 5, 10 };
     public static readonly int[] TimeOptions = { 180, 300, 600 };
 
-    public const int DefaultKillTarget = 3;
-    public const int DefaultMatchSeconds = 180;
+    public const int DefaultKillTarget = 3; // Kill เป้าหมายเริ่มต้นเมื่อห้องไม่ได้ตั้ง
+    public const int DefaultMatchSeconds = 180; // เวลาแมตช์เริ่มต้น 3 นาที
 
     // อ่านค่าจากห้อง (ไม่มีค่า หรือปิด FeatureFlags.RoomSettings = ใช้ค่าเริ่มต้นแบบเดิม)
     public static int KillTarget(RoomInfo room) => ReadInt(room, KillTargetKey, DefaultKillTarget, 1, 99);
@@ -171,11 +171,11 @@ public static partial class MatchRules
     public class Standing
     {
         public int id;          // CombatantId (คน = ActorNumber, บอท = 1000+)
-        public string name;
-        public int kills;
-        public int deaths;
-        public bool isLocal;
-        public bool isBot;
+        public string name; // ชื่อนักบินที่แสดงในตาราง
+        public int kills; // จำนวน Kill
+        public int deaths; // จำนวนครั้งที่ตาย
+        public bool isLocal; // true = แถวของผู้เล่นเครื่องนี้ (ไฮไลต์)
+        public bool isBot; // true = บอท
         public bool left;       // หลุด/ออกจากห้องแล้ว
         public int ship;        // ยาน (ใช้แสดงรูป)
         public int score;       // คะแนนโหมด (ยึดจุด/เก็บดาว/Battle Royale) ใช้เรียงก่อน Kill

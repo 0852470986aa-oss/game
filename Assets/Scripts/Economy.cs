@@ -15,7 +15,7 @@ using UnityEngine;
 [Serializable]
 public class ShipUpgradeState
 {
-    public int ship;
+    public int ship; // index ยานใน BattleLoadoutCatalog.Ships ที่ข้อมูลนี้เป็นของ
     public int hp, spd, atk;          // เลเวลตีบวกแต่ละค่า
     public List<string> slots = new List<string>();   // uid ของไอเท็มที่ใส่ไว้
 }
@@ -26,7 +26,7 @@ public class OwnedItem
 {
     public string uid;     // รหัสเฉพาะของไอเท็มชิ้นนี้
     public string item;    // ชนิด (ItemDef.id)
-    public int level = 1;
+    public int level = 1; // เลเวลตีบวกของไอเท็ม (1 ถึง ItemMaxLevel)
 }
 
 // ข้อมูลเศรษฐกิจทั้งหมดของผู้เล่น แปลงเป็น JSON เก็บใน Firebase economy_json และ PlayerPrefs
@@ -34,10 +34,10 @@ public class OwnedItem
 [Serializable]
 public class EconomyData
 {
-    public List<ShipUpgradeState> ships = new List<ShipUpgradeState>();
-    public List<OwnedItem> items = new List<OwnedItem>();
-    public int cratesOpened;
-    public long savedAt;
+    public List<ShipUpgradeState> ships = new List<ShipUpgradeState>(); // สถานะตีบวกและช่องไอเท็มของยานแต่ละลำ
+    public List<OwnedItem> items = new List<OwnedItem>(); // ไอเท็มทั้งหมดที่ผู้เล่นมีในคลัง
+    public int cratesOpened; // จำนวนกล่องสุ่มที่เปิดไปแล้วทั้งหมด
+    public long savedAt; // เวลาที่บันทึกล่าสุด (ms) ใช้เลือกก้อนข้อมูลที่ใหม่กว่า
     public string shopDay = "";                          // วันของร้านรายวันที่ซื้อไป (yyyy-MM-dd)
     public List<int> shopBought = new List<int>();       // ช่องร้านรายวันที่ซื้อไปแล้วในวันนั้น (ช่องละ 1 ชิ้นต่อวัน)
 }
@@ -59,21 +59,21 @@ public static class Economy
     public enum Rarity { Common, Rare, Epic }
     // ค่าพลังยานที่ตีบวกได้ (ใช้เป็น index ของ StatNames / StatPerLevel)
     public enum Stat { Hp, Spd, Atk }
-    public static readonly string[] StatNames = { "HULL (HP)", "ENGINE (SPD)", "WEAPON (ATK)" };
-    public static readonly string[] RarityNames = { "COMMON", "RARE", "EPIC" };
-    public static readonly Color[] RarityColors = { new Color(.7f, .78f, .85f), new Color(.35f, .7f, 1f), new Color(.8f, .45f, 1f) };
+    public static readonly string[] StatNames = { "HULL (HP)", "ENGINE (SPD)", "WEAPON (ATK)" }; // ชื่อค่าพลังที่ตีบวกได้ แสดงในหน้า Workshop ตามลำดับ enum Stat
+    public static readonly string[] RarityNames = { "COMMON", "RARE", "EPIC" }; // ชื่อระดับความหายากที่แสดงบน UI ตามลำดับ enum Rarity
+    public static readonly Color[] RarityColors = { new Color(.7f, .78f, .85f), new Color(.35f, .7f, 1f), new Color(.8f, .45f, 1f) }; // สีประจำความหายาก ใช้ระบายกรอบ/ชื่อไอเท็ม
 
     // นิยามชนิดไอเท็ม: ชื่อ ความหายาก ข้อความผล ค่าที่เพิ่มต่อเลเวล และฟังก์ชันใส่ผลลง ShipBonus
     public class ItemDef
     {
-        public string id, name, effect;
-        public Rarity rarity;
-        public float perLevel;
-        public Action<ShipBonus, float> apply;
+        public string id, name, effect; // รหัสไอเท็ม ชื่อที่แสดง และข้อความผล (มี {0} แทนค่า)
+        public Rarity rarity; // ระดับความหายากของไอเท็ม (กำหนดราคาร้านและสี)
+        public float perLevel; // ค่าที่เพิ่มต่อเลเวลตีบวก 1 ขั้น
+        public Action<ShipBonus, float> apply; // ฟังก์ชันใส่ผลไอเท็มลง ShipBonus ตามค่ารวมของเลเวล
         // สร้างนิยามไอเท็ม (ใช้ในรายการ Items ด้านล่าง)
         public ItemDef(string id, string name, Rarity rarity, string effect, float perLevel, Action<ShipBonus, float> apply)
         { this.id = id; this.name = name; this.rarity = rarity; this.effect = effect; this.perLevel = perLevel; this.apply = apply; }
-        public string IconPath => "Images/Items/item_" + id.ToLowerInvariant();
+        public string IconPath => "Images/Items/item_" + id.ToLowerInvariant(); // path รูปไอคอนไอเท็มใน Resources
         // ข้อความอธิบายผลไอเท็มที่เลเวล level เช่น "Damage +15%" (แทน {0} ด้วย perLevel x level)
         public string Describe(int level) => string.Format(effect, Mathf.RoundToInt(perLevel * level * 100) / 100f);
     }
@@ -90,7 +90,7 @@ public static class Economy
         new ItemDef("AEGIS", "Aegis Core", Rarity.Epic, "Spawn shield +{0}s", .5f, (b, v) => b.protection += v),
         new ItemDef("SIPHON", "Siphon Module", Rarity.Epic, "Heal {0}% HP on kill", 4, (b, v) => b.killHeal += v / 100f),
     };
-    public const int ItemMaxLevel = 5;
+    public const int ItemMaxLevel = 5; // เลเวลตีบวกสูงสุดของไอเท็ม
 
     // ราคาในร้าน (Epic ได้จากกล่องเท่านั้น)
     public static int ShopPrice(Rarity rarity) => rarity == Rarity.Common ? 400 : rarity == Rarity.Rare ? 900 : 0;
@@ -124,10 +124,10 @@ public static class Economy
 
     // ===== สถานะ =====
     public static EconomyData Data { get; private set; }
-    public static event Action Changed;
-    private static string loadedFor;
-    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local";
-    private static string PrefsKey => "economy_" + Uid;
+    public static event Action Changed; // ยิงเมื่อข้อมูลเศรษฐกิจโหลดหรือเปลี่ยน ให้หน้าจอวาดใหม่
+    private static string loadedFor; // uid ที่โหลดข้อมูลไว้ล่าสุด ใช้เช็กว่าเปลี่ยนบัญชีแล้วต้องโหลดใหม่
+    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local"; // uid ผู้เล่นที่ล็อกอิน หรือ "local" ถ้ายังไม่ล็อกอิน
+    private static string PrefsKey => "economy_" + Uid; // คีย์ PlayerPrefs สำหรับเก็บข้อมูลเศรษฐกิจของบัญชีนี้ในเครื่อง
 
     // โหลดข้อมูลจากเครื่องทันที แล้วโหลด economy_json จาก Firebase (ถ้า savedAt ใหม่กว่าใช้ของ Firebase)
     // เสร็จแล้วยิง event Changed และเรียก done

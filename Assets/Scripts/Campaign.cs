@@ -4,19 +4,20 @@
 // แก้เนื้อเรื่อง/ความยากได้ที่รายการ Stages ด้านล่าง
 public class CampaignStageDef
 {
-    public string title;
+    public string title; // ชื่อด่านที่แสดงบนจอ (ภาษาอังกฤษ)
     public string briefing;     // ข้อความเล่าเรื่องตอนเริ่มด่าน (ภาษาไทย)
     public int bots;            // จำนวนบอทศัตรู (ไม่รวมบอส)
     public int difficulty;      // 1 ง่าย 2 กลาง 3 ยาก
     public int kills;           // Kill ที่ต้องทำเพื่อผ่าน (ด่านบอส = ทำลายบอส)
     public int map;             // 0 แมงกะพรุน 1 ปริซึม 2 หุ่นยนต์
-    public bool boss;
+    public bool boss; // true = ด่านบอส ต้องทำลายยานแม่ DREADNOUGHT เพื่อผ่าน
     public int reward;          // เหรียญเมื่อผ่านครั้งแรก
 }
 
 // รายการด่าน Campaign และตัวช่วยเลือกด่านถัดไปจากความคืบหน้าใน Progression
 public static class Campaign
 {
+    // รายการด่าน Campaign ทั้ง 5 ด่าน เรียงตามลำดับเล่น แก้เนื้อเรื่อง/ความยากได้ที่นี่
     public static readonly CampaignStageDef[] Stages =
     {
         new CampaignStageDef { title = "FIRST CONTACT", briefing = "หน่วยลาดตระเวนศัตรูบุกเข้ามาในเขตแมงกะพรุนสายฟ้า ทำลายให้ได้ 3 ลำ!",
@@ -31,7 +32,7 @@ public static class Campaign
             bots = 2, difficulty = 2, kills = 0, map = 2, boss = true, reward = 1000 },
     };
 
-    public static int Count => Stages.Length;
+    public static int Count => Stages.Length; // จำนวนด่าน Campaign ทั้งหมด
     // คืนข้อมูลด่าน stage (นับจาก 1) บีบให้อยู่ในช่วงด่านที่มี
     public static CampaignStageDef Get(int stage) => Stages[UnityEngine.Mathf.Clamp(stage, 1, Stages.Length) - 1];
     // ด่านที่ผ่านแล้วสูงสุด (0 = ยังไม่ผ่านเลย)

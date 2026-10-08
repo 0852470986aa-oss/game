@@ -17,35 +17,36 @@ using ExitGames.Client.Photon;
 // คลาสจัดการไอเท็มในแม็พ: Master สุ่มเกิด/ตัดสินคนเก็บ ทุกเครื่องแสดงผลและใช้ผลไอเท็ม
 public class PowerUpManager : MonoBehaviour, IOnEventCallback
 {
-    private const byte EvSpawn = 61, EvClaim = 62, EvTaken = 63;
-    public static readonly string[] Names = { "REPAIR", "OVERDRIVE", "BOOST", "SHIELD", "DAMAGE" };
+    private const byte EvSpawn = 61, EvClaim = 62, EvTaken = 63; // รหัส Event ของ Photon: เกิดไอเท็ม / ขอเก็บ / มีคนได้ไป
+    public static readonly string[] Names = { "REPAIR", "OVERDRIVE", "BOOST", "SHIELD", "DAMAGE" }; // ชื่อไอเท็มตามชนิด ใช้แสดงผลและหารูป
+    // สีประจำไอเท็มแต่ละชนิด (ใช้ตอนไม่มีรูป)
     private static readonly Color[] Colors =
     {
         new Color(.35f, 1f, .5f), new Color(1f, .6f, .2f), new Color(.35f, .8f, 1f), new Color(.6f, .6f, 1f), new Color(1f, .3f, .35f)
     };
-    private const int MaxActive = 4;
-    private const float SpawnEvery = 10f, Lifetime = 25f, PickupRadius = 2.2f;
+    private const int MaxActive = 4; // จำนวนไอเท็มในแม็พพร้อมกันสูงสุด
+    private const float SpawnEvery = 10f, Lifetime = 25f, PickupRadius = 2.2f; // รอบเกิดไอเท็ม, อายุก่อนหาย (วินาที), ระยะที่ยานเก็บได้
 
     // ข้อมูลไอเท็ม 1 ชิ้นที่อยู่ในแม็พ: id, ชนิด, GameObject ที่แสดง, เวลาหมดอายุ และส่งขอเก็บไปแล้วหรือยัง
     private sealed class Pickup
     {
-        public int id, type;
-        public GameObject view;
-        public float expireAt;
-        public bool claimSent;
+        public int id, type; // id ไอเท็ม และชนิดไอเท็ม (index ของ Names)
+        public GameObject view; // GameObject ที่แสดงไอเท็มในแม็พ
+        public float expireAt; // เวลาที่ไอเท็มหมดอายุหายไป
+        public bool claimSent; // true = ส่งขอเก็บไปแล้ว กันส่งซ้ำ
     }
 
-    private readonly Dictionary<int, Pickup> active = new Dictionary<int, Pickup>();
-    private float nextSpawnAt = -1f;
-    private int counter;
-    private static Sprite circleSprite;
+    private readonly Dictionary<int, Pickup> active = new Dictionary<int, Pickup>(); // ไอเท็มที่อยู่ในแม็พตอนนี้ (id -> ข้อมูล)
+    private float nextSpawnAt = -1f; // เวลาที่ Master จะเกิดไอเท็มชิ้นถัดไป
+    private int counter; // ตัวนับสร้าง id ไอเท็มไม่ซ้ำ
+    private static Sprite circleSprite; // Sprite วงกลมที่สร้างด้วยโค้ด (แคชไว้)
 
     // ลงทะเบียนรับ Event ของ Photon (OnEvent) เมื่อเปิดคอมโพเนนต์
     private void OnEnable() => PhotonNetwork.AddCallbackTarget(this);
     // ยกเลิกการรับ Event ของ Photon เมื่อปิดคอมโพเนนต์
     private void OnDisable() => PhotonNetwork.RemoveCallbackTarget(this);
 
-    private static bool Enabled => PhotonNetwork.InRoom && MatchRules.PowerUpsEnabled(PhotonNetwork.CurrentRoom);
+    private static bool Enabled => PhotonNetwork.InRoom && MatchRules.PowerUpsEnabled(PhotonNetwork.CurrentRoom); // ห้องนี้เปิดไอเท็มหรือไม่
 
     // ทุกเฟรม: หมุนไอเท็ม, Master เกิดไอเท็มตามรอบ/ลบที่หมดเวลา/ให้บอทเก็บ
     // และถ้ายานเราแตะไอเท็มให้ส่งขอเก็บไปที่ Master
@@ -171,7 +172,7 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
             var ship = PlayerController.FindCombatant(taker);
             if (ship == null) return;
             if (ship.photonView.IsMine) ship.ApplyPowerUp(type);
-            if (AudioManager.Instance != null && ship.IsLocalHuman) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
+            if (AudioManager.Instance != null && ship.IsLocalHuman) AudioManager.Instance.PlaySFX("SFX_PowerUp"); // ปิด NewSounds = เสียงโดนโล่แบบเดิม
             var game = GameplayManager.Instance;
             if (game != null && ship.IsLocalHuman) game.ShowBanner(Names[type] + "!", Colors[type]);
         }
@@ -213,7 +214,7 @@ public class PowerUpManager : MonoBehaviour, IOnEventCallback
     internal static Sprite CircleSprite()
     {
         if (circleSprite != null) return circleSprite;
-        const int size = 64;
+        const int size = 64; // ขนาดภาพวงกลม (พิกเซล)
         var texture = new Texture2D(size, size, TextureFormat.RGBA32, false);
         var pixels = new Color32[size * size];
         for (int y = 0; y < size; y++)

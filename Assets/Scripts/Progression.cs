@@ -13,9 +13,9 @@ using UnityEngine;
 [Serializable]
 public class MissionState
 {
-    public string id;
-    public int progress;
-    public bool claimed;
+    public string id; // รหัสภารกิจ ตรงกับ MissionDef.id
+    public int progress; // ความคืบหน้าที่ทำได้แล้ว
+    public bool claimed; // true = รับรางวัลแล้ว
 }
 
 // ประวัติแมตช์หนึ่งรายการ (เก็บ 15 แมตช์ล่าสุดใน PlayerProgress.history แสดงในหน้าโปรไฟล์)
@@ -25,55 +25,55 @@ public class MatchRecord
     public string date;     // วันเวลา (เวลาเครื่อง)
     public string mode;     // 1V1 / FFA / TEAM
     public string result;   // WIN / LOSE / DRAW / #3 of 8
-    public int kills;
-    public int deaths;
-    public string map;
-    public int coins;
-    public int xp;
-    public bool online;
+    public int kills; // จำนวน Kill ในแมตช์
+    public int deaths; // จำนวนครั้งที่ตายในแมตช์
+    public string map; // ชื่อแม็พที่เล่น
+    public int coins; // เหรียญที่ได้จากแมตช์
+    public int xp; // XP ที่ได้จากแมตช์
+    public bool online; // true = แมตช์ออนไลน์
 }
 
 // ข้อมูลความก้าวหน้าทั้งหมดของผู้เล่น (เลเวล/สถิติ/ภารกิจ/ล็อกอิน/Achievement/ประวัติ) แปลงเป็น JSON ทั้งก้อน
 [Serializable]
 public class PlayerProgress
 {
-    public int level = 1;
+    public int level = 1; // เลเวลปัจจุบันของผู้เล่น
     public int xp;              // XP สะสมในเลเวลปัจจุบัน
-    public int totalXp;
-    public int matches, wins, losses, draws, kills, deaths;
-    public int onlineMatches, ffaWins, teamWins, hardBotWins, flawlessWins, skillsUsed;
-    public int winStreak, bestStreak;
-    public string dailyId = "";
-    public List<MissionState> daily = new List<MissionState>();
-    public string weeklyId = "";
-    public List<MissionState> weekly = new List<MissionState>();
-    public string lastLoginClaim = "";
-    public int loginStreak;
-    public List<string> achievements = new List<string>();
-    public string title = "RECRUIT";
-    public List<MatchRecord> history = new List<MatchRecord>();
+    public int totalXp; // XP สะสมทั้งหมดตั้งแต่เริ่มเล่น
+    public int matches, wins, losses, draws, kills, deaths; // สถิติรวม: แมตช์ ชนะ แพ้ เสมอ Kill และตาย
+    public int onlineMatches, ffaWins, teamWins, hardBotWins, flawlessWins, skillsUsed; // สถิติใช้ปลด Achievement: ออนไลน์ ชนะแต่ละแบบ และการใช้สกิล
+    public int winStreak, bestStreak; // ชนะติดต่อกันตอนนี้ และสถิติสูงสุด
+    public string dailyId = ""; // รหัสวันของภารกิจรายวันชุดปัจจุบัน
+    public List<MissionState> daily = new List<MissionState>(); // ภารกิจรายวัน 3 ข้อของวันนี้
+    public string weeklyId = ""; // รหัสสัปดาห์ของภารกิจรายสัปดาห์ชุดปัจจุบัน
+    public List<MissionState> weekly = new List<MissionState>(); // ภารกิจรายสัปดาห์ของสัปดาห์นี้
+    public string lastLoginClaim = ""; // วันที่รับรางวัลล็อกอินล่าสุด
+    public int loginStreak; // จำนวนวันที่ล็อกอินต่อเนื่อง (วนรอบ 7 วัน)
+    public List<string> achievements = new List<string>(); // รหัส Achievement ที่ปลดแล้ว
+    public string title = "RECRUIT"; // ฉายาที่ผู้เล่นเลือกโชว์
+    public List<MatchRecord> history = new List<MatchRecord>(); // ประวัติแมตช์ล่าสุด (สูงสุด 15 แมตช์)
     public int campaignStage;   // ด่าน Campaign ที่ผ่านแล้วสูงสุด (เฟส 7B)
-    public long savedAt;
+    public long savedAt; // เวลาบันทึกล่าสุด ใช้เลือกข้อมูลที่ใหม่กว่า
 }
 
 // ข้อมูลผลแมตช์ที่ส่งมาจาก GameplayManager ตอนจบเกม
 public class MatchReport
 {
-    public string mode = "1V1";
-    public bool won, draw, online, vsBots, hardBot;
-    public int kills, deaths, place = 1, count = 2, skills, coins;
-    public string map = "";
+    public string mode = "1V1"; // โหมดที่เล่น: 1V1 / FFA / TEAM
+    public bool won, draw, online, vsBots, hardBot; // ผลแมตช์และประเภทแมตช์ (ออนไลน์ / เล่นกับบอท / บอทยาก)
+    public int kills, deaths, place = 1, count = 2, skills, coins; // Kill, ตาย, อันดับ, จำนวนผู้เล่น, สกิลที่ใช้, เหรียญที่ได้
+    public string map = ""; // ชื่อแม็พที่เล่น
 }
 
 // ผลที่ได้จากแมตช์ (แสดงในหน้าผล)
 public class ProgressGain
 {
-    public int xp;
-    public int levelsGained;
-    public int levelCoins;
-    public int newLevel;
-    public List<string> newAchievements = new List<string>();
-    public int missionsReady;
+    public int xp; // XP ที่ได้จากแมตช์นี้
+    public int levelsGained; // จำนวนเลเวลที่เพิ่มขึ้น
+    public int levelCoins; // เหรียญรางวัลจากการเลเวลอัป
+    public int newLevel; // เลเวลใหม่หลังจบแมตช์
+    public List<string> newAchievements = new List<string>(); // ชื่อ Achievement ที่เพิ่งปลด
+    public int missionsReady; // จำนวนภารกิจที่รับรางวัลได้
 }
 
 // ตัวจัดการระบบความก้าวหน้า แบบ static: โหลด/บันทึก PlayerProgress และคิด XP ภารกิจ รางวัล
@@ -96,9 +96,9 @@ public static class Progression
     // นิยามภารกิจ: ข้อความ เป้าหมาย รางวัลเหรียญ/XP และฟังก์ชัน count ที่บอกว่าแมตช์หนึ่งนับได้กี่หน่วย
     public class MissionDef
     {
-        public string id, text;
-        public int goal, coins, xp;
-        public Func<MatchReport, int> count;
+        public string id, text; // รหัสภารกิจ และข้อความที่แสดง
+        public int goal, coins, xp; // เป้าหมาย, เหรียญรางวัล, XP รางวัล
+        public Func<MatchReport, int> count; // ฟังก์ชันนับว่าแมตช์หนึ่งได้ความคืบหน้ากี่หน่วย
         // สร้างนิยามภารกิจ (ใช้ใน DailyPool / WeeklyPool)
         public MissionDef(string id, string text, int goal, int coins, int xp, Func<MatchReport, int> count)
         { this.id = id; this.text = text; this.goal = goal; this.coins = coins; this.xp = xp; this.count = count; }
@@ -128,8 +128,8 @@ public static class Progression
     // นิยาม Achievement: ชื่อ คำอธิบาย ฉายาที่ได้ และเงื่อนไข unlocked (เช็กจาก PlayerProgress + ผลแมตช์)
     public class AchievementDef
     {
-        public string id, name, text, title;
-        public Func<PlayerProgress, MatchReport, bool> unlocked;
+        public string id, name, text, title; // รหัส, ชื่อ, คำอธิบาย และฉายาที่ได้
+        public Func<PlayerProgress, MatchReport, bool> unlocked; // เงื่อนไขปลด Achievement
         // สร้างนิยาม Achievement (ใช้ในรายการ Achievements)
         public AchievementDef(string id, string name, string text, string title, Func<PlayerProgress, MatchReport, bool> unlocked)
         { this.id = id; this.name = name; this.text = text; this.title = title; this.unlocked = unlocked; }
@@ -154,18 +154,19 @@ public static class Progression
 
     // ===== สถานะ =====
     public static PlayerProgress Data { get; private set; }
+    // true = โหลดข้อมูลความก้าวหน้าเสร็จแล้ว
     public static bool Loaded { get; private set; }
-    public static event Action Changed;
+    public static event Action Changed; // แจ้งเมื่อข้อมูลเปลี่ยน ให้ UI อัปเดต
     // นับการใช้สกิลของแมตช์ปัจจุบัน (PlayerController.Skills เพิ่ม, GameplayManager รีเซ็ต)
     public static int SkillsThisMatch;
     private static string loadedFor;
 
-    public static int Level => Data != null ? Data.level : 1;
-    public static string Title => Data != null && !string.IsNullOrEmpty(Data.title) ? Data.title : "RECRUIT";
-    public static bool Enabled => FeatureFlags.Progression;
+    public static int Level => Data != null ? Data.level : 1; // เลเวลปัจจุบัน (ยังไม่โหลด = 1)
+    public static string Title => Data != null && !string.IsNullOrEmpty(Data.title) ? Data.title : "RECRUIT"; // ฉายาที่โชว์อยู่ (ไม่มี = RECRUIT)
+    public static bool Enabled => FeatureFlags.Progression; // true = เปิดระบบความก้าวหน้า
 
-    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local";
-    private static string PrefsKey => "progress_" + Uid;
+    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local"; // uid ผู้เล่น Firebase (ไม่ได้ล็อกอิน = local)
+    private static string PrefsKey => "progress_" + Uid; // key PlayerPrefs สำหรับเก็บข้อมูลในเครื่อง
 
     // โหลดจากเครื่องทันที แล้วลองโหลดจาก Firebase (ถ้าใหม่กว่าใช้ของ Firebase)
     public static void Load(Action done = null)
@@ -256,7 +257,7 @@ public static class Progression
             return now.Year + "W" + week;
         }
     }
-    public static TimeSpan UntilTomorrow => DateTime.Today.AddDays(1) - DateTime.Now;
+    public static TimeSpan UntilTomorrow => DateTime.Today.AddDays(1) - DateTime.Now; // เวลาที่เหลือจนถึงเที่ยงคืน (รีเซ็ตภารกิจรายวัน)
 
     // ขึ้นวันใหม่ = สุ่มภารกิจรายวัน 3 ข้อใหม่ (seed ตามวันที่) / ขึ้นสัปดาห์ใหม่ = รีเซ็ตภารกิจรายสัปดาห์
     private static void RollPeriods()

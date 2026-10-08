@@ -26,7 +26,7 @@ public partial class GameplayManager
     // ข้อมูลชิ้นส่วน 1 ชิ้นของแม็พปริซึมรุ่น 3 (a/b ใช้แบบเดียวกับ MapPiece: สัดส่วนรัศมีวงกลม หรือกว้าง/สูงของกล่อง)
     public struct PrismPiece
     {
-        public string sprite; public Vector2 position; public float size, rotation, a, b; public MapCollider collider; public PrismPieceKind kind;
+        public string sprite; public Vector2 position; public float size, rotation, a, b; public MapCollider collider; public PrismPieceKind kind; // รูป, ตำแหน่ง, ขนาด, มุมหมุน, สัดส่วนชนกัน a/b, รูปทรงชนกัน และชนิดชิ้นส่วน
         // Constructor สำหรับเขียนตารางสั้น ๆ
         public PrismPiece(string sprite, float x, float y, float size, float rotation, MapCollider collider, float a, float b, PrismPieceKind kind)
         {

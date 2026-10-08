@@ -11,10 +11,10 @@ using TMPro;
 // ส่วนปรับหน้าตา UI ล็อบบี้ (partial): สีพื้นหลังทึบ สีแท็บ จัดตำแหน่งปุ่ม/ช่องนักบิน/การ์ดแม็พให้ถูกต้องทุกครั้งที่เปิดหน้า
 public partial class LobbyManager
 {
-    public static readonly Color OverlayShade = new Color(.006f, .01f, .025f, .975f);
-    public static readonly Color WindowFill = new Color(.03f, .055f, .1f, 1f);
-    public static readonly Color TabIdle = new Color(.08f, .26f, .36f);
-    public static readonly Color TabActive = new Color(.10f, .55f, .55f);
+    public static readonly Color OverlayShade = new Color(.006f, .01f, .025f, .975f); // สีพื้นหลังมืดเกือบทึบ ปิดทับหน้าจอเวลามีหน้าต่างเปิด
+    public static readonly Color WindowFill = new Color(.03f, .055f, .1f, 1f); // สีพื้นทึบของหน้าต่าง popup ในล็อบบี้
+    public static readonly Color TabIdle = new Color(.08f, .26f, .36f); // สีแท็บที่ยังไม่ได้เลือก
+    public static readonly Color TabActive = new Color(.10f, .55f, .55f); // สีแท็บที่กำลังเลือกอยู่
 
     // พื้นหลังมืดทึบ + หน้าต่างทึบ
     private static void SolidOverlay(Image overlay, Component window = null)
@@ -138,7 +138,7 @@ public partial class LobbyManager
         if (LayoutRosterSlotsPrep(maxPlayers, teams, teamSize)) return; // หน้าเตรียมพร้อมรบแบบใหม่ (LobbyManager.NewLayout.cs)
         int rows = teams ? 2 : (maxPlayers <= 5 ? 1 : 2);
         int cols = teams ? teamSize : Mathf.CeilToInt(maxPlayers / (float)rows);
-        const float gap = 14f;
+        const float gap = 14f; // ระยะห่างระหว่างช่องนักบินในห้องรอ (พิกเซล)
         float w = Mathf.Min(300f, (1160f - gap * (cols - 1)) / cols);
         float h = rows == 1 ? 196f : 102f;
         for (int i = 0; i < rosterSlots.Length; i++)

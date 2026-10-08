@@ -31,30 +31,31 @@ public static class Social
     // ข้อมูลกิลด์ที่เราอยู่: id, ชื่อ, ป้าย TAG, uid หัวหน้า และรายชื่อสมาชิก (uid -> ชื่อ)
     public class GuildInfo { public string id, name, tag, owner; public Dictionary<string, string> members = new Dictionary<string, string>(); }
 
-    public const int GuildCost = 500;
-    public const int GuildMaxMembers = 20;
+    public const int GuildCost = 500; // ค่าสร้างกิลด์ (เหรียญ Astronium)
+    public const int GuildMaxMembers = 20; // จำนวนสมาชิกสูงสุดต่อกิลด์
 
-    public static readonly List<Friend> Friends = new List<Friend>();
-    public static readonly List<Request> Requests = new List<Request>();
-    public static readonly List<Invite> Invites = new List<Invite>();
-    public static readonly List<ChatLine> Chat = new List<ChatLine>();
+    public static readonly List<Friend> Friends = new List<Friend>(); // รายชื่อเพื่อนพร้อมสถานะออนไลน์
+    public static readonly List<Request> Requests = new List<Request>(); // คำขอเป็นเพื่อนที่ส่งมาหาเรา
+    public static readonly List<Invite> Invites = new List<Invite>(); // คำชวนเข้าห้องจากเพื่อนที่ยังไม่หมดอายุ
+    public static readonly List<ChatLine> Chat = new List<ChatLine>(); // ข้อความแชทของช่องที่เปิดอยู่
+    // กิลด์ที่เราอยู่ (null = ไม่มีกิลด์)
     public static GuildInfo Guild { get; private set; }
-    public static string ChatChannel { get; private set; } = "global";
-    public static event Action Changed;
-    public static event Action ChatChanged;
+    public static string ChatChannel { get; private set; } = "global"; // ช่องแชทที่เปิดอยู่ (global / guild_ / dm_)
+    public static event Action Changed; // ยิงเมื่อเพื่อน/คำขอ/คำชวน/กิลด์เปลี่ยน ให้หน้าจอวาดใหม่
+    public static event Action ChatChanged; // ยิงเมื่อข้อความแชทหรือช่องแชทเปลี่ยน
 
-    private static bool started;
-    private static string startedFor;
-    private static Query chatQuery;
-    private static DatabaseReference guildRef;
-    private static float lastChatAt = -10f;
+    private static bool started; // เริ่มฟังข้อมูลจาก Firebase ไปแล้วหรือยัง
+    private static string startedFor; // uid ที่เริ่มระบบไว้ ใช้เริ่มใหม่เมื่อเปลี่ยนบัญชี
+    private static Query chatQuery; // query ฟังข้อความล่าสุดของช่องแชทปัจจุบัน
+    private static DatabaseReference guildRef; // ตำแหน่งข้อมูลกิลด์ที่กำลังฟังอยู่ใน Firebase
+    private static float lastChatAt = -10f; // เวลาที่ส่งแชทล่าสุด ใช้กันส่งรัว (เว้น 1.5 วินาที)
 
-    private static DatabaseReference Db => FirebaseManager.Instance != null ? FirebaseManager.Instance.GetDbReference() : null;
-    public static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : null;
-    public static string MyName => FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUsername() : "PILOT";
-    public static bool Ready => FeatureFlags.Social && Db != null && !string.IsNullOrEmpty(Uid);
-    public static string GuildTag => Guild != null ? Guild.tag : "";
-    private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+    private static DatabaseReference Db => FirebaseManager.Instance != null ? FirebaseManager.Instance.GetDbReference() : null; // ราก Firebase Realtime Database (null = ยังไม่พร้อม)
+    public static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : null; // uid ผู้เล่นที่ล็อกอิน (null = ยังไม่ล็อกอิน)
+    public static string MyName => FirebaseManager.Instance != null ? FirebaseManager.Instance.GetUsername() : "PILOT"; // ชื่อผู้เล่นของเรา ใช้ตอนส่งแชท/คำขอ/คำชวน
+    public static bool Ready => FeatureFlags.Social && Db != null && !string.IsNullOrEmpty(Uid); // ระบบสังคมพร้อมใช้ไหม (เปิดสวิตช์ มีฐานข้อมูล และล็อกอินแล้ว)
+    public static string GuildTag => Guild != null ? Guild.tag : ""; // ป้ายกิลด์ของเรา แนบไปกับข้อความแชท
+    private static long Now => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(); // เวลาเครื่องปัจจุบันแบบ Unix (ms)
 
     // โค้ดเพื่อน = 8 ตัวแรก (ตัวอักษร/ตัวเลข) ของ uid ตัวพิมพ์ใหญ่
     public static string FriendCode(string uid)
@@ -64,7 +65,7 @@ public static class Social
         foreach (char c in uid) { if (char.IsLetterOrDigit(c)) chars.Append(char.ToUpperInvariant(c)); if (chars.Length == 8) break; }
         return chars.ToString();
     }
-    public static string MyCode => FriendCode(Uid);
+    public static string MyCode => FriendCode(Uid); // โค้ดเพื่อนของเรา ให้คนอื่นใช้ค้นหา
 
     // ===== เริ่มระบบ (เรียกจากล็อบบี้ทุกวินาที ทำงานจริงครั้งเดียวต่อบัญชี) =====
     public static void Start()
@@ -241,7 +242,7 @@ public static class Social
     private static string oldestChatKey; // key ข้อความเก่าสุดที่เก็บ (ใช้ลบที่เก่ากว่านี้)
     private static long serverOffset;    // เวลา server - เวลาเครื่อง (ms) ใช้นับอายุข้อความให้ตรงกันทุกเครื่อง
     private static bool serverOffsetKnown; // ได้ค่า offset จาก server แล้ว (ก่อนหน้านั้นแค่ซ่อน ไม่ลบจากฐานข้อมูล กันนาฬิกาเครื่องเพี้ยนลบข้อความคนอื่น)
-    private static long ServerNow => Now + serverOffset;
+    private static long ServerNow => Now + serverOffset; // เวลาปัจจุบันฝั่ง server (ms) ใช้นับอายุข้อความแชท
     // เวลา server (ms) ให้ระบบอื่นใช้ เช่นร้านค้ารายวัน (ยังไม่ได้ offset = เวลาเครื่อง)
     public static long ServerTimeMs => ServerNow;
 
@@ -276,7 +277,7 @@ public static class Social
         dmFriendUid = friend.uid;
         MarkDmRead(friend.uid);
     }
-    private static string dmFriendUid;
+    private static string dmFriendUid; // uid เพื่อนที่กำลังคุยส่วนตัวด้วย ใช้ส่งแจ้งเตือน dm_notify
 
     // ตัวรับ ValueChanged ของช่องแชทปัจจุบัน: อ่านข้อความล่าสุดใหม่ทั้งหมด (แชทรวมข้ามข้อความหมดอายุ) แล้วยิงอีเวนต์ ChatChanged
     private static void OnChat(object sender, ValueChangedEventArgs e)

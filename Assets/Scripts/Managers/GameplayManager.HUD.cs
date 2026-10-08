@@ -18,12 +18,12 @@ public partial class GameplayManager
     // ข้อมูลป้ายชื่อเหนือยาน 1 ลำ: ยานที่ติดตาม, กรอบ, ชื่อ, แถบเลือด, ข้อความอีโมต และเวลาที่อีโมตจะหาย
     private sealed class ShipNameplate
     {
-        public PlayerController ship;
-        public RectTransform root;
-        public TMP_Text name;
-        public Image fill;
-        public TMP_Text emote;
-        public float emoteUntil;
+        public PlayerController ship; // ยานที่ป้ายนี้ติดตามตำแหน่ง
+        public RectTransform root; // กรอบหลักของป้าย วางเหนือยานบนชั้น shipHudLayer
+        public TMP_Text name; // ข้อความชื่อผู้เล่นบนป้าย
+        public Image fill; // แถบเลือดของยาน (ปรับ fillAmount ตาม HP)
+        public TMP_Text emote; // ข้อความอีโมตที่ผู้เล่นส่ง แสดงเหนือป้าย
+        public float emoteUntil; // เวลาที่อีโมตจะถูกซ่อน
     }
     // ป้ายชื่อทั้งหมด (key = InstanceID ของยาน) และรายการ key ของยานที่ถูกลบแล้ว รอเอาออก
     private readonly System.Collections.Generic.Dictionary<int, ShipNameplate> shipNameplates = new System.Collections.Generic.Dictionary<int, ShipNameplate>();
@@ -528,7 +528,7 @@ public partial class GameplayManager
         plate.emote.text = text;
         plate.emoteUntil = Time.unscaledTime + 2.5f;
         plate.emote.gameObject.SetActive(true);
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Click");
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Emote"); // ปิด NewSounds = เสียงปุ่มแบบเดิม
     }
 
     // วงแหวน/หัวจอยที่เปลี่ยนสีตามการกด, ข้อความชื่อสกิล, CanvasGroup ของแต่ละปุ่ม (ทำให้ปุ่มจางตอนกดไม่ได้)

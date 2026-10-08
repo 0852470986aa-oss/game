@@ -13,21 +13,21 @@ public class MapAmbience : MonoBehaviour
     // ของลอย 1 ชิ้น: ความเร็ว ความเร็วหมุน และค่าเฉพาะแบบ (เวลาเริ่ม/อายุ/ความสว่างสูงสุด)
     private class Drifter
     {
-        public SpriteRenderer art;
-        public Vector2 velocity;
-        public float spin, phase, life, age, maxAlpha;
+        public SpriteRenderer art; // SpriteRenderer ของชิ้นประดับนี้
+        public Vector2 velocity; // ความเร็วลอย (หน่วยโลก/วินาที)
+        public float spin, phase, life, age, maxAlpha; // ความเร็วหมุน, เฟสเริ่มกะพริบ, คาบ/อายุ, เวลาที่ผ่านไป และความทึบสูงสุด
     }
 
-    private const int Order = -5;
-    private readonly List<Drifter> rocks = new List<Drifter>();
-    private readonly List<Drifter> lights = new List<Drifter>();
-    private readonly List<Drifter> embers = new List<Drifter>();
-    private readonly List<Drifter> beams = new List<Drifter>();
-    private Drifter meteor;
-    private SpriteRenderer heatGlow;
-    private Vector2 min, max;
-    private float nextMeteor;
-    private static Sprite softDot, beamSprite;
+    private const int Order = -5; // sortingOrder ของของประดับ (หน้าพื้นหลัง หลังสิ่งกีดขวางและยาน)
+    private readonly List<Drifter> rocks = new List<Drifter>(); // เศษหิน/คริสตัลที่ลอยหมุนช้า ๆ
+    private readonly List<Drifter> lights = new List<Drifter>(); // ไฟสัญญาณที่กะพริบ
+    private readonly List<Drifter> embers = new List<Drifter>(); // ประกายไฟลอยขึ้นของแม็พเนบิวลาลาวา
+    private readonly List<Drifter> beams = new List<Drifter>(); // ลำแสงสีรุ้งหมุนรอบเสากลางแม็พปริซึม
+    private Drifter meteor; // ดาวตกที่พาดผ่านเป็นครั้งคราว (null = ไม่มี)
+    private SpriteRenderer heatGlow; // แสงร้อนเรืองของแม็พลาวา
+    private Vector2 min, max; // ขอบเขตสนาม ใช้วนของลอยที่หลุดขอบกลับเข้ามา
+    private float nextMeteor; // เวลาที่จะปล่อยดาวตกลูกถัดไป
+    private static Sprite softDot, beamSprite; // รูปวงกลมนุ่มและรูปลำแสงที่สร้างจากโค้ด (สร้างครั้งเดียวใช้ร่วมกัน)
 
     // สร้างของประดับของแม็พ map (แม็พ 3, 4 และแม็พ 1 เมื่อเปิดปริซึมรุ่น 3) คืน null ถ้าแม็พอื่น/ปิด Flag
     public static MapAmbience Build(int map, Vector2 arenaMin, Vector2 arenaMax)
@@ -89,7 +89,7 @@ public class MapAmbience : MonoBehaviour
     private static Sprite BeamSprite()
     {
         if (beamSprite != null) return beamSprite;
-        const int w = 128, h = 32;
+        const int w = 128, h = 32; // ขนาดเท็กซ์เจอร์ลำแสง กว้าง x สูง (พิกเซล)
         var texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
         for (int y = 0; y < h; y++)
             for (int x = 0; x < w; x++)
@@ -188,7 +188,7 @@ public class MapAmbience : MonoBehaviour
     private static Sprite SoftDot()
     {
         if (softDot != null) return softDot;
-        const int size = 64;
+        const int size = 64; // ขนาดเท็กซ์เจอร์วงกลมนุ่ม (พิกเซล)
         var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { wrapMode = TextureWrapMode.Clamp };
         for (int y = 0; y < size; y++)
             for (int x = 0; x < size; x++)

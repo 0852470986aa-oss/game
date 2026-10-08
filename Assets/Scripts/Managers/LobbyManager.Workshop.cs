@@ -12,18 +12,18 @@ using Photon.Pun;
 // ส่วนหน้าจอ WORKSHOP ของ LobbyManager: ตีบวกค่าพลังยาน, จัดการไอเท็ม, ร้านค้า และปุ่ม UPGRADES ในห้องรอ
 public partial class LobbyManager
 {
-    private Button workshopButton;
-    private Image workshopOverlay;
-    private RectTransform workshopWindow, workshopPage;
+    private Button workshopButton; // ปุ่ม WORKSHOP บนหน้าหลัก
+    private Image workshopOverlay; // พื้นหลังมืดของหน้าต่าง WORKSHOP (ใช้เปิด/ปิดทั้งหน้า)
+    private RectTransform workshopWindow, workshopPage; // หน้าต่าง WORKSHOP และเนื้อหาแท็บที่สร้างใหม่ทุกครั้งที่วาด
     // แท็บของหน้า WORKSHOP: ตีบวก / ไอเท็ม / ร้านค้า
     private enum WorkshopTab { Upgrade, Items, Shop }
-    private WorkshopTab workshopTab;
-    private int workshopShip;
-    private int workshopItemPage;
-    private bool workshopBusy;
-    private string workshopMessage = "";
-    private long workshopCoins = -1;
-    private bool economySubscribed;
+    private WorkshopTab workshopTab; // แท็บที่เปิดอยู่ในหน้า WORKSHOP
+    private int workshopShip; // index ยานที่กำลังตีบวก/ใส่ไอเท็ม (เลือกด้วยปุ่ม < >)
+    private int workshopItemPage; // หน้าปัจจุบันของรายการไอเท็มในแท็บ ITEMS
+    private bool workshopBusy; // true ระหว่างรอผลหักเหรียญ ใช้ปิดปุ่มกันกดซ้ำ
+    private string workshopMessage = ""; // ข้อความผลล่าสุด (สำเร็จ/ล้มเหลว) ที่แสดงท้ายหน้า
+    private long workshopCoins = -1; // ยอดเหรียญล่าสุดที่รู้ (-1 = ยังไม่โหลด)
+    private bool economySubscribed; // สมัครฟัง Economy.Changed แล้วหรือยัง (กันสมัครซ้ำ)
 
     // ปุ่ม WORKSHOP บนหน้าหลัก + หน้าต่างลอย (เรียกจาก BuildHomeScreen)
     private void BuildWorkshopUI(RectTransform root)

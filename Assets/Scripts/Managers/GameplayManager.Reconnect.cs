@@ -15,7 +15,7 @@ using UnityEngine.SceneManagement;
 // ส่วนต่อเน็ตใหม่ของ GameplayManager: พากลับเข้าห้องเดิมเมื่อเน็ตหลุด และจัดการยานของคนที่หลุด
 public partial class GameplayManager
 {
-    private const float ReconnectGraceSeconds = 25f;
+    private const float ReconnectGraceSeconds = 25f; // เวลารอต่อเน็ตกลับเข้าแมตช์เดิม (วินาที)
 
     // ===== ฝั่งเราหลุด =====
     private bool battleReconnecting;
@@ -25,6 +25,7 @@ public partial class GameplayManager
     private float rejoinShipCheckAt;
     private TMP_Text reconnectLabel;
 
+    // ลองต่อเน็ตกลับเข้าแมตช์ได้ไหม (ไม่ใช่ออฟไลน์ ไม่ได้ตั้งใจออก และแมตช์ยังไม่จบ)
     private bool BattleReconnectAllowed => FeatureFlags.BattleReconnect && !PhotonNetwork.OfflineMode
         && !intentionalLeave && !resultShown && !returningToRoom && !string.IsNullOrEmpty(battleRoomName);
 
@@ -175,6 +176,7 @@ public partial class GameplayManager
     private readonly HashSet<int> awayExpired = new HashSet<int>();
     private float nextAwayGhostRefresh;
 
+    // ช่วงที่ต้องรอคนหลุดกลับมา (แมตช์ยังเล่นอยู่และเปิด BattleReconnect)
     private bool ReconnectGraceActive => FeatureFlags.BattleReconnect && !PhotonNetwork.OfflineMode
         && !resultShown && !isMatchEnding && !intentionalLeave && !returningToRoom;
 

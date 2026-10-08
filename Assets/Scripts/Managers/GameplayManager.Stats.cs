@@ -11,8 +11,8 @@ using TMPro;
 // ส่วนหน้าสถิติหลังแมตช์ของ GameplayManager (partial)
 public partial class GameplayManager
 {
-    private Image statsPanel;
-    private TMP_Text statsToggleLabel;
+    private Image statsPanel; // แผงสถิติหลังแมตช์ (สร้างเมื่อกดปุ่ม MATCH STATS)
+    private TMP_Text statsToggleLabel; // ข้อความบนปุ่ม MATCH STATS สลับเปิด/ปิดแผงสถิติ
 
     // สร้างปุ่ม MATCH STATS บนหน้าผล (เรียกจาก FitResultUI ตอนแสดงผล) สร้างครั้งเดียว
     private void EnsureStatsButton()

@@ -8,9 +8,9 @@ using TMPro;
 // ส่วนเนื้อหาเฟส 7 ของ GameplayManager: นับ Kill Streak และป้ายข้อความกลางจอ
 public partial class GameplayManager
 {
-    private readonly Dictionary<int, int> killStreaks = new Dictionary<int, int>();
-    private TMP_Text bannerText;
-    private float bannerUntil;
+    private readonly Dictionary<int, int> killStreaks = new Dictionary<int, int>(); // จำนวนฆ่าต่อเนื่องของแต่ละยาน (CombatantId -> จำนวน) รีเซ็ตเมื่อตาย
+    private TMP_Text bannerText; // ข้อความป้ายกลางจอ (สร้างครั้งแรกที่ใช้)
+    private float bannerUntil; // เวลาที่ป้ายกลางจอจะถูกซ่อน
 
     // ชื่อประกาศตามจำนวนฆ่าต่อเนื่อง
     private static string StreakName(int streak)

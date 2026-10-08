@@ -11,8 +11,8 @@ using Photon.Pun;
 // คลาส static เก็บ/ส่ง/อ่านสถิติแมตช์ของผู้ต่อสู้ทุกคน
 public static class MatchStats
 {
-    public const string PlayerKey = "Sx", BotPrefix = "SX";
-    public const int Shots = 0, Hits = 1, Dealt = 2, Taken = 3;
+    public const string PlayerKey = "Sx", BotPrefix = "SX"; // คีย์ Photon: Player Property ของคน / คำนำหน้า Room Property ของบอท
+    public const int Shots = 0, Hits = 1, Dealt = 2, Taken = 3; // ตำแหน่งในอาร์เรย์สถิติ: ยิง, ยิงโดน, ดาเมจที่ทำ, ดาเมจที่โดน
     // ยอดรวมของยานที่เครื่องนี้เป็นเจ้าของ / ยานที่มีค่าใหม่ยังไม่ได้ส่ง
     private static readonly Dictionary<int, float[]> totals = new Dictionary<int, float[]>();
     private static readonly HashSet<int> dirty = new HashSet<int>();

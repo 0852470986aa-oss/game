@@ -15,9 +15,9 @@ using Photon.Pun;
 // ส่วนกันโกงของ PlayerController (partial): ส่งคำขอดาเมจให้ Host ตรวจ แล้วรับดาเมจเฉพาะที่ Host ส่งมา
 public partial class PlayerController
 {
-    internal const float MaxHitDistance = 120f;
-    internal const int MaxHitsPerSecond = 25;
-    internal const float MaxSkillHit = 160f;
+    internal const float MaxHitDistance = 120f; // ระยะห่างสูงสุดระหว่างคนยิงกับเป้า ถ้าไกลกว่านี้ Host ปฏิเสธดาเมจ
+    internal const int MaxHitsPerSecond = 25; // จำนวนครั้งที่ยิงโดนได้สูงสุดต่อวินาที กันยิงรัวผิดปกติ
+    internal const float MaxSkillHit = 160f; // ดาเมจสูงสุดต่อครั้งของสกิลที่ Host ยอมรับ
 
     // ใช้ระบบ Host ตัดสินดาเมจอยู่หรือไม่ (ออฟไลน์/เล่นคนเดียวไม่ต้อง)
     public static bool HostDamageActive => FeatureFlags.HostDamage && PhotonNetwork.InRoom && !PhotonNetwork.OfflineMode;

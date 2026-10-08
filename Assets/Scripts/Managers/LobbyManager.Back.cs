@@ -6,7 +6,7 @@ using UnityEngine;
 // ส่วนจัดการปุ่มย้อนกลับ (Android Back / Esc) ในล็อบบี้ของ LobbyManager (partial)
 public partial class LobbyManager
 {
-    private float leaveRoomArmedUntil;
+    private float leaveRoomArmedUntil; // เวลาที่ยังกด Back ซ้ำเพื่อออกจากห้องรอได้ (กด 2 ครั้งภายใน 2.5 วิ)
 
     // คืน true ในเฟรมที่กดปุ่ม Back/Esc (ใช้ทั้งล็อบบี้และ GameplayManager) ถ้าโปรเจคปิด Input Manager เดิมจะคืน false
     public static bool BackKeyPressed()

@@ -10,8 +10,8 @@ using UnityEngine;
 // ส่วนแม็พใหม่ของ GameplayManager: สร้างแม็พ 3 (สถานีอวกาศ) และแม็พ 4 (ลาวา) ด้วยโค้ดตอนเริ่มแมตช์
 public partial class GameplayManager
 {
-    public const int StationMapIndex = 3;
-    public const int LavaMapIndex = 4;
+    public const int StationMapIndex = 3; // เลขแม็พสถานีอวกาศในดงอุกกาบาต (แม็พ 3)
+    public const int LavaMapIndex = 4; // เลขแม็พเนบิวลาลาวา (แม็พ 4)
     // จำนวนแม็พที่เลือกได้ในล็อบบี้
     public static int MapCount => FeatureFlags.NewMaps ? 5 : 3;
     // true = แม็พที่สร้างด้วยโค้ดตอนรันเกม (แม็พ 3 และ 4) ไม่ได้จัดวางไว้ใน Scene
@@ -27,7 +27,7 @@ public partial class GameplayManager
     // (a/b = สัดส่วนรัศมีของ Circle หรือกว้าง/สูงของ Box เทียบกับขนาดรูป)
     public struct MapPiece
     {
-        public string sprite; public Vector2 position; public float size, rotation; public MapCollider collider; public float a, b;
+        public string sprite; public Vector2 position; public float size, rotation; public MapCollider collider; public float a, b; // รูป, ตำแหน่ง, ขนาด, มุมหมุน, ชนิดตัวชน และสัดส่วนตัวชน a/b
         // Constructor สำหรับเขียนตาราง Layout สั้นๆ: รับ x, y แยกแล้วแปลงเป็น Vector2
         public MapPiece(string sprite, float x, float y, float size, float rotation, MapCollider collider, float a, float b)
         {
@@ -63,6 +63,7 @@ public partial class GameplayManager
         new MapPiece("Station/st_core", -6f, -24f, 4.5f, 0f, MapCollider.Circle, 0.42f, 0f),
         new MapPiece("Station/st_core", 6f, 24f, 4.5f, 180f, MapCollider.Circle, 0.42f, 0f),
     };
+    // ตารางวางหินลาวาของแม็พ 4 (สมมาตร 180 องศา)
     private static readonly MapPiece[] LavaLayout =
     {
         new MapPiece("Lava/lv_big_b", 0f, 0f, 9f, 0f, MapCollider.Circle, 0.36f, 0f),
@@ -109,7 +110,7 @@ public partial class GameplayManager
     {
         MapPiece[] layout = map == StationMapIndex ? StationLayout : map == LavaMapIndex ? LavaLayout : null;
         if (layout == null) return;
-        const string folder = "Images/Maps/";
+        const string folder = "Images/Maps/"; // โฟลเดอร์รูปชิ้นส่วนแม็พใน Resources
         int obstacleLayer = LayerMask.NameToLayer("Obstacle");
         int id = 1;
         foreach (var piece in layout)

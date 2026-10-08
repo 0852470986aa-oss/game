@@ -9,6 +9,7 @@ using UnityEngine.UI;
 // Rebuilds the authored Lobby UI and checks repeated builds preserve layout.
 public static class LobbyNavigationSetup
 {
+    // เมนู Editor: สำรองฉากล็อบบี้ สร้าง UI ใหม่ ตรวจว่าสร้างซ้ำไม่พัง แล้วบันทึกฉาก
     [MenuItem("Tools/Battlefield/Build Lobby Navigation")]
     public static void Build()
     {
@@ -17,7 +18,7 @@ public static class LobbyNavigationSetup
             Debug.LogWarning("Stop Play Mode before building Lobby navigation.");
             return;
         }
-        const string scenePath = "Assets/Scenes/LobbyScene.unity";
+        const string scenePath = "Assets/Scenes/LobbyScene.unity"; // path ฉากล็อบบี้ที่จะสร้าง UI และสำรองไฟล์
         if (!Application.isBatchMode && !EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
         string backupDirectory = "RecoveryBackups/Navigation-" + DateTime.Now.ToString("yyyyMMdd-HHmmss");
         Directory.CreateDirectory(backupDirectory);

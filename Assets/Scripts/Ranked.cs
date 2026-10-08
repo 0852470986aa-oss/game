@@ -14,14 +14,14 @@ using UnityEngine;
 [Serializable]
 public class RankData
 {
-    public int mmr = 1000;
-    public int peak = 1000;
-    public int wins, losses, draws;
+    public int mmr = 1000; // คะแนน MMR ปัจจุบัน (เริ่มที่ 1000)
+    public int peak = 1000; // MMR สูงสุดในฤดูกาลนี้
+    public int wins, losses, draws; // สถิติ ชนะ / แพ้ / เสมอ ในฤดูกาลนี้
     public int games;              // จำนวนแมตช์แรงค์ทั้งหมด (ใช้เลือกค่า K)
-    public string season = "";
+    public string season = ""; // รหัสฤดูกาลของข้อมูลนี้ (yyyy-MM) ใช้ตรวจขึ้นฤดูกาลใหม่
     public int lastSeasonPeak;     // MMR สูงสุดของฤดูกาลที่แล้ว (ใช้คิดรางวัล)
-    public bool rewardClaimed = true;
-    public long savedAt;
+    public bool rewardClaimed = true; // รับรางวัลจบฤดูกาลที่แล้วไปแล้วหรือยัง
+    public long savedAt; // เวลาที่บันทึกล่าสุด (ms) ใช้เลือกก้อนข้อมูลที่ใหม่กว่า
 }
 
 // ตัวจัดการระบบแรงค์ แบบ static: คิด MMR (Elo), ระดับแรงค์, ฤดูกาล และโหลด/บันทึกข้อมูล
@@ -38,7 +38,7 @@ public static class Ranked
         new Color(.8f, .5f, .3f), new Color(.78f, .82f, .88f), new Color(1f, .8f, .3f), new Color(.4f, .9f, .85f),
         new Color(.45f, .7f, 1f), new Color(.8f, .45f, 1f), new Color(1f, .35f, .35f)
     };
-    public static readonly string[] TierHex = { "#CC804D", "#C7D1E0", "#FFCC4D", "#66E6D9", "#73B3FF", "#CC73FF", "#FF5959" };
+    public static readonly string[] TierHex = { "#CC804D", "#C7D1E0", "#FFCC4D", "#66E6D9", "#73B3FF", "#CC73FF", "#FF5959" }; // รหัสสีแรงค์แบบ hex ใช้ใส่ใน rich text ของ TMP
     // รางวัลจบฤดูกาลตามแรงค์สูงสุดที่ทำได้
     public static readonly int[] SeasonRewardCoins = { 100, 200, 350, 500, 800, 1200, 2000 };
     public const int StartMmr = 1000;
@@ -73,11 +73,11 @@ public static class Ranked
 
     // ===== สถานะ =====
     public static RankData Data { get; private set; }
-    public static event Action Changed;
-    private static string loadedFor;
-    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local";
-    private static string PrefsKey => "rank_" + Uid;
-    public static int Mmr => Data != null ? Data.mmr : StartMmr;
+    public static event Action Changed; // ยิงเมื่อข้อมูลแรงค์โหลดหรือเปลี่ยน ให้หน้าจอวาดใหม่
+    private static string loadedFor; // uid ที่โหลดข้อมูลไว้ล่าสุด ใช้เช็กว่าเปลี่ยนบัญชีแล้วต้องโหลดใหม่
+    private static string Uid => FirebaseManager.Instance != null && FirebaseManager.Instance.IsLoggedIn() ? FirebaseManager.Instance.GetUserId() : "local"; // uid ผู้เล่นที่ล็อกอิน หรือ "local" ถ้ายังไม่ล็อกอิน
+    private static string PrefsKey => "rank_" + Uid; // คีย์ PlayerPrefs สำหรับเก็บข้อมูลแรงค์ของบัญชีนี้ในเครื่อง
+    public static int Mmr => Data != null ? Data.mmr : StartMmr; // MMR ปัจจุบันของเรา (ยังไม่โหลด = ค่าเริ่มต้น)
 
     // โหลดจากเครื่องทันที แล้วโหลด rank_json จาก Firebase (ใหม่กว่าใช้ของ Firebase) ถ้าขึ้นฤดูกาลใหม่จะบันทึกทันที
     public static void Load(Action done = null)
@@ -148,7 +148,7 @@ public static class Ranked
         return true;
     }
 
-    public static bool CanClaimSeasonReward => Data != null && FeatureFlags.Seasons && !Data.rewardClaimed && Data.lastSeasonPeak > 0;
+    public static bool CanClaimSeasonReward => Data != null && FeatureFlags.Seasons && !Data.rewardClaimed && Data.lastSeasonPeak > 0; // รับรางวัลจบฤดูกาลได้ไหม (เปิดฤดูกาล ยังไม่รับ และมีแรงค์ฤดูกาลที่แล้ว)
 
     // รับรางวัลจบฤดูกาลตามแรงค์สูงสุดของฤดูกาลที่แล้ว เพิ่มเหรียญแล้วบันทึก (รับไม่ได้ = false)
     public static bool ClaimSeasonReward(out int coins)

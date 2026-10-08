@@ -2,6 +2,9 @@
 // สร้างตัวเองอัตโนมัติหลังโหลด Scene แรก และอยู่ข้าม Scene (DontDestroyOnLoad) จึงไม่ต้องวางใน Scene
 // ระบบอื่นเรียกผ่าน AudioManager.Instance.PlayBGM("ชื่อ") / PlaySFX("ชื่อ") โดยโหลดไฟล์จาก Resources/Audio/
 // ถ้าไม่มีไฟล์เสียง จะสังเคราะห์เสียงชั่วคราวขึ้นมาเอง; ระดับเสียงบันทึกใน PlayerPrefs (หน้าตั้งค่า)
+// เสียงชุดใหม่ (FeatureFlags.NewSounds): ไฟล์อยู่ที่ Resources/Audio/BOS/ (SFX_*.wav, BGM_*.ogg)
+//   ลำดับการหาไฟล์: Resources/Audio/<ชื่อ> (วางไฟล์ชื่อเดียวกันตรงนี้เพื่อทับเสียงเองได้) -> Resources/Audio/BOS/<ชื่อ> -> เสียงสังเคราะห์เดิม
+//   เสียงที่เพิ่งมีชื่อของตัวเอง (วาร์ป, เก็บพาวเวอร์อัป, ฮีล ฯลฯ) ถ้าปิดสวิตช์/ไม่มีไฟล์ จะเล่นเสียงเดิมที่เคยใช้ (LegacyNames)
 // เพลงต่อสู้เลือกตามแม็พผ่าน GameplayManager.GetCurrentMapIndex()
 using UnityEngine;
 using System.Collections.Generic;
@@ -27,6 +30,20 @@ public class AudioManager : MonoBehaviour
     private readonly List<AudioClip> generated = new List<AudioClip>();
     // true = มีการเปลี่ยนค่าระดับเสียงที่ยังไม่ได้ PlayerPrefs.Save()
     private bool settingsDirty;
+    // โฟลเดอร์เสียงชุดใหม่ใน Resources
+    private const string PackFolder = "Audio/BOS/";
+    // ชื่อเสียงชุดใหม่ -> เสียงเดิมที่จุดนั้นเคยใช้ (ใช้เมื่อปิด NewSounds หรือไม่มีไฟล์ชุดใหม่ ทำให้ทุกอย่างเหมือนเดิม)
+    private static readonly Dictionary<string, string> LegacyNames = new Dictionary<string, string>
+    {
+        { "SFX_Bounce", "SFX_HitMiss" }, { "SFX_Warp", "SFX_ShieldHit" }, { "SFX_PowerUp", "SFX_ShieldHit" },
+        { "SFX_Star", "SFX_ShieldHit" }, { "SFX_Heal", "SFX_ShieldHit" }, { "SFX_Nova", "SFX_Explosion" },
+        { "SFX_Meteor", "SFX_Explosion" }, { "SFX_MissileHit", "SFX_Hit" }, { "SFX_Emote", "SFX_Click" },
+        { "SFX_Celebrate", "SFX_ShieldBreak" }, { "SFX_CrateTick", "SFX_Click" }, { "SFX_CrateOpen", "SFX_ShieldBreak" },
+        { "SFX_CrateEpic", "SFX_Explosion" },
+    };
+    // เสียงที่เล่นถี่ (ยิง/โดน/ระเบิด): ชุดใหม่สุ่มระดับเสียง ±5% ทุกครั้ง ฟังไม่ซ้ำซาก
+    private static readonly HashSet<string> VariedPitch = new HashSet<string>
+        { "SFX_Laser", "SFX_Hit", "SFX_HitMiss", "SFX_Bounce", "SFX_ShieldHit", "SFX_Explosion", "SFX_MissileHit", "SFX_Meteor" };
 
     // Unity เรียกอัตโนมัติหลังโหลด Scene แรก: ถ้ายังไม่มี AudioManager ให้สร้าง GameObject ใหม่พร้อมคอมโพเนนต์นี้
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -42,6 +59,8 @@ public class AudioManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        // ไม่มี AudioListener ในฉากใดเลย = ใน Unity Editor ไม่มีเสียง: สร้างตัวรับเสียงบน AudioManager (อยู่ข้ามฉาก) ถ้ายังไม่มีตัวอื่น
+        if (FeatureFlags.AudioListenerGuard && UnityEngine.Object.FindFirstObjectByType<AudioListener>() == null) gameObject.AddComponent<AudioListener>();
         masterVolume = Mathf.Clamp01(PlayerPrefs.GetFloat("MasterVolume", 1f));
         musicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat("MusicVolume", .65f));
         sfxVolume = Mathf.Clamp01(PlayerPrefs.GetFloat("SFXVolume", .8f));
@@ -91,8 +110,8 @@ public class AudioManager : MonoBehaviour
         bgmSource.Play();
     }
 
-    // เล่นเสียงเอฟเฟกต์: หา AudioSource ที่ว่าง ถ้าไม่มีให้เพิ่มใหม่ (ไม่เกิน MaxVoices) แล้วเล่นคลิป
-    public void PlaySFX(AudioClip clip)
+    // เล่นเสียงเอฟเฟกต์: หา AudioSource ที่ว่าง ถ้าไม่มีให้เพิ่มใหม่ (ไม่เกิน MaxVoices) แล้วเล่นคลิป (pitch 1 = ปกติ)
+    public void PlaySFX(AudioClip clip, float pitch = 1f)
     {
         if (clip == null || masterVolume * sfxVolume <= 0) return;
         sfxSources.RemoveAll(source => source == null);
@@ -106,6 +125,7 @@ public class AudioManager : MonoBehaviour
             sfxSources.Add(voice);
         }
         voice.volume = masterVolume * sfxVolume;
+        voice.pitch = pitch;
         voice.clip = clip;
         voice.Play();
     }
@@ -116,7 +136,7 @@ public class AudioManager : MonoBehaviour
         int map = GameplayManager.GetCurrentMapIndex();
         if (name == "BGM_Battle") name += "_" + map;
         AudioClip clip = Load(name, false);
-        // แม็พใหม่ยังไม่มีเพลงของตัวเอง: สถานี = เพลงแม็พปริซึม, ลาวา = เพลงแม็พหุ่นยนต์
+        // แม็พ 3/4 ไม่มีไฟล์เพลงของตัวเอง (ปิด NewSounds): สถานี = เพลงแม็พปริซึม, ลาวา = เพลงแม็พหุ่นยนต์
         if (clip == null && name.StartsWith("BGM_Battle_") && map >= 3) clip = Load("BGM_Battle_" + (map == 3 ? 1 : 2), false);
         PlayBGM(clip); // Missing battle music must not leave lobby music playing.
     }
@@ -125,21 +145,29 @@ public class AudioManager : MonoBehaviour
     public void PlaySFX(string name)
     {
         if (string.IsNullOrEmpty(name)) return;
+        // ปิดเสียงชุดใหม่: ชื่อใหม่กลับไปใช้ชื่อเสียงเดิม (นับเวลากันเล่นถี่ร่วมกันแบบเดิมด้วย)
+        if (!FeatureFlags.NewSounds && LegacyNames.TryGetValue(name, out string legacy)) name = legacy;
         if (lastPlayed.TryGetValue(name, out float last) && Time.unscaledTime - last < .055f) return;
         lastPlayed[name] = Time.unscaledTime;
-        PlaySFX(Load(name, true));
+        AudioClip clip = Load(name, !LegacyNames.ContainsKey(name));
+        if (clip == null && LegacyNames.TryGetValue(name, out legacy)) clip = Load(legacy, true);
+        float pitch = FeatureFlags.NewSounds && VariedPitch.Contains(name) ? Random.Range(.95f, 1.05f) : 1f;
+        PlaySFX(clip, pitch);
     }
 
-    // โหลดคลิปตามชื่อ: ดูแคชก่อน -> Resources/Audio/<name> -> ถ้าไม่มีและเป็น BGM ให้สังเคราะห์เพลง
-    // -> ถ้าเป็น SFX (allowPlaceholder) ให้สังเคราะห์เสียงชั่วคราว แล้วเก็บผลลงแคช (รวมกรณี null)
+    // โหลดคลิปตามชื่อ: ดูแคชก่อน -> Resources/Audio/<name> -> เสียงชุดใหม่ Resources/Audio/BOS/<name> (เปิด NewSounds)
+    // -> ถ้าไม่มีและเป็น BGM ให้สังเคราะห์เพลง -> ถ้าเป็น SFX (allowPlaceholder) ให้สังเคราะห์เสียงชั่วคราว แล้วเก็บผลลงแคช (รวมกรณี null)
     private AudioClip Load(string name, bool allowPlaceholder)
     {
         if (string.IsNullOrEmpty(name)) return null;
-        if (clips.TryGetValue(name, out AudioClip cached)) return cached;
+        // แคชแยกตามสวิตช์ (สลับสวิตช์ระหว่างเล่นแล้วได้เสียงตามสวิตช์ทันที)
+        string key = (FeatureFlags.NewSounds ? "new:" : "old:") + name;
+        if (clips.TryGetValue(key, out AudioClip cached)) return cached;
         AudioClip clip = Resources.Load<AudioClip>("Audio/" + name);
+        if (clip == null && FeatureFlags.NewSounds) clip = Resources.Load<AudioClip>(PackFolder + name);
         if (clip == null && name.StartsWith("BGM_")) clip = CreateMusic(name);
         if (clip == null && allowPlaceholder) clip = Placeholder(name);
-        clips[name] = clip;
+        clips[key] = clip;
         if (clip == null) Debug.LogWarning("Audio asset missing: Assets/Resources/Audio/" + name);
         return clip;
     }

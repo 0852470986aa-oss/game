@@ -16,16 +16,16 @@ public partial class LobbyManager
     // ข้อมูลอ้างอิง UI ของช่องนักบิน 1 ช่อง: พื้นหลัง, ชื่อผู้เล่น, รูปยาน, ชื่อยาน และสถานะ READY
     private sealed class RosterSlot
     {
-        public Image panel;
-        public TMP_Text name;
-        public Image ship;
-        public TMP_Text shipName;
-        public TMP_Text ready;
+        public Image panel; // พื้นหลังของช่อง (ใช้ระบายสีทีม/ช่องว่าง)
+        public TMP_Text name; // ชื่อผู้เล่นในช่อง
+        public Image ship; // รูปยานที่ผู้เล่นเลือก
+        public TMP_Text shipName; // ชื่อยานที่ผู้เล่นเลือก
+        public TMP_Text ready; // ข้อความสถานะ READY ของผู้เล่น
     }
 
-    private RectTransform rosterRoot;
-    private RosterSlot[] rosterSlots;
-    private GameObject pilotCardOne, pilotCardTwo;
+    private RectTransform rosterRoot; // กรอบรวมตารางนักบินในห้องรอ
+    private RosterSlot[] rosterSlots; // ช่องนักบินทั้ง 10 ช่องของตาราง
+    private GameObject pilotCardOne, pilotCardTwo; // การ์ดผู้เล่น 2 ใบแบบเดิม (ซ่อนเมื่อใช้ตารางนักบิน)
 
     // สร้างตาราง 10 ช่องในพื้นที่เดียวกับการ์ดผู้เล่น 2 ใบ (เรียกจาก BuildLobbyUI)
     private void BuildRoster(RectTransform root)

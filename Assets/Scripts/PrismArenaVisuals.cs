@@ -15,11 +15,11 @@ public class PrismArenaVisuals : MonoBehaviour
     // ข้อมูลแสงเรืองที่กะพริบเป็นจังหวะ (ภาพเรือง, สี, เฟส, ความทึบสูงสุด, ความเร็วกะพริบ)
     private struct Pulse
     {
-        public SpriteRenderer glow;
-        public Color color;
-        public float phase, alpha, speed;
+        public SpriteRenderer glow; // ภาพแสงเรืองที่กะพริบ
+        public Color color; // สีของแสงเรือง
+        public float phase, alpha, speed; // เฟสเริ่ม, ความทึบสูงสุด, ความเร็วกะพริบ
     }
-    private readonly List<Pulse> pulses = new List<Pulse>();
+    private readonly List<Pulse> pulses = new List<Pulse>(); // แสงเรืองทั้งหมดที่ต้องกะพริบทุกเฟรม
 
     // ของที่ขยับ (ภาพล้วน ไม่มีตัวชน ไม่ส่งผ่านเน็ต)
     // Bob = ของลอยขึ้นลง, Shard = เศษคริสตัลโคจรรอบเสากลาง, Mist = หมอกลอยผ่านสนาม
@@ -28,20 +28,20 @@ public class PrismArenaVisuals : MonoBehaviour
     private struct Shard { public SpriteRenderer art; public float radius, speed, angle, spin, bob; }
     // หมอก 1 ก้อน: ความเร็วเลื่อนไปทางขวา ความทึบสูงสุด และเฟสของการจางเข้าออก
     private struct Mist { public SpriteRenderer art; public float speed, alpha, phase; }
-    private readonly List<Bob> bobs = new List<Bob>();
-    private readonly List<Shard> shards = new List<Shard>();
-    private readonly List<Mist> mists = new List<Mist>();
-    private readonly List<SpriteRenderer> sparkleTargets = new List<SpriteRenderer>();
+    private readonly List<Bob> bobs = new List<Bob>(); // ของที่ลอยขึ้นลง
+    private readonly List<Shard> shards = new List<Shard>(); // เศษคริสตัลที่โคจรรอบเสากลาง
+    private readonly List<Mist> mists = new List<Mist>(); // หมอกที่ลอยผ่านสนาม
+    private readonly List<SpriteRenderer> sparkleTargets = new List<SpriteRenderer>(); // ภาพคริสตัลที่สุ่มเกิดประกายแสง
     // เฟส 7B: หินลอยวนรอบเสาแต่ละต้น (ปิดได้ด้วย FeatureFlags.PillarRocks)
     private struct PillarRock { public SpriteRenderer art; public Vector2 center; public float radius, speed, angle, spin, bob, baseOrder; }
-    private readonly List<PillarRock> pillarRocks = new List<PillarRock>();
-    private readonly List<Bounds> pillarBounds = new List<Bounds>();
-    private Vector2 arenaMin, arenaMax;
-    private float nextSparkle;
+    private readonly List<PillarRock> pillarRocks = new List<PillarRock>(); // หินลอยวนรอบเสาแต่ละต้น
+    private readonly List<Bounds> pillarBounds = new List<Bounds>(); // ขอบเขตเสาแต่ละต้น ใช้วางหินลอยรอบเสา
+    private Vector2 arenaMin, arenaMax; // มุมล่างซ้ายและบนขวาของสนาม
+    private float nextSparkle; // เวลาที่จะเกิดประกายแสงครั้งถัดไป
     // รุ่น 3: ภาพที่หมุนอยู่กับที่ (ลายวนบนแท่นวาร์ป) และโหมดมุมบน (เศษคริสตัลโคจรเป็นวงกลม ไม่แบนแบบมุมเอียง)
     private struct Spinner { public Transform item; public float speed; }
-    private readonly List<Spinner> spinners = new List<Spinner>();
-    private bool topDown;
+    private readonly List<Spinner> spinners = new List<Spinner>(); // ภาพที่หมุนอยู่กับที่ เช่น ลายบนแท่นวาร์ป
+    private bool topDown; // true = แม็พรุ่น 3 แบบมุมบน
 
     // false = ใช้ภาพพื้นหลังเดิมของแม็พ (Map_ObeliskPlains) / true = ใช้พื้นมุมบนที่สร้างด้วยโค้ด
     public static bool UseGeneratedGround = false;
@@ -232,7 +232,7 @@ public class PrismArenaVisuals : MonoBehaviour
         art.sprite = sprite;
         art.drawMode = SpriteDrawMode.Simple;
         art.flipX = art.flipY = false;
-        const float margin = 6f;
+        const float margin = 6f; // ขยายพื้นหลังเกินขอบสนามกันเห็นขอบภาพ
         Vector2 cover = max - min + Vector2.one * margin * 2f;
         Vector2 spriteSize = sprite.bounds.size;
         float scale = Mathf.Max(cover.x / Mathf.Max(.01f, spriteSize.x), cover.y / Mathf.Max(.01f, spriteSize.y));
@@ -282,7 +282,7 @@ public class PrismArenaVisuals : MonoBehaviour
         var background = transform.Find("Background");
         var art = background != null ? background.GetComponent<SpriteRenderer>() : null;
         if (art == null || art.sprite == null) return;
-        const float margin = 1.5f;
+        const float margin = 1.5f; // ระยะเผื่อรอบสนามตอนขยายพื้นหลัง
         Vector2 spriteSize = art.sprite.bounds.size;
         float worldHeight = (max.y - min.y + margin * 2) / Mathf.Clamp(GroundFraction, .2f, 1f);
         float scale = Mathf.Max(worldHeight / spriteSize.y, (max.x - min.x + margin * 2) / spriteSize.x);
@@ -407,9 +407,9 @@ public class PrismArenaVisuals : MonoBehaviour
 // ภาพที่สร้างด้วยโค้ด (ไม่ต้องมีไฟล์ภาพ) ใช้ร่วมกันในแม็พปริซึม
 public static class PrismFx
 {
-    public const float DotWorldSize = 1f;
-    private static Sprite dot, floor, lattice, vignette;
-    private static Material dotMaterial;
+    public const float DotWorldSize = 1f; // ขนาดจุดแสงในหน่วยโลก
+    private static Sprite dot, floor, lattice, vignette; // Sprite ที่สร้างด้วยโค้ด (แคชไว้สร้างครั้งเดียว)
+    private static Material dotMaterial; // Material ของจุดแสงสำหรับ Particle
 
     // สร้าง GameObject ที่มี SpriteRenderer พร้อมลำดับการวาด (sortingOrder)
     public static SpriteRenderer Sprite(string name, Transform parent, Sprite sprite, int order)
@@ -455,7 +455,7 @@ public static class PrismFx
     public static Sprite Dot()
     {
         if (dot != null) return dot;
-        const int size = 64;
+        const int size = 64; // ขนาดภาพจุดแสง (พิกเซล)
         var texture = NewTexture(size, size);
         var pixels = new Color32[size * size];
         for (int y = 0; y < size; y++)
@@ -475,7 +475,7 @@ public static class PrismFx
     public static Sprite FloorSprite()
     {
         if (floor != null) return floor;
-        const int w = 256, h = 204;
+        const int w = 256, h = 204; // ขนาดภาพพื้นสนาม (พิกเซล)
         var texture = NewTexture(w, h);
         texture.wrapMode = TextureWrapMode.Clamp;
         var pixels = new Color32[w * h];
@@ -513,7 +513,7 @@ public static class PrismFx
     public static Sprite LatticeSprite()
     {
         if (lattice != null) return lattice;
-        const int w = 64;
+        const int w = 64; // ความกว้างภาพลายตาข่าย (พิกเซล)
         int h = Mathf.RoundToInt(w * 1.7320508f);
         float spacing = w * .8660254f;
         var texture = NewTexture(w, h);
@@ -542,7 +542,7 @@ public static class PrismFx
     public static Sprite VignetteSprite()
     {
         if (vignette != null) return vignette;
-        const int size = 128;
+        const int size = 128; // ขนาดภาพขอบมืด (พิกเซล)
         var texture = NewTexture(size, size);
         texture.wrapMode = TextureWrapMode.Clamp;
         var pixels = new Color32[size * size];

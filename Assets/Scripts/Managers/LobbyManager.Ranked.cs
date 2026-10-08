@@ -11,14 +11,14 @@ using Photon.Realtime;
 // ส่วนหน้าจอแรงค์ของ LobbyManager: ปุ่ม RANKED, หน้าสรุปแรงค์, ตารางอันดับ และการหาแมตช์แรงค์ผ่าน Photon
 public partial class LobbyManager
 {
-    private Button rankedButton;
-    private Image rankedOverlay;
-    private RectTransform rankedWindow, rankedPage;
-    private bool pendingRanked;
-    private bool showingLeaderboard;
-    private bool rankedSubscribed;
-    private System.Collections.Generic.List<LeaderboardEntry> leaderboard;
-    private bool leaderboardLoading;
+    private Button rankedButton; // ปุ่ม RANKED บนหน้าหลัก เปิดหน้าต่างแรงค์
+    private Image rankedOverlay; // พื้นหลังมืดของหน้าต่างแรงค์
+    private RectTransform rankedWindow, rankedPage; // กรอบหน้าต่างแรงค์ และหน้าเนื้อหาที่สร้างใหม่ทุกครั้งที่วาด
+    private bool pendingRanked; // กำลังหาแมตช์แรงค์อยู่ (รอเข้าหรือสร้างห้องแรงค์)
+    private bool showingLeaderboard; // true = แสดงตารางอันดับ, false = แสดงหน้าสรุปแรงค์
+    private bool rankedSubscribed; // สมัครรับอีเวนต์ Ranked.Changed แล้วหรือยัง (กันสมัครซ้ำ)
+    private System.Collections.Generic.List<LeaderboardEntry> leaderboard; // ข้อมูลตารางอันดับที่โหลดจาก Firebase (null = ยังไม่โหลด)
+    private bool leaderboardLoading; // กำลังโหลดตารางอันดับจาก Firebase อยู่ (กันโหลดซ้อน)
     // แรงค์ที่กดดูในแถบแรงค์ (-1 = แสดงแรงค์ของเราเอง)
     private int rankPreviewTier = -1;
 

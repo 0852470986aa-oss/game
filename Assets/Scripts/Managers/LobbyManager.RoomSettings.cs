@@ -10,12 +10,12 @@ using TMPro;
 // ส่วนปุ่มตั้งค่าห้องของ LobbyManager (partial): สร้างปุ่ม อัปเดตข้อความ และเขียนกติกาลง Room Custom Properties
 public partial class LobbyManager
 {
-    private Button roomKillsButton;
-    private Button roomTimeButton;
-    private Button roomHazardButton;
-    private Button roomBotButton;
-    private Button roomModeButton;
-    private TMP_Text roomModeLabel;
+    private Button roomKillsButton; // ปุ่มตั้งจำนวน Kill ที่ต้องทำเพื่อชนะ
+    private Button roomTimeButton; // ปุ่มตั้งเวลาแมตช์
+    private Button roomHazardButton; // ปุ่มเปิด/ปิดอันตรายในแม็พ
+    private Button roomBotButton; // ปุ่มตั้งบอทเติมห้อง (OFF / EASY / NORMAL / HARD)
+    private Button roomModeButton; // ปุ่มพื้นหลังป้ายโหมด Host กดเพื่อเปลี่ยนจำนวนคน/โหมดทีม
+    private TMP_Text roomModeLabel; // ป้ายข้อความโหมดห้อง (เช่น 1 VS 1, TEAM 2v2) วางทับปุ่มโหมด
 
     // ปุ่มพื้นหลังของป้ายโหมด (ป้ายข้อความวางทับด้านบน) — Host กดเพื่อเปลี่ยนจำนวนคนในห้อง
     private void BuildRoomModeButton(RectTransform root)
@@ -60,7 +60,7 @@ public partial class LobbyManager
         roomWinRuleButton = UIButton("RoomWinRule", root, "FIRST TO X", 290, 246, 150, 40, OnRoomWinRuleClicked);
     }
 
-    private Button roomWinRuleButton;
+    private Button roomWinRuleButton; // ปุ่มเลือกเงื่อนไขชนะของห้อง
 
     // Host กดปุ่มเงื่อนไขชนะ: วนไปแบบถัดไป แล้วเขียนลงห้อง (ทุกคนต้องกด READY ใหม่เหมือนกติกาอื่น)
     private void OnRoomWinRuleClicked()

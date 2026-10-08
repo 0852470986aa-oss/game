@@ -46,15 +46,15 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
 {
     // speed = ความเร็วกระสุน (หน่วย/วินาที), lifeTime = อายุก่อนหายเอง (วินาที), damage = ดาเมจต่อนัด (รับจาก InstantiationData)
     public float speed = 18f; // PHASE 6: ยิงเร็วขึ้นจาก 15 เป็น 18
-    public float lifeTime = 3f;
+    public float lifeTime = 3f; // อายุกระสุนก่อนหายเอง (วินาที)
     private float damage = 10f; // จะถูกตั้งค่าตอน instantiate
-    private bool isDestroyed = false;
+    private bool isDestroyed = false; // true = สั่งทำลายแล้ว กันชนหรือส่งดาเมจซ้ำ
     // true = กระสุนจากป้อมปืน (ไม่ชนป้อมปืนด้วยกัน)
     private bool isTurretProjectile;
     // ActorNumber ของคนยิง; ถ้า InstantiationData[1] เป็น true (กระสุนของฉาก/ป้อมปืน) จะได้ -1 คือไม่มีเจ้าของที่ได้แต้ม
     private int Shooter => photonView.InstantiationData != null && photonView.InstantiationData.Length > 1
         && photonView.InstantiationData[1] is bool environmental && environmental ? -1 : photonView.CreatorActorNr;
-    private Rigidbody2D body;
+    private Rigidbody2D body; // Rigidbody2D ของกระสุน ใช้ขยับกระสุนตามความเร็ว
     // จำนวนครั้งที่เด้งจากคริสตัลได้อีก (เริ่มที่ PrismReflector.MaxBounces)
     private int bouncesLeft = PrismReflector.MaxBounces;
 
@@ -174,7 +174,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             body.rotation = angle;
             body.linearVelocity = direction * speed;
         }
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_HitMiss");
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Bounce"); // เสียงคริสตัล (ปิด NewSounds = เสียงยิงพลาดแบบเดิม)
     }
 
     // Unity เรียกตอนสร้าง (ทุกเครื่อง): ตั้ง Rigidbody2D ไม่มีแรงโน้มถ่วง ตรวจชนแบบ Continuous และเพิ่มหางแสง (TrailRenderer) เหลือง-ส้ม

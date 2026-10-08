@@ -119,6 +119,10 @@ public static class FeatureFlags
     public static bool SoloStartFix = true;
     // แม็พปริซึมรุ่น 3: พื้นหลังเนบิวลามุมบน + คริสตัล/เสาโอเบลิสก์/ปริซึมสะท้อนกระสุน/แท่นวาร์ปภาพใหม่ + ลำแสงหมุนและเศษคริสตัลลอย (false = แม็พปริซึมรุ่น 2 แบบเดิม)
     public static bool PrismMapV3 = true;
+    // เสียงชุดใหม่ทั้งเกม (Resources/Audio/BOS: เสียงเอฟเฟกต์ 21 เสียง + เพลงล็อบบี้ + เพลงต่อสู้แยก 5 แม็พ) และเสียงเฉพาะของวาร์ป/พาวเวอร์อัป/ฮีล/กล่องสุ่ม ฯลฯ (false = เสียงสังเคราะห์เดิมในโค้ด)
+    public static bool NewSounds = true;
+    // ทุกฉากไม่มี AudioListener ทำให้ใน Unity Editor ไม่มีเสียงและเตือนซ้ำใน Console: ให้ AudioManager สร้างตัวรับเสียงให้เองเมื่อหาไม่เจอ (false = แบบเดิม)
+    public static bool AudioListenerGuard = true;
 
     // เขียนทับค่าจาก Firebase (key ต้องตรงชื่อ field เช่น "LightBullets") ค่าที่ไม่ใช่ bool จะถูกข้าม
     public static void Apply(IDictionary<string, object> values)
@@ -191,6 +195,8 @@ public static class FeatureFlags
                 case nameof(AppBranding): AppBranding = on; break;
                 case nameof(SoloStartFix): SoloStartFix = on; break;
                 case nameof(PrismMapV3): PrismMapV3 = on; break;
+                case nameof(NewSounds): NewSounds = on; break;
+                case nameof(AudioListenerGuard): AudioListenerGuard = on; break;
             }
         }
     }

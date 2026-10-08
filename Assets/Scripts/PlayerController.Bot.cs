@@ -11,13 +11,15 @@ public partial class PlayerController : IPunInstantiateMagicCallback
     // เลขประจำตัวบอทเริ่มที่ 1000 (ไม่ชนกับ ActorNumber ของคนจริงที่เป็นเลขน้อย ๆ)
     public const int BotIdBase = 1000;
 
+    // true = ยานนี้เป็นบอทที่ Master Client ควบคุม
     public bool IsBot { get; private set; }
+    // ระดับความยากของบอท (0-3) ใช้ปรับสมองบอท
     public int BotDifficulty { get; private set; }
-    private int botId;
-    private string botName = "BOT";
-    private int botShip;
-    private int botSkillIndex;
-    private int botPaint;
+    private int botId; // เลขผู้ต่อสู้ของบอท (เริ่มที่ BotIdBase) ใช้แทน ActorNumber
+    private string botName = "BOT"; // ชื่อบอทที่แสดงบนจอและ Kill Feed
+    private int botShip; // index ยานที่บอทใช้
+    private int botSkillIndex; // index สกิลที่บอทใช้
+    private int botPaint; // index สีลายยานของบอท (ShipPaint.Colors)
 
     // คำสั่งจากสมองบอท (ใช้เฉพาะเมื่อ IsBot)
     [System.NonSerialized] public Vector2 botMove;
@@ -50,6 +52,7 @@ public partial class PlayerController : IPunInstantiateMagicCallback
         IsBoss = data.Length > 7 && data[7] is bool boss && boss;
     }
 
+    // true = บอทตัวนี้เป็นบอส (โหมด Survival/Campaign)
     public bool IsBoss { get; private set; }
 
     // บอส: เลือด 6 เท่า แรง 1.4 เท่า ช้าลงนิดหน่อย ตัวใหญ่ 1.6 เท่า (ทุกเครื่องคำนวณเหมือนกัน)

@@ -1081,8 +1081,8 @@ public class FirebaseManager : MonoBehaviour
 // แถวหนึ่งในตารางอันดับแรงค์ (เฟส 6)
 public class LeaderboardEntry
 {
-    public string uid;
-    public string name;
-    public int mmr;
-    public int level;
+    public string uid; // uid ของผู้เล่นในแถวอันดับ
+    public string name; // ชื่อผู้เล่นที่แสดงในตารางอันดับ
+    public int mmr; // คะแนน MMR ใช้เรียงอันดับและบอกแรงค์
+    public int level; // เลเวลบัญชีของผู้เล่น
 }

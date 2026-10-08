@@ -17,9 +17,9 @@ using TMPro;
 // รับ IOnEventCallback เพื่อรับ RaiseEvent ของดาว (รหัส 71-73)
 public partial class GameplayManager : IOnEventCallback
 {
-    private int gameMode;
-    private const byte EvStarSpawn = 71, EvStarClaim = 72, EvStarTaken = 73;
-    private const string ZoneXKey = "ZoneX", ZoneYKey = "ZoneY", WaveKey = "Wave", ModeResultKey = "ModeResult";
+    private int gameMode; // โหมดเกมของแมตช์นี้ (ค่า MatchRules.ModeXXX)
+    private const byte EvStarSpawn = 71, EvStarClaim = 72, EvStarTaken = 73; // รหัส RaiseEvent ของดาว: เกิดดาว / ขอเก็บ / มีคนเก็บได้
+    private const string ZoneXKey = "ZoneX", ZoneYKey = "ZoneY", WaveKey = "Wave", ModeResultKey = "ModeResult"; // คีย์ Room Properties: จุดศูนย์กลางวง, ระลอก Survival, ผลโหมด
 
     // ===== ตั้งค่าตอนเริ่มแมตช์ (เรียกจาก ConfigureMultiplayerMatch) =====
     private void ConfigureGameMode()
@@ -387,9 +387,9 @@ public partial class GameplayManager : IOnEventCallback
 
     // ================= 2) STAR HUNT =================
     private sealed class Star { public GameObject view; public bool claimSent; }
-    private readonly Dictionary<int, Star> stars = new Dictionary<int, Star>();
-    private float nextStarAt = -1f;
-    private int starCounter;
+    private readonly Dictionary<int, Star> stars = new Dictionary<int, Star>(); // ดาวที่อยู่ในแม็พตอนนี้ (รหัสดาว -> ข้อมูลดาว)
+    private float nextStarAt = -1f; // เวลาที่ Master จะเกิดดาวดวงถัดไป (-1 = ยังไม่เริ่มนับ)
+    private int starCounter; // ตัวนับใช้สร้างรหัสดาวไม่ให้ซ้ำกัน
 
     // ทุกเฟรมของโหมดเก็บดาว: หมุนดาว, Master เกิดดาวทุก 2.5 วิ (ไม่เกิน 6 ดวง) และให้บอทเก็บ
     // ยานเราแตะดาวแล้วส่งขอเก็บไปที่ Master
@@ -479,7 +479,7 @@ public partial class GameplayManager : IOnEventCallback
             if (star.view != null) Destroy(star.view);
             stars.Remove(id);
             if (PhotonNetwork.IsMasterClient) AddModeScores(new Dictionary<int, int> { [taker] = 1 });
-            if (localPlayer != null && taker == localPlayer.CombatantId && AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_ShieldHit");
+            if (localPlayer != null && taker == localPlayer.CombatantId && AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Star"); // ปิด NewSounds = เสียงโดนโล่แบบเดิม
         }
     }
 
@@ -713,7 +713,7 @@ public partial class GameplayManager : IOnEventCallback
         if (campaign.boss ? Time.time > 3f && !BossAlive() && BossSeen() : MatchRules.LocalKills() >= campaign.kills) SetModeResult(1);
     }
 
-    private bool bossSeen;
+    private bool bossSeen; // เคยพบยานบอสในฉากแล้วหรือยัง
     // true = เคยเห็นบอสในฉากแล้ว (กันตัดสินว่าชนะก่อนบอสถูกสร้างเสร็จ)
     private bool BossSeen()
     {

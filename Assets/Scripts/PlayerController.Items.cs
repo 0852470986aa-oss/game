@@ -10,7 +10,7 @@ public partial class PlayerController
     private float itemRegen;          // HP/วินาที เมื่อไม่โดนยิง 3 วินาที (Nano Repair)
     private float itemKillHeal;       // ฟื้น % ของ HP สูงสุดเมื่อฆ่าได้ (Siphon Module)
     private float itemProtection;     // วินาทีกันตัวหลังเกิดเพิ่ม (Aegis Core)
-    private float lastHullDamageAt = -10f;
+    private float lastHullDamageAt = -10f; // เวลาที่ตัวยานโดนดาเมจล่าสุด ใช้เช็กเงื่อนไขฟื้นเลือดของ Nano Repair
 
     // คูณค่าพลังตามตีบวก + ไอเท็ม (ห้องปิด UPGRADES หรือปิดสวิตช์ = ไม่เปลี่ยนอะไร)
     private void ApplyLoadoutBonus(int shipIndex)

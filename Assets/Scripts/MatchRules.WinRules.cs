@@ -15,10 +15,10 @@ using Photon.Realtime;
 // ส่วนเงื่อนไขชนะของ MatchRules (partial)
 public static partial class MatchRules
 {
-    public const string WinRuleKey = "WinRule";
-    public const int WinFirstTo = 0, WinMostKills = 1, WinNetScore = 2, WinDamage = 3, WinBounty = 4;
-    public static readonly string[] WinRuleNames = { "FIRST TO X", "MOST KILLS", "NET SCORE", "MOST DAMAGE", "BOUNTY HUNT" };
-    public const string DamageKey = "Dmg", BountyKey = "Bty", BotDamagePrefix = "DM", BotBountyPrefix = "BB";
+    public const string WinRuleKey = "WinRule"; // คีย์ Room Property เก็บเงื่อนไขชนะของห้อง
+    public const int WinFirstTo = 0, WinMostKills = 1, WinNetScore = 2, WinDamage = 3, WinBounty = 4; // รหัสเงื่อนไขชนะแต่ละแบบ (ใช้เป็น index ของ WinRuleNames)
+    public static readonly string[] WinRuleNames = { "FIRST TO X", "MOST KILLS", "NET SCORE", "MOST DAMAGE", "BOUNTY HUNT" }; // ชื่อเงื่อนไขชนะที่แสดงบนปุ่มเลือกในห้องรอ
+    public const string DamageKey = "Dmg", BountyKey = "Bty", BotDamagePrefix = "DM", BotBountyPrefix = "BB"; // คีย์ Player Property ดาเมจ/ค่าหัว และ prefix คีย์ห้องของบอท
 
     // เงื่อนไขชนะของห้องนี้ (โหมดพิเศษ/แรงค์/ปิดสวิตช์ = FIRST TO X)
     public static int WinRule(RoomInfo room)
@@ -74,9 +74,9 @@ public static partial class MatchRules
     // เก็บยอดรวมไว้ในเครื่องแล้วส่ง "ยอดรวม" ขึ้นเครือข่าย (ไม่อ่านค่าเก่าจาก Photon มาบวก เพราะถ้าเน็ตช้าค่าที่อ่านยังไม่อัปเดต ยอดจะหาย)
     private static readonly Dictionary<string, Dictionary<int, float>> ownedTotals = new Dictionary<string, Dictionary<int, float>>
     { [DamageKey] = new Dictionary<int, float>(), [BountyKey] = new Dictionary<int, float>() };
-    private static readonly HashSet<int> dirtyDamage = new HashSet<int>();
-    private static bool freshScores;
-    private static float nextDamageFlush;
+    private static readonly HashSet<int> dirtyDamage = new HashSet<int>(); // id ยานที่ดาเมจเปลี่ยนแต่ยังไม่ได้ส่งขึ้นเครือข่าย
+    private static bool freshScores; // true = แมตช์ใหม่ เริ่มนับจาก 0 ไม่อ่านค่าเก่าจาก Photon
+    private static float nextDamageFlush; // เวลาที่จะส่งยอดดาเมจรอบถัดไป (ส่งทุก 0.4 วิ)
 
     // เริ่มแมตช์: fresh = แมตช์ใหม่ (เริ่ม 0) / false = กลับเข้าแมตช์เดิมหลังหลุด (ต่อจากค่าที่ส่งไว้)
     public static void BeginScores(bool fresh)

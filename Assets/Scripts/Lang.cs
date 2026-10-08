@@ -13,7 +13,7 @@ using TMPro;
 // ตัวจัดการภาษา: เก็บภาษาที่ผู้เล่นเลือกใน PlayerPrefs และแปลข้อความอังกฤษเป็นไทยจากตาราง Table / Patterns
 public static class Lang
 {
-    private const string PrefsKey = "Opt_Language";
+    private const string PrefsKey = "Opt_Language"; // key ใน PlayerPrefs ที่เก็บภาษาที่ผู้เล่นเลือก
     // true = ผู้เล่นเลือกภาษาไทย
     private static int thaiCache = -1;
     public static bool Thai
@@ -25,7 +25,7 @@ public static class Lang
             return thaiCache == 1;
         }
     }
-    public static string CurrentName => Thai ? "ไทย" : "ENGLISH";
+    public static string CurrentName => Thai ? "ไทย" : "ENGLISH"; // ชื่อภาษาปัจจุบันที่แสดงบนปุ่มเลือกภาษา
 
     // เปลี่ยนภาษา (true = ไทย) บันทึกลง PlayerPrefs แล้วสั่ง LangTranslator วาดข้อความทุกอันใหม่ทันที
     public static void SetThai(bool thai)
@@ -59,7 +59,7 @@ public static class Lang
         return thai;
     }
 
-    private static readonly Dictionary<string, string> Cache = new Dictionary<string, string>();
+    private static readonly Dictionary<string, string> Cache = new Dictionary<string, string>(); // จำผลแปลข้อความที่เคยแปลแล้ว ไม่ต้องแปลซ้ำ
 
     // แปลจริง (ไม่ผ่านตัวจำ)
     private static string TranslateUncached(string text)
@@ -74,8 +74,8 @@ public static class Lang
         return TranslatePlain(text);
     }
 
-    private static readonly System.Text.RegularExpressions.Regex TagSplit = new System.Text.RegularExpressions.Regex("(<[^>]*>)");
-    private static readonly System.Text.RegularExpressions.Regex SegmentSplit = new System.Text.RegularExpressions.Regex("( {2,}| / )");
+    private static readonly System.Text.RegularExpressions.Regex TagSplit = new System.Text.RegularExpressions.Regex("(<[^>]*>)"); // แยกแท็ก rich text <...> ออกจากตัวหนังสือก่อนแปล
+    private static readonly System.Text.RegularExpressions.Regex SegmentSplit = new System.Text.RegularExpressions.Regex("( {2,}| / )"); // แยกช่วงข้อความด้วยช่องว่าง 2 ช่องขึ้นไป หรือ " / "
 
     // แปลข้อความที่ไม่มีแท็ก: ถ้ามีหลายบรรทัดจะแยกแปลทีละบรรทัด (ตัด \r ท้ายบรรทัด) แล้วต่อกลับด้วย \n
     private static string TranslatePlain(string text)
@@ -651,9 +651,9 @@ public static class Lang
 // ข้ามช่องพิมพ์ของผู้เล่น (TMP_InputField)
 public class LangTranslator : MonoBehaviour, ITextPreprocessor
 {
-    private static LangTranslator instance;
-    private float nextScan;
-    private bool appliedThai;
+    private static LangTranslator instance; // ตัวแปลภาษาตัวเดียวที่อยู่ข้ามฉาก (DontDestroyOnLoad)
+    private float nextScan; // เวลาที่จะสแกนหาข้อความใหม่รอบถัดไป (ทุก 2 วินาที)
+    private bool appliedThai; // ภาษาที่ใช้วาดล่าสุด ถ้าไม่ตรง Lang.Thai จะวาดข้อความใหม่ทั้งหมด
 
     // เรียกอัตโนมัติหลังโหลดฉากแรก: เตรียมฟอนต์ไทย สร้าง LangTranslator แบบ DontDestroyOnLoad
     // สมัครรับ TEXT_CHANGED_EVENT ของ TextMeshPro และติดตัวแปลให้ข้อความที่มีอยู่ทั้งหมด

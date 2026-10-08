@@ -98,20 +98,20 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     // ปุ่มควบคุมบนจอมือถือ (ลากใส่ใน Inspector): จอยสติ๊กเคลื่อนที่ ปุ่มยิง ปุ่มสกิล รูปคูลดาวน์และไอคอนสกิล
     [Header("UI Controls")]
     public UIJoystick joystick;
-    public UIButton fireButton;
-    public UIButton skillButton;
-    public Image skillCooldownImage;
-    public Image skillIconImage;
+    public UIButton fireButton; // ปุ่มยิงกระสุนบนจอ
+    public UIButton skillButton; // ปุ่มใช้สกิลบนจอ
+    public Image skillCooldownImage; // รูปทับปุ่มสกิล แสดงเวลาคูลดาวน์ที่เหลือ
+    public Image skillIconImage; // ไอคอนสกิลที่ติดตั้งอยู่บนปุ่มสกิล
 
     // ข้อความ Ping และข้อความชื่อผู้เล่น (playerInfoText ถูกใช้เป็นตัวอ้างอิง Canvas ของมินิแม็พด้วย)
     [Header("UI Text")]
     public TMP_Text pingText;
-    public TMP_Text playerInfoText;
+    public TMP_Text playerInfoText; // ข้อความชื่อผู้เล่น (ซ่อนไว้ ใช้อ้างอิง Canvas ของมินิแม็พ)
 
     // ยานของเรา (ตั้งผ่าน SetLocalPlayer) และยานศัตรู (ค้นหาเองใน Update)
     [Header("Players")]
     public PlayerController localPlayer;
-    public PlayerController remotePlayer;
+    public PlayerController remotePlayer; // ยานคู่แข่ง (ค้นหาเองใน Update)
 
     // ความยาวแมตช์ หน่วยวินาที (180 = 3 นาที) หมดเวลาแล้วตัดสินจาก Kill ถ้าเท่ากัน = เสมอ
     [Header("Match Settings")]
@@ -306,18 +306,18 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     // อ้างอิง UI หน้าผล: กรอบสี ชื่อ รูปยาน สถานะ เหรียญที่ได้ ของเราและคู่แข่ง + ปุ่มกลับ Lobby (สร้าง/ผูกใน BuildResultUI)
     [Header("Result UI")]
     public GameObject resultPanel;
-    public TMP_Text resultRoomNumber;
-    public UnityEngine.UI.Outline localResultOutline;
-    public TMP_Text localResultName;
-    public Image localResultShip;
-    public TMP_Text localResultStatus;
-    public TMP_Text localResultCoins;
-    public UnityEngine.UI.Outline remoteResultOutline;
-    public TMP_Text remoteResultName;
-    public Image remoteResultShip;
-    public TMP_Text remoteResultStatus;
-    public TMP_Text remoteResultCoins;
-    public Button btnReturnToMenu;
+    public TMP_Text resultRoomNumber; // ข้อความเลขห้องบนหน้าผล
+    public UnityEngine.UI.Outline localResultOutline; // กรอบสีรอบการ์ดผลของเรา (สีตามแพ้/ชนะ)
+    public TMP_Text localResultName; // ชื่อผู้เล่นของเราบนหน้าผล
+    public Image localResultShip; // รูปยานของเราบนหน้าผล
+    public TMP_Text localResultStatus; // สถานะผลของเรา (WIN / LOSE / DRAW)
+    public TMP_Text localResultCoins; // จำนวนเหรียญที่เราได้จากแมตช์นี้
+    public UnityEngine.UI.Outline remoteResultOutline; // กรอบสีรอบการ์ดผลของคู่แข่ง
+    public TMP_Text remoteResultName; // ชื่อคู่แข่งบนหน้าผล
+    public Image remoteResultShip; // รูปยานของคู่แข่งบนหน้าผล
+    public TMP_Text remoteResultStatus; // สถานะผลของคู่แข่ง
+    public TMP_Text remoteResultCoins; // จำนวนเหรียญที่คู่แข่งได้
+    public Button btnReturnToMenu; // ปุ่มกลับไปหน้า Lobby หลังจบแมตช์
     
     // ภาพพื้นหลังแม็พ, ขอบจอแดงเตือนเลือดต่ำ, สวิตช์สร้างสิ่งกีดขวางอัตโนมัติตอนเริ่ม
     [Header("Map UI")]

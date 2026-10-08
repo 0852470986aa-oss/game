@@ -12,10 +12,10 @@ public class LoginManager : MonoBehaviour
     // ช่อง UI ที่ลากมาใส่ใน Inspector: ข้อความหัวเรื่อง/สถานะ/ข้อผิดพลาด และปุ่มล็อกอินสองแบบ
     [Header("UI References")]
     public TMP_Text titleText;
-    public TMP_Text statusText;
-    public TMP_Text errorText;
-    public UnityEngine.UI.Button googleButton;
-    public UnityEngine.UI.Button guestButton;
+    public TMP_Text statusText; // ข้อความสถานะ เช่น กำลังเชื่อมต่อ/กำลังล็อกอิน
+    public TMP_Text errorText; // ข้อความแจ้งข้อผิดพลาดเมื่อล็อกอินไม่สำเร็จ
+    public UnityEngine.UI.Button googleButton; // ปุ่มล็อกอินด้วยบัญชี Google
+    public UnityEngine.UI.Button guestButton; // ปุ่มเข้าเล่นแบบ Guest (ไม่ผูกบัญชี)
 
     // true ระหว่างรอผลล็อกอิน ใช้กันผู้เล่นกดปุ่มซ้ำหลายครั้ง
     private bool isLoggingIn = false;

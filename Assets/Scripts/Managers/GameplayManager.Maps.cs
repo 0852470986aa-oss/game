@@ -51,7 +51,7 @@ public partial class GameplayManager
     private static void FitBackgroundToArena(SpriteRenderer renderer)
     {
         if (renderer == null || renderer.sprite == null) return;
-        const float targetWorldHeight = 75f;
+        const float targetWorldHeight = 75f; // ความสูงเป้าหมายของภาพพื้นหลัง (หน่วยโลก)
         float scale = targetWorldHeight / Mathf.Max(renderer.sprite.bounds.size.y, 0.01f);
         renderer.transform.localScale = new Vector3(scale, scale, 1f);
     }

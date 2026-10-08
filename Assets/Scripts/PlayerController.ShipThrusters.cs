@@ -10,7 +10,7 @@ public partial class PlayerController
     // โปรไฟล์ไอพ่น 1 ลำ: สไตล์เปลวไฟ (0 แดง, 1 ขาว/ฟ้า, 2 เขียว), จุดหัวฉีด และตัวคูณความกว้างเปลวไฟ
     private class ThrusterProfile
     {
-        public int style; public Vector2[] anchors; public float width;
+        public int style; public Vector2[] anchors; public float width; // สไตล์เปลวไฟ, ตำแหน่งหัวฉีด (สัดส่วนบนรูป) และตัวคูณความกว้างไฟ
         // constructor: สไตล์, ตัวคูณความกว้าง, จุดหัวฉีดทั้งหมด
         public ThrusterProfile(int style, float width, params Vector2[] anchors) { this.style = style; this.width = width; this.anchors = anchors; }
     }
@@ -27,7 +27,7 @@ public partial class PlayerController
         new ThrusterProfile(0, 1.15f, new Vector2(.343f, .3f), new Vector2(.655f, .3f)),
     };
 
-    private float exhaustWidthScale = 1f;
+    private float exhaustWidthScale = 1f; // ตัวคูณความกว้างไฟไอพ่นของยานนี้ (จากโปรไฟล์)
 
     // ยานนี้ใช้รูปของตัวเองและมีโปรไฟล์ไอพ่นหรือไม่ (เรียกตอนสร้างไอพ่นครั้งแรกใน LateUpdateVisuals)
     private ThrusterProfile OwnThrusterProfile()

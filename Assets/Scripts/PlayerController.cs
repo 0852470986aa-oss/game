@@ -10,9 +10,9 @@ using Photon.Pun;
 // Local-only visual: no collider, damage, or network object is created.
 public class ShipSheetBurst : MonoBehaviour
 {
-    private SpriteRenderer visual;
-    private float lifetime, age, baseScale;
-    private Vector3 origin;
+    private SpriteRenderer visual; // SpriteRenderer ของภาพระเบิด
+    private float lifetime, age, baseScale; // ระยะเวลาแสดง, เวลาที่ผ่านไป และสเกลตั้งต้นให้ได้ขนาดที่ต้องการ
+    private Vector3 origin; // ตำแหน่งจุดระเบิด ใช้จัดภาพให้อยู่กึ่งกลางตอนขยาย
 
     // ตั้งค่าเอฟเฟกต์: renderer ที่ใช้, ขนาดสุดท้าย (หน่วยโลก) และระยะเวลาแสดง (วินาที)
     public void Initialize(SpriteRenderer renderer, float size, float duration)
@@ -49,7 +49,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     // HP สูงสุด/ปัจจุบัน: ค่าจริงถูกตั้งจาก BattleLoadoutCatalog ใน InitializeStats (เจ้าของ) แล้วซิงก์ให้อีกเครื่องผ่าน OnPhotonSerializeView
     [Header("Ship Stats")]
     public float maxHp = 100f;
-    public float currentHp = 100f;
+    public float currentHp = 100f; // HP ปัจจุบันของยาน (0 = ระเบิด)
     // speed = ความเร็ว (หน่วยโลก/วินาที) ปัจจุบัน อาจถูกคูณจากโล่/สถานะช้า; attack = ดาเมจต่อกระสุน 1 นัด
     public float speed = 5f;
     public float attack = 10f;
@@ -65,7 +65,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     // ตำแหน่ง/มุมล่าสุดที่รับจากเครือข่าย (ใช้เฉพาะยานของอีกฝ่ายเพื่อ Lerp ให้ลื่น), movementInput = ทิศจากจอยที่ผ่านการเร่ง/หน่วงแล้ว
     [Header("Network Sync")]
     private Vector2 networkPosition;
-    private float networkRotation;
+    private float networkRotation; // มุมหมุนล่าสุดที่รับจากเครือข่าย
     // ความเร็วล่าสุดที่ได้รับ + เวลาที่ได้รับ (ใช้เดาตำแหน่งล่วงหน้าเมื่อห้องคนเยอะส่งข้อมูลถี่น้อยลง)
     private Vector2 networkVelocity;
     private float networkReceivedAt;
@@ -75,11 +75,11 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     // อ้างอิงปุ่ม/จอยบนจอ หาให้เฉพาะยานของเราใน Start
     [Header("UI Controls")]
     private UIJoystick joystick;
-    private UIButton fireButton;
-    private UIButton skillButton;
+    private UIButton fireButton; // ปุ่มยิงบนจอ
+    private UIButton skillButton; // ปุ่มใช้สกิลบนจอ
     
     [Header("Shooting")]
-    public Transform firePoint;
+    public Transform firePoint; // จุดปล่อยกระสุนที่หัวยาน
     // fireCooldown = เวลาระหว่างนัด (วินาที) ยิ่งน้อยยิ่งยิงเร็ว; baseFireCooldown = ค่าเดิมไว้คืนหลังหมดบัฟ Energy Core
     public float fireCooldown = 0.5f;
     private float baseFireCooldown;
@@ -88,13 +88,13 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     // ขอบเขตแม็พที่ยานเดินได้ (หน่วยโลก) ค่านี้ถูกแทนที่ด้วยค่าของแม็พจริงใน Start
     [Header("Arena Bounds")]
     public Vector2 arenaMin = new Vector2(-38f, -35.5f);
-    public Vector2 arenaMax = new Vector2(38f, 35.5f);
+    public Vector2 arenaMax = new Vector2(38f, 35.5f); // มุมขวาบนของขอบเขตแม็พ
 
     // ข้อมูลสกิล: ชนิดสกิล, คูลดาวน์เต็ม (วินาที) และคูลดาวน์ที่เหลือ (นับลงใน Update ของเจ้าของ)
     [Header("Skill Mechanics")]
     public int skillType = 0; // 0=STUN, 1=SHIELD, 2=NOVA, 3=SEEKER
-    public float maxCooldown = 10f;
-    public float currentCooldown = 0f;
+    public float maxCooldown = 10f; // คูลดาวน์เต็มของสกิล (วินาที)
+    public float currentCooldown = 0f; // คูลดาวน์สกิลที่เหลือ (0 = ใช้ได้)
     // ธงสถานะของยาน: สตัน, โล่, อยู่ใน Energy Core (ยิงเร็วขึ้นแต่เสียเลือด), แมตช์จบแล้ว, ตายอยู่
     private bool isStunned = false;
     private bool isShielded = false;
@@ -114,19 +114,19 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     // ตัวแปรภาพ: ไฟไอพ่น, ภาพยาน, โล่แบบ spritesheet และชิ้นส่วนไอพ่นที่สร้างตอนรัน (ใช้ใน PlayerController.Visuals.cs)
     [Header("Visual Effects")]
     public ParticleSystem thrusterEffect;
-    private SpriteRenderer spriteRenderer;
-    private SkillSheetVisual authoredShield;
-    private SpriteRenderer[] sheetThrusters;
-    private SpriteRenderer[] sheetThrusterGlows;
-    private Vector2[] exhaustAnchors;
-    private float[] exhaustAngles;
-    private int exhaustStyle;
-    private float displayedThrust;
-    private Color exhaustGlowColor;
-    private static readonly Sprite[] exhaustSprites = new Sprite[3];
-    private Vector3 previousVfxPosition;
-    private float lastSheetImpact = -10f;
-    private static Sprite[] shipEffectSprites;
+    private SpriteRenderer spriteRenderer; // SpriteRenderer ของภาพยาน
+    private SkillSheetVisual authoredShield; // ภาพโล่แบบ spritesheet ตอนใช้สกิล SHIELD
+    private SpriteRenderer[] sheetThrusters; // เปลวไฟไอพ่นของแต่ละหัวฉีด
+    private SpriteRenderer[] sheetThrusterGlows; // แสงเรืองรอบหัวฉีดแต่ละอัน
+    private Vector2[] exhaustAnchors; // ตำแหน่งหัวฉีดบนตัวยาน
+    private float[] exhaustAngles; // มุมพ่นไฟของแต่ละหัวฉีด
+    private int exhaustStyle; // สไตล์เปลวไฟ (0 แดง, 1 ขาว/ฟ้า, 2 เขียว)
+    private float displayedThrust; // แรงขับที่แสดงอยู่ (0-1) ค่อย ๆ ไล่ตามแรงขับจริงให้ไฟยืดหดนุ่มนวล
+    private Color exhaustGlowColor; // สีแสงเรืองของไอพ่นตามสไตล์
+    private static readonly Sprite[] exhaustSprites = new Sprite[3]; // รูปเปลวไฟของแต่ละสไตล์ (โหลดครั้งเดียวใช้ร่วมกันทุกยาน)
+    private Vector3 previousVfxPosition; // ตำแหน่งยานเฟรมก่อน ใช้วัดระยะเคลื่อนที่ของเอฟเฟกต์
+    private float lastSheetImpact = -10f; // เวลาที่แสดงเอฟเฟกต์โดนยิงล่าสุด กันเอฟเฟกต์ซ้อนถี่เกินไป
+    private static Sprite[] shipEffectSprites; // รูปเอฟเฟกต์ยานจาก Images/VFX_ShipEffects (โหลดครั้งเดียว)
 
 
     // Unity เรียกครั้งแรกเมื่อยานถูกสร้าง (ทุกเครื่อง): ตั้งขอบแม็พ ฟิสิกส์ และสียาน
@@ -374,7 +374,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
     private LineRenderer spawnRing;
     private Material spawnRingMaterial;
     public float RespawnReadyAt { get; private set; }
-    public string DeathReason { get; private set; } = "SHIP DESTROYED";
+    public string DeathReason { get; private set; } = "SHIP DESTROYED"; // สาเหตุการตายที่แสดงบนหน้าจอรอเกิดใหม่
 
     // ล้างสถานะทั้งหมดของชีวิตก่อนหน้า (สตัน ช้า โล่ โซนอันตราย ความเร็ว ภาพ) เรียกตอนตายและตอนเกิดใหม่ (ทุกเครื่อง)
     private void ResetLifeState()
@@ -467,7 +467,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
         // 3) Raycast จากหัวยานไปข้างหน้า หาจุดที่ชนสิ่งกีดขวางที่ใกล้สุด (ข้ามตัวเอง)
         Vector2 start = GetFirePosition();
         Vector2 direction = transform.up;
-        const float range = 8f;
+        const float range = 8f; // ระยะสูงสุดของเส้นเล็ง (หน่วยโลก)
         float length = range;
         var filter = new ContactFilter2D();
         filter.SetLayerMask(Physics2D.DefaultRaycastLayers);

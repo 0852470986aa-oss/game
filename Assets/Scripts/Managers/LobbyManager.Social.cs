@@ -14,19 +14,19 @@ public partial class LobbyManager
 {
     // แท็บของหน้าต่าง SOCIAL: เพื่อน / คำขอเป็นเพื่อน / กิลด์ / แชท
     private enum SocialTab { Friends, Requests, Guild, Chat }
-    private SocialTab socialTab;
-    private Button socialButton, inviteFriendsButton;
-    private TMP_Text socialBadge;
-    private RectTransform socialHomeRoot, socialWaitRoot;
-    private Image socialOverlay;
-    private RectTransform socialWindow, socialPage;
-    private TMP_Text socialMessageText, chatLogText;
-    private TMP_InputField chatInput, friendCodeInput, guildNameInput, guildTagInput, guildJoinInput;
-    private string socialMessage = "";
-    private Image invitePopup;
-    private Social.Invite shownInvite;
-    private bool socialSubscribed, socialTicking;
-    private float nextPresenceRefresh;
+    private SocialTab socialTab; // แท็บที่กำลังเปิดอยู่ในหน้าต่าง SOCIAL
+    private Button socialButton, inviteFriendsButton; // ปุ่ม SOCIAL บนหน้าหลัก และปุ่ม INVITE FRIENDS ในห้องรอ
+    private TMP_Text socialBadge; // ตัวเลขแจ้งเตือนคำขอเป็นเพื่อนบนปุ่ม SOCIAL
+    private RectTransform socialHomeRoot, socialWaitRoot; // จุดวาง UI สังคมบนหน้าหลัก และในห้องรอ
+    private Image socialOverlay; // พื้นหลังมืดของหน้าต่าง SOCIAL
+    private RectTransform socialWindow, socialPage; // กรอบหน้าต่าง SOCIAL และหน้าเนื้อหาแท็บที่สร้างใหม่ทุกครั้ง
+    private TMP_Text socialMessageText, chatLogText; // ข้อความแจ้งเตือนด้านล่างหน้าต่าง และกล่องข้อความแชท
+    private TMP_InputField chatInput, friendCodeInput, guildNameInput, guildTagInput, guildJoinInput; // ช่องพิมพ์แชท, รหัสเพื่อน, ชื่อ/แท็กกิลด์ใหม่ และรหัสกิลด์ที่จะเข้าร่วม
+    private string socialMessage = ""; // ข้อความแจ้งเตือนที่จะแสดง (คงไว้ตอนวาดหน้าใหม่)
+    private Image invitePopup; // กล่องคำชวนเข้าห้องจากเพื่อน
+    private Social.Invite shownInvite; // คำชวนที่กำลังแสดงอยู่ (กันสร้างกล่องซ้ำ)
+    private bool socialSubscribed, socialTicking; // สมัครรับอีเวนต์ Social แล้วหรือยัง / เริ่ม Coroutine SocialTick แล้วหรือยัง
+    private float nextPresenceRefresh; // เวลาที่จะรีเฟรชสถานะออนไลน์ของเพื่อนครั้งถัดไป (ทุก 20 วิ)
 
     // ===== ปุ่มบนหน้าหลัก (เรียกจาก BuildHomeScreen หลัง BuildProgressUI) =====
     private void BuildSocialHome(RectTransform root)
@@ -264,7 +264,7 @@ public partial class LobbyManager
         }
     }
 
-    private string pendingRemove;
+    private string pendingRemove; // uid เพื่อนที่กด X ครั้งแรกแล้ว รอกดซ้ำเพื่อยืนยันลบ
 
     // แปลงเวลาออนไลน์ล่าสุด (Unix ms) เป็นข้อความ เช่น "  /  5m ago", "3h ago", "2d ago" (0 = ไม่แสดง)
     private static string LastSeen(long last)
