@@ -44,7 +44,7 @@ public partial class BattleSettingsPanel : MonoBehaviour
             current = copy.AddComponent<BattleSettingsPanel>();
             current.leave = onLeave;
             current.logout = onLogout;
-            if (current.BindAuthored()) { current.MakeUnified(); return; }
+            if (current.BindAuthored()) { current.MakeUnified(); ButtonSkin.ApplyUnder(current.transform); return; }
             Debug.LogWarning("BattleSettingsTemplate is missing SettingsPanel; using the code-built settings panel.", template);
             current = null;
             Destroy(copy);
@@ -56,6 +56,7 @@ public partial class BattleSettingsPanel : MonoBehaviour
         current.logout = onLogout;
         current.Build();
         current.MakeUnified();
+        ButtonSkin.ApplyUnder(current.transform); // หน้าตาปุ่มแบบใหม่ (FeatureFlags.FancyButtons)
     }
 
     // สร้าง Canvas แบบ Screen Space Overlay (sortingOrder 200 ให้อยู่บนสุด)
@@ -102,9 +103,10 @@ public partial class BattleSettingsPanel : MonoBehaviour
     private void Button(Transform parent,string value,float x,float y,System.Action action)
     {
         var rect=Rect(value,parent,x,y,220,48);
-        rect.gameObject.AddComponent<UnityEngine.UI.Image>().color=new Color(.08f,.25f,.34f);
+        var image=rect.gameObject.AddComponent<UnityEngine.UI.Image>(); image.color=new Color(.08f,.25f,.34f);
         rect.gameObject.AddComponent<UnityEngine.UI.Button>().onClick.AddListener(()=>action());
         Text(rect,value,0,0,210);
+        ButtonSkin.Apply(image); // หน้าตาปุ่มแบบใหม่ (ปุ่มในหน้ายืนยันที่สร้างทีหลังด้วย)
     }
     // สร้างสไลเดอร์หนึ่งแถว (ข้อความหัวข้อด้านซ้าย + แถบเลื่อนด้านขวา) แล้วผูกกับ PlayerPrefs ผ่าน HookSlider
     private void Row(string title,string key,float defaultValue,float min,float max,float y,System.Action<float> changed)
@@ -337,6 +339,7 @@ public partial class BattleSettingsPanel : MonoBehaviour
         }
         Text(page,"Tap a row to change it. Saved on this device.",0,-178,600,"Hint").fontSize=16;
         Button(page,"BACK",0,-232,()=>optionsPage.SetActive(false));
+        ButtonSkin.ApplyUnder(page); // แถวตัวเลือก (Opt_) ก็แต่งด้วย
     }
 
     // ปุ่มย้อนกลับมือถือ/Esc: ปิดชั้นบนสุดของหน้าตั้งค่า (หน้า MORE OPTIONS > หน้ายืนยัน > หน้าตั้งค่า) คืน false ถ้าไม่ได้เปิดอยู่

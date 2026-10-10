@@ -159,6 +159,7 @@ public partial class GameplayManager
             var leave = BattlePanel("ReconnectLeave", reconnectLabel.transform, 0, -105, 260, 54, new Color(.35f, .1f, .1f, .95f));
             leave.raycastTarget = true;
             BattleLabel("Label", leave.transform, "BACK TO LOBBY", 0, 0, 250, 50, 20);
+            ButtonSkin.Apply(leave); // หน้าตาปุ่มแบบใหม่ (FeatureFlags.FancyButtons)
             leave.gameObject.AddComponent<UnityEngine.UI.Button>().onClick.AddListener(() =>
             {
                 battleReconnecting = false;

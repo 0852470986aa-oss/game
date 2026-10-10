@@ -56,15 +56,28 @@ public partial class LobbyManager
         });
         var stage = RevealRect("Stage", root, Vector2.zero, Vector2.zero); // จุดกลางจอ (ทุกอย่างหมุน/สั่นรอบจุดนี้)
 
-        // แสงรัศมี 16 เส้น (หมุนตลอด)
+        bool soft = FeatureFlags.SoftUiFx; // เอฟเฟกต์แบบนุ่ม (UiFx.cs) / false = แท่งแสงสี่เหลี่ยมแบบเดิม
+        float shadeAlpha = soft ? .96f : .9f; // Linear color space ทำให้ 0.9 ยังเห็นหน้าข้างหลังชัด จึงเข้มขึ้นเล็กน้อย
+        // แสงรัศมี (หมุนตลอด): แบบนุ่ม = ลำแสงเรียว 2 ชั้นหมุนสวนกัน + แสงเรืองหลังกล่อง / แบบเดิม = แท่ง 16 เส้น
         var rays = RevealRect("Rays", stage, Vector2.zero, Vector2.zero);
         var rayImages = new List<Image>();
-        for (int i = 0; i < 16; i++)
+        Image halo = null; // แสงเรืองกลมหลังกล่อง/รางวัล (แบบนุ่มเท่านั้น)
+        if (soft)
         {
-            var ray = RevealImage("Ray" + i, rays, Vector2.zero, new Vector2(i % 2 == 0 ? 26 : 14, 900), new Color(1, 1, 1, 0));
-            ray.rectTransform.localRotation = Quaternion.Euler(0, 0, i * 11.25f);
-            rayImages.Add(ray);
+            rayImages.Add(UiFx.Layer("RaysWide", rays, UiFx.Rays12, 980, new Color(1, 1, 1, 0)));
+            var thin = UiFx.Layer("RaysThin", rays, UiFx.Rays20, 820, new Color(1, 1, 1, 0));
+            thin.gameObject.AddComponent<UiSpin>().degreesPerSecond = -22f;
+            rayImages.Add(thin);
+            halo = UiFx.Layer("Halo", stage, UiFx.Glow, 540, new Color(1, 1, 1, 0));
+            rayImages.Add(halo);
         }
+        else
+            for (int i = 0; i < 16; i++)
+            {
+                var ray = RevealImage("Ray" + i, rays, Vector2.zero, new Vector2(i % 2 == 0 ? 26 : 14, 900), new Color(1, 1, 1, 0));
+                ray.rectTransform.localRotation = Quaternion.Euler(0, 0, i * 11.25f);
+                rayImages.Add(ray);
+            }
         // กล่อง
         var crate = RevealImage("Crate", stage, Vector2.zero, new Vector2(230, 230), Color.white);
         var crateSprite = Resources.Load<Sprite>("Images/Items/crate");
@@ -74,20 +87,20 @@ public partial class LobbyManager
         var title = RevealText("Title", stage, "SUPPLY CRATE", new Vector2(0, 205), 30, Color.white);
 
         // 1) พื้นหลังมืด + กล่องเด้งขึ้น
-        for (float t = 0; t < .35f && crateRevealRoot == root; t += Time.unscaledDeltaTime)
+        for (float t = 0; t < .35f && RevealAlive(root); t += Time.unscaledDeltaTime)
         {
             float k = t / .35f;
-            shade.color = new Color(0, 0, 0, .9f * k);
+            shade.color = new Color(0, 0, 0, shadeAlpha * k);
             crate.rectTransform.localScale = Vector3.one * EaseOutBack(k);
             yield return null;
         }
-        if (crateRevealRoot != root) yield break; // ถูกปิดกลางทาง (ปุ่มย้อนกลับ)
-        shade.color = new Color(0, 0, 0, .9f);
+        if (!RevealAlive(root)) yield break; // ถูกปิดกลางทาง (ปุ่มย้อนกลับ)
+        shade.color = new Color(0, 0, 0, shadeAlpha);
         crate.rectTransform.localScale = Vector3.one;
 
         // 2) กล่องสั่นแรงขึ้น แสงรอบกล่องค่อย ๆ เป็นสีความหายาก
         float shake = 1.3f, nextTick = 0;
-        for (float t = 0; t < shake && !crateRevealSkip && crateRevealRoot == root; t += Time.unscaledDeltaTime)
+        for (float t = 0; t < shake && !crateRevealSkip && RevealAlive(root); t += Time.unscaledDeltaTime)
         {
             float k = t / shake;
             float amp = Mathf.Lerp(2f, 16f, k * k);
@@ -102,7 +115,7 @@ public partial class LobbyManager
             yield return null;
         }
 
-        if (crateRevealRoot != root) yield break;
+        if (!RevealAlive(root)) yield break;
         // 3) แสงวาบ กล่องหาย
         crate.gameObject.SetActive(false);
         title.gameObject.SetActive(false);
@@ -110,6 +123,9 @@ public partial class LobbyManager
         var flash = RevealImage("Flash", root, Vector2.zero, Vector2.zero, Color.white);
         Stretch(flash.rectTransform);
         flash.raycastTarget = false;
+        // แบบนุ่ม: คลื่นวงแหวนขยายออก + แสงระเบิดกลมตรงกลาง (แทนการวาบขาวจ้าเต็มจอ)
+        Image shock = soft ? UiFx.Layer("Shockwave", stage, UiFx.Ring, 220, rarity) : null;
+        Image burst = soft ? UiFx.Layer("Burst", stage, UiFx.Glow, 320, Color.white) : null;
 
         // 4) รางวัลเด้งออกมา + ประกายกระจาย
         Sprite rewardSprite = item != null ? Resources.Load<Sprite>(item.IconPath) : PolishSprites.Coin();
@@ -123,8 +139,9 @@ public partial class LobbyManager
         {
             float angle = Random.Range(0f, Mathf.PI * 2f);
             float speed = Random.Range(260f, epic ? 720f : 520f);
-            var spark = RevealImage("Spark" + i, stage, Vector2.zero, Vector2.one * Random.Range(6f, 14f), Color.Lerp(rarity, Color.white, Random.value * .5f));
-            spark.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
+            var spark = RevealImage("Spark" + i, stage, Vector2.zero, Vector2.one * (soft ? Random.Range(14f, 30f) : Random.Range(6f, 14f)), Color.Lerp(rarity, Color.white, Random.value * .5f));
+            if (soft) { spark.sprite = UiFx.Spark; spark.rectTransform.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 90f)); }
+            else spark.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
             sparks.Add(new KeyValuePair<Image, Vector2>(spark, new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * speed));
         }
         string rarityName = item != null ? Economy.RarityNames[(int)item.rarity] : "ASTRONIUM";
@@ -133,9 +150,21 @@ public partial class LobbyManager
         var detail = RevealText("Detail", stage, item != null ? item.Describe(1) : "", new Vector2(0, -230), 18, new Color(.75f, .85f, .92f));
         foreach (var text in new[] { rarityLabel, nameLabel, detail }) text.alpha = 0;
         Vector2 basePos = stage.anchoredPosition;
-        for (float t = 0; t < .9f && crateRevealRoot == root; t += Time.unscaledDeltaTime)
+        for (float t = 0; t < .9f && RevealAlive(root); t += Time.unscaledDeltaTime)
         {
-            flash.color = new Color(1, 1, 1, Mathf.Clamp01(1f - t / .35f));
+            flash.color = new Color(1, 1, 1, (soft ? .4f : 1f) * Mathf.Clamp01(1f - t / .35f));
+            if (shock != null)
+            {
+                float k = Mathf.Clamp01(t / .6f), ease = 1f - (1f - k) * (1f - k) * (1f - k);
+                shock.rectTransform.localScale = Vector3.one * (.4f + 3.8f * ease);
+                Color c = Color.Lerp(Color.white, rarity, k); c.a = .9f * (1f - k); shock.color = c;
+            }
+            if (burst != null)
+            {
+                float k = Mathf.Clamp01(t / .5f);
+                burst.rectTransform.localScale = Vector3.one * (.5f + 2.6f * k);
+                burst.color = new Color(1f, 1f, 1f, .85f * (1f - k));
+            }
             reward.rectTransform.localScale = Vector3.one * EaseOutBack(Mathf.Clamp01(t / .45f)) * 1.05f;
             rays.localRotation = Quaternion.Euler(0, 0, 32f + t * 40f);
             Color glow = rarity; glow.a = Mathf.Lerp(.55f, .3f, t / .9f);
@@ -152,23 +181,30 @@ public partial class LobbyManager
             stage.anchoredPosition = epic && t < .4f ? basePos + Random.insideUnitCircle * 10f * (1f - t / .4f) : basePos;
             yield return null;
         }
-        if (crateRevealRoot != root) yield break;
+        if (!RevealAlive(root)) yield break;
         stage.anchoredPosition = basePos;
         Destroy(flash.gameObject);
+        if (shock != null) Destroy(shock.gameObject);
+        if (burst != null) Destroy(burst.gameObject);
         foreach (var spark in sparks) Destroy(spark.Key.gameObject);
         foreach (var text in new[] { rarityLabel, nameLabel, detail }) text.alpha = 1;
 
         // 5) แตะเพื่อไปต่อ (แสงหมุนช้า ๆ รางวัลลอยขึ้นลง)
         crateRevealCanClose = true;
         var tap = RevealText("Tap", root, "TAP TO CONTINUE", new Vector2(0, -300), 20, new Color(.8f, .9f, 1f));
-        for (float t = 0; crateRevealRoot == root; t += Time.unscaledDeltaTime)
+        for (float t = 0; RevealAlive(root); t += Time.unscaledDeltaTime)
         {
             rays.localRotation = Quaternion.Euler(0, 0, 68f + t * 18f);
             reward.rectTransform.anchoredPosition = new Vector2(0, Mathf.Sin(t * 2.4f) * 8f);
+            if (halo != null) halo.rectTransform.localScale = Vector3.one * (1f + .06f * Mathf.Sin(t * 2.4f)); // แสงหลังรางวัลหายใจเบา ๆ
             tap.alpha = .45f + .55f * Mathf.Abs(Mathf.Sin(t * 2.5f));
             yield return null;
         }
     }
+
+    // ฉากเปิดกล่องชุดนี้ยังแสดงอยู่ไหม — เช็ก root != null ด้วย เพราะถ้าฉากถูกทำลายจากที่อื่น (เช่น หน้าถูกสร้างใหม่)
+    // Unity ถือว่า "วัตถุที่ถูกทำลาย == วัตถุที่ถูกทำลาย" เป็นจริง ทำให้ลูปเดิมวิ่งต่อแล้วเกิด MissingReferenceException
+    private bool RevealAlive(RectTransform root) => root != null && crateRevealRoot == root;
 
     // ===== ตัวช่วยสร้าง UI ของอนิเมชัน (สร้างใหม่ทุกครั้ง แล้วทำลายทิ้งตอนปิด) =====
     private static RectTransform RevealRect(string name, Transform parent, Vector2 pos, Vector2 size)

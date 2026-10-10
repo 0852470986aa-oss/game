@@ -71,14 +71,30 @@ public class CelebrationOverlay : MonoBehaviour
         shade.gameObject.AddComponent<Button>().onClick.AddListener(() => tapped = true);
         var stage = Rect("Stage", root, Vector2.zero);
 
+        bool soft = FeatureFlags.SoftUiFx; // เอฟเฟกต์แบบนุ่ม (UiFx.cs) / false = แท่งแสงสี่เหลี่ยมแบบเดิม
+        float shadeAlpha = soft ? .95f : .85f; // Linear color space ทำให้ 0.85 ยังเห็นหน้าผลข้างหลังชัด
         var rays = Rect("Rays", stage, new Vector2(0, 40));
         var rayImages = new List<Image>();
-        for (int i = 0; i < 18; i++)
+        Image halo = null, shock = null; // แสงเรืองหลังรูป / คลื่นวงแหวนตอนเปิดฉาก (แบบนุ่มเท่านั้น)
+        if (soft)
         {
-            var ray = Img("Ray" + i, rays, Vector2.zero, new Vector2(i % 2 == 0 ? 30 : 14, 1000), new Color(1, 1, 1, 0));
-            ray.rectTransform.localRotation = Quaternion.Euler(0, 0, i * 10f);
-            rayImages.Add(ray);
+            rayImages.Add(UiFx.Layer("RaysWide", rays, UiFx.Rays12, 1060, new Color(1, 1, 1, 0)));
+            var thin = UiFx.Layer("RaysThin", rays, UiFx.Rays20, 900, new Color(1, 1, 1, 0));
+            thin.gameObject.AddComponent<UiSpin>().degreesPerSecond = -20f;
+            rayImages.Add(thin);
+            halo = UiFx.Layer("Halo", stage, UiFx.Glow, 520, new Color(1, 1, 1, 0));
+            halo.rectTransform.anchoredPosition = new Vector2(0, 40);
+            rayImages.Add(halo);
+            shock = UiFx.Layer("Shockwave", stage, UiFx.Ring, 220, scene.color);
+            shock.rectTransform.anchoredPosition = new Vector2(0, 40);
         }
+        else
+            for (int i = 0; i < 18; i++)
+            {
+                var ray = Img("Ray" + i, rays, Vector2.zero, new Vector2(i % 2 == 0 ? 30 : 14, 1000), new Color(1, 1, 1, 0));
+                ray.rectTransform.localRotation = Quaternion.Euler(0, 0, i * 10f);
+                rayImages.Add(ray);
+            }
         var picture = Img("Picture", stage, new Vector2(0, 40), new Vector2(220, 220), Color.white);
         if (scene.sprite != null) { picture.sprite = scene.sprite; picture.preserveAspect = true; }
         else picture.color = scene.color;
@@ -92,8 +108,9 @@ public class CelebrationOverlay : MonoBehaviour
         for (int i = 0; i < 28; i++)
         {
             float a = Random.Range(0f, Mathf.PI * 2f);
-            var spark = Img("Spark" + i, stage, new Vector2(0, 40), Vector2.one * Random.Range(7f, 15f), Color.Lerp(scene.color, Color.white, Random.value * .6f));
-            spark.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
+            var spark = Img("Spark" + i, stage, new Vector2(0, 40), Vector2.one * (soft ? Random.Range(14f, 32f) : Random.Range(7f, 15f)), Color.Lerp(scene.color, Color.white, Random.value * .6f));
+            if (soft) { spark.sprite = UiFx.Spark; spark.rectTransform.localRotation = Quaternion.Euler(0, 0, Random.Range(0f, 90f)); }
+            else spark.rectTransform.localRotation = Quaternion.Euler(0, 0, 45);
             sparks.Add(new KeyValuePair<Image, Vector2>(spark, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * Random.Range(280f, 620f)));
         }
         AudioManager.Instance?.PlaySFX("SFX_Celebrate"); // ปิด NewSounds = เสียงโล่แตกแบบเดิม
@@ -101,7 +118,13 @@ public class CelebrationOverlay : MonoBehaviour
         // เด้งเข้า (1 วิ) — แตะเพื่อข้ามได้
         for (float t = 0; t < 1f && !tapped && root != null; t += Time.unscaledDeltaTime)
         {
-            shade.color = new Color(0, 0, 0, .85f * Mathf.Clamp01(t / .25f));
+            shade.color = new Color(0, 0, 0, shadeAlpha * Mathf.Clamp01(t / .25f));
+            if (shock != null)
+            {
+                float k = Mathf.Clamp01(t / .7f), ease = 1f - (1f - k) * (1f - k) * (1f - k);
+                shock.rectTransform.localScale = Vector3.one * (.4f + 4f * ease);
+                Color c = Color.Lerp(Color.white, scene.color, k); c.a = .9f * (1f - k); shock.color = c;
+            }
             picture.rectTransform.localScale = Vector3.one * EaseOutBack(Mathf.Clamp01(t / .45f));
             rays.localRotation = Quaternion.Euler(0, 0, t * 30f);
             Color glow = scene.color; glow.a = .35f * Mathf.Clamp01(t / .4f);
@@ -117,7 +140,8 @@ public class CelebrationOverlay : MonoBehaviour
             yield return null;
         }
         if (root == null) yield break;
-        shade.color = new Color(0, 0, 0, .85f);
+        shade.color = new Color(0, 0, 0, shadeAlpha);
+        if (shock != null) Destroy(shock.gameObject);
         picture.rectTransform.localScale = Vector3.one;
         title.rectTransform.localScale = Vector3.one;
         foreach (var t in new[] { title, subtitle, detail }) t.alpha = 1;
@@ -131,6 +155,7 @@ public class CelebrationOverlay : MonoBehaviour
             if (t < .4f) tapped = false;
             rays.localRotation = Quaternion.Euler(0, 0, 30f + t * 16f);
             picture.rectTransform.anchoredPosition = new Vector2(0, 40 + Mathf.Sin(t * 2.4f) * 8f);
+            if (halo != null) halo.rectTransform.localScale = Vector3.one * (1f + .06f * Mathf.Sin(t * 2.4f)); // แสงหลังรูปหายใจเบา ๆ
             tap.alpha = .45f + .55f * Mathf.Abs(Mathf.Sin(t * 2.5f));
             yield return null;
         }

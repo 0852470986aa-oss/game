@@ -274,6 +274,7 @@ public partial class LobbyManager
         button.onClick.AddListener(action);
         button.onClick.AddListener(() => { if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_Click"); });
         UILabel("Label", image.transform, value, 0, 0, w - 16, h - 8, 20, Color.white);
+        ButtonSkin.Apply(image); // หน้าตาปุ่มแบบมุมโค้ง/ไล่สี/เงา (FeatureFlags.FancyButtons) ตำแหน่ง/ขนาดเท่าเดิม
         return button;
     }
 

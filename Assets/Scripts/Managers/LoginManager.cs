@@ -33,6 +33,9 @@ public class LoginManager : MonoBehaviour
         Screen.orientation = ScreenOrientation.LandscapeLeft;
 
         SetError("");
+        // หน้าตาปุ่ม Google / Guest แบบใหม่ (FeatureFlags.FancyButtons) — ปุ่มที่มีรูปของตัวเองอยู่แล้วจะไม่ถูกเปลี่ยน
+        if (googleButton != null) ButtonSkin.Apply(googleButton.image);
+        if (guestButton != null) ButtonSkin.Apply(guestButton.image);
 
         if (FirebaseManager.Instance != null)
         {

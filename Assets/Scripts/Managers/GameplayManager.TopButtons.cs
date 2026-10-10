@@ -66,7 +66,7 @@ public partial class GameplayManager
         {
             if (rect == null) continue;
             var image = rect.GetComponent<Image>();
-            if (image != null) { image.color = TopButtonColor; image.sprite = null; image.type = Image.Type.Simple; }
+            if (image != null) { image.color = TopButtonColor; image.sprite = null; image.type = Image.Type.Simple; ButtonSkin.Apply(image); }
             var button = rect.GetComponent<Button>();
             if (button != null) { var colors = button.colors; colors.normalColor = Color.white; colors.highlightedColor = new Color(.85f, .95f, 1f); colors.pressedColor = new Color(.6f, .8f, 1f); button.colors = colors; }
             var label = rect.GetComponentInChildren<TMP_Text>(true);

@@ -767,6 +767,7 @@ public partial class GameplayManager
         btnReturnToMenu.targetGraphic = back;
         BattleLabel("Label", back.transform, "BACK TO LOBBY", 0, 0, 415, 52, 25);
         btnReturnToMenu.onClick.AddListener(LeaveRoom);
+        ButtonSkin.Apply(again); ButtonSkin.Apply(back); // หน้าตาปุ่มแบบใหม่ (FeatureFlags.FancyButtons)
         BattleLabel("Footer", resultSurface, "BATTLEFIELD OF THE STARS / MATCH REPORT", 0, -324, 1100, 25, 14);
         FitResultUI();
     }
@@ -822,6 +823,8 @@ public partial class GameplayManager
             btnReturnToMenu = back;
             btnReturnToMenu.onClick.AddListener(LeaveRoom);
         }
+        if (rematch != null) ButtonSkin.Apply(rematch.targetGraphic as Image); // หน้าตาปุ่มแบบใหม่
+        if (back != null) ButtonSkin.Apply(back.targetGraphic as Image);
         FitResultUI();
         return true;
     }

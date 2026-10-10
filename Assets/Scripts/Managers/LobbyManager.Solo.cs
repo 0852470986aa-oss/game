@@ -23,6 +23,13 @@ public partial class LobbyManager
     private static readonly int[] SoloModeGame = { 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 5 };
     private static readonly string[] SoloModeLabels = { "1 BOT", "3 BOTS", "5 BOTS", "9 BOTS", "TEAM 2v2", "TEAM 3v3", "TEAM 5v5",
         "SURVIVAL", "HILL 4P", "STARS 4P", "ROYALE 10", "CAMPAIGN" };
+    // FeatureFlags.FunBotRules: เป้าและเวลาของแต่ละโหมดเล่นกับบอท (ลำดับเดียวกับ SoloModeLabels) — เดิมทุกโหมดใช้ 3 Kill / 3 นาที
+    // ศัตรูเยอะ = เก็บ Kill ได้เร็ว จึงตั้งเป้าตามจำนวนบอท ให้แมตช์ยาวราว 4–7 นาที
+    // โหมดทีม: เป้าของทีม = ค่านี้ × จำนวนคนต่อทีม (2v2 = 10, 3v3 = 15, 5v5 = 25)
+    // HILL: คะแนนยึดเนิน = ค่านี้ × 15 (6 → ยืนในวง 90 วินาที) / STARS: ดาว = ค่านี้ × 3 (5 → 15 ดวง)
+    // SURVIVAL / ROYALE / CAMPAIGN ไม่ใช้ค่า Kill (ใช้กติกาของโหมดเอง)
+    private static readonly int[] SoloModeKills = { 5, 8, 10, 15, 5, 5, 5, 3, 6, 5, 3, 3 };
+    private static readonly int[] SoloModeSeconds = { 240, 300, 360, 420, 360, 360, 420, 900, 300, 300, 300, 480 };
     // โหมดเล่นคนเดียวที่เลือกไว้ (จำใน PlayerPrefs) ถ้าโหมดถูกปิดด้วย FeatureFlags จะกลับเป็น 0
     private int SoloMode
     {
@@ -37,6 +44,22 @@ public partial class LobbyManager
         set { PlayerPrefs.SetInt(SoloModePrefs, value); PlayerPrefs.Save(); }
     }
     private int SoloBots => SoloModeBots[SoloMode]; // จำนวนบอทของโหมดเล่นคนเดียวที่เลือก
+
+    // ข้อความเป้าหมาย + เวลาของโหมดที่เลือก แสดงใต้การ์ดโหมด เช่น "FIRST TO 15 KILLS  /  TIME 7:00" (โหมดเนื้อเรื่องคืน "")
+    // ใช้รูปแบบข้อความที่ Lang.cs แปลไทยได้อยู่แล้ว (ฆ่าครบ 15 ก่อนชนะ / เวลา 7:00)
+    private string SoloGoalText()
+    {
+        int mode = SoloMode, game = SoloModeGame[mode], kills = SoloModeKills[mode];
+        if (game == MatchRules.ModeCampaign) return "";
+        int teamSize = SoloModeTeams[mode] ? (SoloModeBots[mode] + 1) / 2 : 1; // ทีม 2v2/3v3/5v5: เป้าของทีม = Kill ต่อคน × คนในทีม
+        string goal = game == MatchRules.ModeKoth ? "HOLD THE ZONE"
+            : game == MatchRules.ModeStars ? "COLLECT STARS " + kills * 3
+            : game == MatchRules.ModeSurvival ? "SURVIVE 10 WAVES"
+            : game == MatchRules.ModeRoyale ? "LAST SHIP STANDING"
+            : "FIRST TO " + kills * teamSize + " KILLS";
+        int seconds = SoloModeSeconds[mode];
+        return goal + "  /  TIME " + seconds / 60 + ":" + (seconds % 60).ToString("00");
+    }
     private bool pendingSolo; // รอเข้า Offline Mode เพื่อสร้างห้องเล่นคนเดียว
     private bool pendingTraining; // รอเข้า Offline Mode เพื่อเริ่มโหมดฝึกซ้อม
     private const string SoloDifficultyPrefs = "SoloBotDifficulty"; // คีย์ PlayerPrefs เก็บความยากบอทที่เลือกไว้
@@ -170,6 +193,12 @@ public partial class LobbyManager
         props[MatchRules.GameModeKey] = game;
         if (game == MatchRules.ModeSurvival) props[MatchRules.MatchSecondsKey] = 900;
         if (game == MatchRules.ModeRoyale) props[MatchRules.MatchSecondsKey] = 300;
+        // เป้า Kill/เวลาตามโหมดและจำนวนบอท (ดู SoloModeKills) — ปิดสวิตช์ = 3 Kill / 3 นาทีแบบเดิม
+        if (FeatureFlags.FunBotRules && !pendingTraining && game != MatchRules.ModeCampaign)
+        {
+            props[MatchRules.KillTargetKey] = SoloModeKills[SoloMode];
+            props[MatchRules.MatchSecondsKey] = SoloModeSeconds[SoloMode];
+        }
         if (game == MatchRules.ModeCampaign)
         {
             int stage = Campaign.NextStage;

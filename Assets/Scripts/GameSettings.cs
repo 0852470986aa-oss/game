@@ -86,5 +86,8 @@ public static class GameSettings
             int level = Mathf.Clamp(Mathf.RoundToInt(Graphics / 2f * (levels - 1)), 0, levels - 1);
             if (QualitySettings.GetQualityLevel() != level) QualitySettings.SetQualityLevel(level, true);
         }
+        // FeatureFlags.FpsUnlock: การสลับระดับ Quality จะใช้ VSync ของระดับนั้น (Medium/High/Ultra ตั้ง VSync ไว้)
+        // ทำให้ FPS ติดเพดานรีเฟรชจอ (เช่น 60) แม้เลือก 120 — จึงปิด VSync ซ้ำหลังสลับระดับ ให้ targetFrameRate มีผลจริง
+        if (FeatureFlags.FpsUnlock) QualitySettings.vSyncCount = 0;
     }
 }

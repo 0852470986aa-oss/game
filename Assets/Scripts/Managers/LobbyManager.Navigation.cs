@@ -131,7 +131,8 @@ public partial class LobbyManager
                 card.GetComponent<Button>().interactable = profileLoaded && !pendingSolo && !roomRequestPending && !reconnecting && !Photon.Pun.PhotonNetwork.InRoom;
             }
         }
-        if (soloSelection != null) soloSelection.text = "SELECTED: " + SoloModeLabels[SoloMode] + "  /  Set difficulty, then press VS BOT";
+        if (soloSelection != null) soloSelection.text = "SELECTED: " + SoloModeLabels[SoloMode] + "  /  "
+            + (FeatureFlags.FunBotRules && SoloGoalText() != "" ? SoloGoalText() : "Set difficulty, then press VS BOT");
     }
 
     // เปิดหน้าต่างเลือกวิธีเล่น: รีเฟรชปุ่มโซโล่/แรงก์/การ์ดโหมดก่อน แล้วยกหน้าต่างขึ้นบนสุด
@@ -179,7 +180,8 @@ public partial class LobbyManager
         if (sample == null) return;
         var sampleImage = sample.GetComponent<Image>();
         var image = roomModeButton.GetComponent<Image>();
-        if (sampleImage != null && image != null) { image.color = sampleImage.color; image.sprite = sampleImage.sprite; image.type = sampleImage.type; }
+        if (sampleImage != null && image != null) { image.color = sampleImage.color; image.sprite = sampleImage.sprite; image.type = sampleImage.type; image.pixelsPerUnitMultiplier = sampleImage.pixelsPerUnitMultiplier; }
+        ButtonSkin.Apply(image); // ถ้าปุ่มต้นแบบแต่งแล้ว ปุ่มนี้ก็แต่งให้เหมือนกัน (ขอบ/เงา)
         roomModeButton.colors = sample.colors;
         var sampleLabel = sample.transform.Find("Label")?.GetComponent<TMP_Text>() ?? sample.GetComponentInChildren<TMP_Text>(true);
         if (sampleLabel != null)

@@ -123,6 +123,14 @@ public static class FeatureFlags
     public static bool NewSounds = true;
     // ทุกฉากไม่มี AudioListener ทำให้ใน Unity Editor ไม่มีเสียงและเตือนซ้ำใน Console: ให้ AudioManager สร้างตัวรับเสียงให้เองเมื่อหาไม่เจอ (false = แบบเดิม)
     public static bool AudioListenerGuard = true;
+    // ปุ่มสวยขึ้นทั้งเกม (ButtonSkin.cs): มุมโค้ง ไล่สีบนสว่าง-ล่างเข้ม ขอบเรืองแสงบาง ๆ เงาวาว เงาตก และกดแล้วยุบ — ตำแหน่ง/ขนาด/สีเดิม (false = ปุ่มสี่เหลี่ยมเรียบแบบเดิม)
+    public static bool FancyButtons = true;
+    // เอฟเฟกต์ฉากเปิดกล่องเสบียง/ฉากฉลอง แบบนุ่ม (UiFx.cs): ลำแสงเรียวปลายจาง 2 ชั้น แสงเรือง คลื่นวงแหวน ประกายรูปดาว พื้นหลังมืดขึ้น (false = แท่งแสงสี่เหลี่ยม/วาบขาวเต็มจอแบบเดิม)
+    public static bool SoftUiFx = true;
+    // เล่นกับบอท: เป้า Kill/เวลาตามโหมดและจำนวนบอท (1 บอท 5 Kill, 3 บอท 8, 5 บอท 10, 9 บอท 15, ทีม 5 ต่อคน, ยึดเนิน 90 วิ, ล่าดาว 15 ดวง) (false = 3 Kill / 3 นาทีทุกโหมดแบบเดิม)
+    public static bool FunBotRules = true;
+    // FPS LIMIT 120 ได้จริง: ปิด VSync ซ้ำหลังสลับระดับกราฟิก (เดิมกราฟิก MEDIUM/HIGH เปิด VSync กลับ ทำให้ติดเพดานรีเฟรชจอ) (false = แบบเดิม)
+    public static bool FpsUnlock = true;
 
     // เขียนทับค่าจาก Firebase (key ต้องตรงชื่อ field เช่น "LightBullets") ค่าที่ไม่ใช่ bool จะถูกข้าม
     public static void Apply(IDictionary<string, object> values)
@@ -197,6 +205,10 @@ public static class FeatureFlags
                 case nameof(PrismMapV3): PrismMapV3 = on; break;
                 case nameof(NewSounds): NewSounds = on; break;
                 case nameof(AudioListenerGuard): AudioListenerGuard = on; break;
+                case nameof(FancyButtons): FancyButtons = on; break;
+                case nameof(SoftUiFx): SoftUiFx = on; break;
+                case nameof(FunBotRules): FunBotRules = on; break;
+                case nameof(FpsUnlock): FpsUnlock = on; break;
             }
         }
     }
