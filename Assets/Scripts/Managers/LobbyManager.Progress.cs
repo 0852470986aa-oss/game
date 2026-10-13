@@ -174,6 +174,7 @@ public partial class LobbyManager
             if (Progression.ClaimMission(state, out int coins, out int xp))
             {
                 UpdateStatus("Mission reward: +" + coins + " Astronium, +" + xp + " XP");
+                if (FeatureFlags.PremiumPass) BattlePass.AddXp(xp); // XP ภารกิจนับเข้า Battle Pass ด้วย
                 StartCoroutine(RefreshCoinsLater());
             }
         });

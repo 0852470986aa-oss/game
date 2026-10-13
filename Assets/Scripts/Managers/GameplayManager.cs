@@ -661,6 +661,8 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
 
             if (matchTimer <= 0)
             {
+                // Co-op บอสให้ Host ยืนยันผลเดียวกันก่อนเปิดผลบนทุกเครื่อง
+                if (gameMode == MatchRules.ModeBossRaid) { if (PhotonNetwork.IsMasterClient) SetModeResult(-1); return; }
                 isMatchEnding = true;
                 // เงื่อนไขชนะแบบใหม่: ส่งคะแนนล่าสุดแล้วรอให้ทุกเครื่องได้รับก่อนตัดสิน (กันสองเครื่องเห็นผลไม่ตรงกัน)
                 if (WinRuleActive) { MatchRules.FlushDamage(true); StartCoroutine(EndMatchAfterSync()); }

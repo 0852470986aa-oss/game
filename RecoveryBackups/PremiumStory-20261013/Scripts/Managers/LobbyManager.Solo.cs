@@ -1,0 +1,233 @@
+// LobbyManager.Solo.cs — โหมดเล่นคนเดียวกับบอท และโหมดฝึก/บทสอน (partial class ของ LobbyManager)
+// ใช้ Photon Offline Mode: ไม่ต่อเน็ต ไม่นับโควต้าผู้เล่นพร้อมกันของ Photon แต่ใช้โค้ดเกมเดิมทั้งหมด
+// ขั้นตอน: กดปุ่ม → ตัดการเชื่อมต่อออนไลน์ → เปิด OfflineMode → สร้างห้อง SOLO (มีบอท 1 ตัว) → โหลดฉากต่อสู้ทันที
+// กลับจากแมตช์: LobbyManager.Start ปิด OfflineMode แล้วต่อออนไลน์ใหม่อัตโนมัติ
+// ปิดทั้งระบบได้ด้วย FeatureFlags.Bots = false (ปุ่มจะซ่อน)
+using UnityEngine;
+using UnityEngine.UI;
+using Photon.Pun;
+using Photon.Realtime;
+
+// ส่วนเล่นคนเดียวของ LobbyManager (partial): ปุ่มเลือกโหมด/ความยากของบอท และเริ่มแมตช์ Offline Mode
+public partial class LobbyManager
+{
+    private Button soloDifficultyButton; // ปุ่มเลือกความยากของบอท (EASY / NORMAL / HARD)
+    private Button soloPlayButton; // ปุ่มเริ่มเล่นกับบอทแบบ Offline
+    private Button trainingButton; // ปุ่มเข้าโหมดฝึกซ้อมกับบอทเป้าซ้อม
+    private Button soloBotsButton; // ปุ่มวนเลือกโหมดเล่นคนเดียว (จำนวนบอท/โหมดเกม)
+    private const string SoloModePrefs = "SoloModeIndex"; // คีย์ PlayerPrefs เก็บโหมดเล่นคนเดียวที่เลือกไว้
+    // โหมดเล่นคนเดียว: จำนวนบอท / เป็นโหมดทีมไหม / ชื่อบนปุ่ม (1 BOT = 1 VS 1, หลายตัว = FFA, TEAM = เราอยู่ทีม BLUE กับบอท)
+    // เฟส 7B: เพิ่มโหมดเกม SURVIVAL / KOTH / STARS / ROYALE / CAMPAIGN (SoloModeGame = MatchRules.Mode*)
+    private static readonly int[] SoloModeBots = { 1, 3, 5, 9, 3, 5, 9, 0, 3, 3, 9, 0, 3 };
+    private static readonly bool[] SoloModeTeams = { false, false, false, false, true, true, true, false, false, false, false, false, false };
+    private static readonly int[] SoloModeGame = { 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 5, 6 };
+    private static readonly string[] SoloModeLabels = { "1 BOT", "3 BOTS", "5 BOTS", "9 BOTS", "TEAM 2v2", "TEAM 3v3", "TEAM 5v5",
+        "SURVIVAL", "HILL 4P", "STARS 4P", "ROYALE 10", "CAMPAIGN", "BOSS CO-OP" };
+    // FeatureFlags.FunBotRules: เป้าและเวลาของแต่ละโหมดเล่นกับบอท (ลำดับเดียวกับ SoloModeLabels) — เดิมทุกโหมดใช้ 3 Kill / 3 นาที
+    // ศัตรูเยอะ = เก็บ Kill ได้เร็ว จึงตั้งเป้าตามจำนวนบอท ให้แมตช์ยาวราว 4–7 นาที
+    // โหมดทีม: เป้าของทีม = ค่านี้ × จำนวนคนต่อทีม (2v2 = 10, 3v3 = 15, 5v5 = 25)
+    // HILL: คะแนนยึดเนิน = ค่านี้ × 15 (6 → ยืนในวง 90 วินาที) / STARS: ดาว = ค่านี้ × 3 (5 → 15 ดวง)
+    // SURVIVAL / ROYALE / CAMPAIGN ไม่ใช้ค่า Kill (ใช้กติกาของโหมดเอง)
+    private static readonly int[] SoloModeKills = { 5, 8, 10, 15, 5, 5, 5, 3, 6, 5, 3, 3, 3 };
+    private static readonly int[] SoloModeSeconds = { 240, 300, 360, 420, 360, 360, 420, 900, 300, 300, 300, 480, BossRaidRules.Seconds };
+    // โหมดเล่นคนเดียวที่เลือกไว้ (จำใน PlayerPrefs) ถ้าโหมดถูกปิดด้วย FeatureFlags จะกลับเป็น 0
+    private int SoloMode
+    {
+        get
+        {
+            int value = PlayerPrefs.GetInt(SoloModePrefs, 0);
+            if (!FeatureFlags.MultiPlayer || value < 0 || value >= SoloModeBots.Length) return 0;
+            if (SoloModeTeams[value] && !FeatureFlags.Teams) return 0;
+            if (SoloModeGame[value] != 0 && !FeatureFlags.GameModes) return 0;
+            if (value == BossRaidRules.SoloChoice && !FeatureFlags.BossRaid) return 0;
+            return value;
+        }
+        set { PlayerPrefs.SetInt(SoloModePrefs, value); PlayerPrefs.Save(); }
+    }
+    private int SoloBots => SoloModeBots[SoloMode]; // จำนวนบอทของโหมดเล่นคนเดียวที่เลือก
+
+    // ข้อความเป้าหมาย + เวลาของโหมดที่เลือก แสดงใต้การ์ดโหมด เช่น "FIRST TO 15 KILLS  /  TIME 7:00" (โหมดเนื้อเรื่องคืน "")
+    // ใช้รูปแบบข้อความที่ Lang.cs แปลไทยได้อยู่แล้ว (ฆ่าครบ 15 ก่อนชนะ / เวลา 7:00)
+    private string SoloGoalText()
+    {
+        int mode = SoloMode, game = SoloModeGame[mode], kills = SoloModeKills[mode];
+        if (game == MatchRules.ModeBossRaid) return "CO-OP / 3 ALLIED BOTS / 3 LIVES / 8:00";
+        if (game == MatchRules.ModeCampaign) return "";
+        int teamSize = SoloModeTeams[mode] ? (SoloModeBots[mode] + 1) / 2 : 1; // ทีม 2v2/3v3/5v5: เป้าของทีม = Kill ต่อคน × คนในทีม
+        string goal = game == MatchRules.ModeKoth ? "HOLD THE ZONE"
+            : game == MatchRules.ModeStars ? "COLLECT STARS " + kills * 3
+            : game == MatchRules.ModeSurvival ? "SURVIVE 10 WAVES"
+            : game == MatchRules.ModeRoyale ? "LAST SHIP STANDING"
+            : "FIRST TO " + kills * teamSize + " KILLS";
+        int seconds = SoloModeSeconds[mode];
+        return goal + "  /  TIME " + seconds / 60 + ":" + (seconds % 60).ToString("00");
+    }
+    private bool pendingSolo; // รอเข้า Offline Mode เพื่อสร้างห้องเล่นคนเดียว
+    private bool pendingTraining; // รอเข้า Offline Mode เพื่อเริ่มโหมดฝึกซ้อม
+    private const string SoloDifficultyPrefs = "SoloBotDifficulty"; // คีย์ PlayerPrefs เก็บความยากบอทที่เลือกไว้
+    // ความยากที่เลือกไว้ (1 ง่าย, 2 กลาง, 3 ยาก) จำไว้ในเครื่อง
+    private int SoloDifficulty
+    {
+        get => Mathf.Clamp(PlayerPrefs.GetInt(SoloDifficultyPrefs, 2), 1, 3);
+        set { PlayerPrefs.SetInt(SoloDifficultyPrefs, Mathf.Clamp(value, 1, 3)); PlayerPrefs.Save(); }
+    }
+
+    // ปุ่มแถวล่างของหน้าหลัก (เรียกจาก BuildHomeScreen)
+    private void BuildSoloButtons(RectTransform root)
+    {
+        soloDifficultyButton = UIButton("SoloDifficulty", root, "NORMAL", 272, -262, 125, 42, OnSoloDifficultyClicked);
+        soloPlayButton = UIButton("SoloPlay", root, "VS BOT", 397, -262, 115, 42, () => StartSolo(false));
+        trainingButton = UIButton("Training", root, "TRAINING", 520, -262, 125, 42, () => StartSolo(true));
+        // จำนวนบอท (แถวล่าง ใต้ปุ่มความยาก) — 1 / 3 / 5 / 9 ตัว
+        soloBotsButton = UIButton("SoloBots", root, "1 BOT", 272, -306, 125, 36, OnSoloBotsClicked);
+        RefreshSoloButtons();
+    }
+
+    // อัปเดตปุ่มโซโล่ทั้งหมด: แสดงตาม FeatureFlags.Bots กดได้เมื่อโหลดโปรไฟล์แล้วและไม่ได้รอเข้าห้อง
+    // เปลี่ยนข้อความความยาก/โหมด (CAMPAIGN แสดงด่านถัดไป) แล้วรีเฟรชการ์ดโหมด
+    private void RefreshSoloButtons()
+    {
+        bool visible = FeatureFlags.Bots;
+        bool canStart = visible && profileLoaded && !pendingSolo && !roomRequestPending && !reconnecting && !PhotonNetwork.InRoom;
+        if (soloDifficultyButton != null)
+        {
+            soloDifficultyButton.gameObject.SetActive(visible);
+            soloDifficultyButton.interactable = canStart;
+            SetButtonLabel(soloDifficultyButton, "DIFFICULTY: " + MatchRules.DifficultyNames[SoloDifficulty]);
+        }
+        if (soloPlayButton != null) { soloPlayButton.gameObject.SetActive(visible); soloPlayButton.interactable = canStart; }
+        if (trainingButton != null) { trainingButton.gameObject.SetActive(visible); trainingButton.interactable = canStart; }
+        if (soloBotsButton != null)
+        {
+            soloBotsButton.gameObject.SetActive(visible && FeatureFlags.MultiPlayer);
+            soloBotsButton.interactable = canStart;
+            SetButtonLabel(soloBotsButton, SoloModeGame[SoloMode] == MatchRules.ModeCampaign
+                ? "CAMPAIGN " + Campaign.NextStage + "/" + Campaign.Count : SoloModeLabels[SoloMode]);
+        }
+        RefreshModeSelection();
+    }
+
+    // กดปุ่มโหมดโซโล่: วนไปโหมดถัดไปที่เปิดใช้ได้ บันทึกลง PlayerPrefs แล้วรีเฟรชปุ่ม
+    private void OnSoloBotsClicked()
+    {
+        // วนไปโหมดถัดไป (ข้ามโหมดทีมถ้าปิด FeatureFlags.Teams)
+        int next = SoloMode;
+        for (int step = 0; step < SoloModeBots.Length; step++)
+        {
+            next = (next + 1) % SoloModeBots.Length;
+            if ((!SoloModeTeams[next] || FeatureFlags.Teams) && (SoloModeGame[next] == 0 || FeatureFlags.GameModes)
+                && (next != BossRaidRules.SoloChoice || FeatureFlags.BossRaid)) break;
+        }
+        SoloMode = next;
+        RefreshSoloButtons();
+    }
+
+    // กดปุ่ม DIFFICULTY: วนความยากบอท ง่าย → กลาง → ยาก → ง่าย แล้วรีเฟรชปุ่ม
+    private void OnSoloDifficultyClicked()
+    {
+        SoloDifficulty = SoloDifficulty % 3 + 1;
+        RefreshSoloButtons();
+    }
+
+    // เริ่มเล่นคนเดียว (training = บทสอนกับเป้าซ้อม)
+    private void StartSolo(bool training)
+    {
+        if (!FeatureFlags.Bots || !profileLoaded || pendingSolo || PhotonNetwork.InRoom) return;
+        if (!Application.CanStreamedLevelBeLoaded("SampleScene")) { UpdateStatus("Gameplay scene is missing from Build Profiles."); return; }
+        pendingSolo = true;
+        soloRequestedAt = Time.unscaledTime;
+        pendingTraining = training;
+        RefreshSoloButtons();
+        EnablePlayButtons(false);
+        UpdateStatus(training ? "Starting training..." : "Starting solo battle...");
+        if (PhotonNetwork.IsConnected && !PhotonNetwork.OfflineMode) PhotonNetwork.Disconnect(); // ต่อใน OnDisconnected
+        else EnterOfflineSolo();
+    }
+
+    // เรียกจาก OnDisconnected เมื่อกำลังจะเล่นคนเดียว
+    private void EnterOfflineSolo()
+    {
+        if (PhotonNetwork.OfflineMode) { CreateSoloRoom(); return; }
+        // ยังต่อออนไลน์อยู่ (เช่น ระบบต่อเน็ตอัตโนมัติแทรกเข้ามาก่อน): Photon ไม่ยอมเข้าโหมดออฟไลน์ -> ตัดอีกครั้งแล้วรอ OnDisconnected
+        if (FeatureFlags.SoloStartFix && PhotonNetwork.IsConnected) { PhotonNetwork.Disconnect(); return; }
+        PhotonNetwork.OfflineMode = true; // จะเรียก OnConnectedToMaster ต่อ
+    }
+
+    // ===== กันกดเล่นกับบอทครั้งแรกแล้วไม่เข้าเกม (FeatureFlags.SoloStartFix) =====
+    // รอให้ Photon จัดการการตัดเน็ตเสร็จ 1 เฟรม แล้วค่อยเข้าโหมดออฟไลน์
+    private System.Collections.IEnumerator EnterOfflineSoloNextFrame()
+    {
+        yield return null;
+        if (this != null && pendingSolo) EnterOfflineSolo();
+    }
+    // เวลาที่กดเริ่ม (ไว้จับว่าค้างนานเกินไหม)
+    private float soloRequestedAt;
+    // เรียกจาก Update: กดแล้วเกิน 8 วิยังไม่ได้เข้าห้อง SOLO = ยกเลิกสถานะค้าง ให้กดใหม่ได้ (เดิมค้างจนต้องออกเข้าใหม่)
+    private void CheckSoloTimeout()
+    {
+        if (!FeatureFlags.SoloStartFix || !pendingSolo || PhotonNetwork.InRoom || Time.unscaledTime < soloRequestedAt + 8f) return;
+        Debug.LogWarning("[Solo] Start timed out (state " + PhotonNetwork.NetworkClientState + "). Ready to retry.");
+        pendingSolo = false;
+        RefreshSoloButtons();
+        RefreshModeSelection();
+        UpdateStatus("Could not start the battle. Press VS BOT again.");
+    }
+
+    // เรียกจาก OnConnectedToMaster ในโหมดออฟไลน์: สร้างห้อง SOLO พร้อมกติกาและบอท
+    private void CreateSoloRoom()
+    {
+        var props = new ExitGames.Client.Photon.Hashtable
+        {
+            [MapProperty] = pendingTraining ? 1 : SoloMapRotation.Next(MapChoices),
+            ["MapRevision"] = 0,
+            ["Starting"] = false,
+            [MatchRules.SoloKey] = true,
+            [MatchRules.TutorialKey] = pendingTraining,
+            [MatchRules.HumansKey] = 1,
+            [MatchRules.BotCountKey] = pendingTraining ? 1 : SoloBots,
+            [MatchRules.TeamsKey] = !pendingTraining && SoloModeTeams[SoloMode],
+            [MatchRules.BotDifficultyKey] = pendingTraining ? 0 : SoloDifficulty,
+            [MatchRules.KillTargetKey] = pendingTraining ? 3 : MatchRules.DefaultKillTarget,
+            [MatchRules.MatchSecondsKey] = pendingTraining ? 600 : MatchRules.DefaultMatchSeconds,
+            [MatchRules.HazardsKey] = !pendingTraining
+        };
+        // เฟส 7B: โหมดเกม
+        int game = pendingTraining ? 0 : SoloModeGame[SoloMode];
+        props[MatchRules.GameModeKey] = game;
+        if (game == MatchRules.ModeSurvival) props[MatchRules.MatchSecondsKey] = 900;
+        if (game == MatchRules.ModeRoyale) props[MatchRules.MatchSecondsKey] = 300;
+        if (game == MatchRules.ModeBossRaid) props[MatchRules.MatchSecondsKey] = BossRaidRules.Seconds;
+        // เป้า Kill/เวลาตามโหมดและจำนวนบอท (ดู SoloModeKills) — ปิดสวิตช์ = 3 Kill / 3 นาทีแบบเดิม
+        if (FeatureFlags.FunBotRules && !pendingTraining && game != MatchRules.ModeCampaign)
+        {
+            props[MatchRules.KillTargetKey] = SoloModeKills[SoloMode];
+            props[MatchRules.MatchSecondsKey] = SoloModeSeconds[SoloMode];
+        }
+        if (game == MatchRules.ModeCampaign)
+        {
+            int stage = Campaign.NextStage;
+            var def = Campaign.Get(stage);
+            props[MatchRules.CampaignStageKey] = stage;
+            props[MapProperty] = def.map;
+            props[MatchRules.BotDifficultyKey] = def.difficulty;
+            props[MatchRules.MatchSecondsKey] = 480;
+        }
+        PhotonNetwork.CreateRoom("SOLO", new RoomOptions { MaxPlayers = 1, CustomRoomProperties = props });
+    }
+
+    // เรียกจาก OnJoinedRoom ในโหมดออฟไลน์: ส่ง loadout แล้วโหลดฉากต่อสู้เลย (ไม่ผ่านห้องรอ)
+    private void LaunchSoloRoom()
+    {
+        pendingSolo = false;
+        PublishLocalLoadout(true);
+        PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable
+        {
+            // โหมดทีมคนเดียว: เราอยู่ทีม BLUE (บอทจะถูกแบ่งเติมให้สองทีมเท่ากัน)
+            [MatchRules.TeamPrefix + PhotonNetwork.LocalPlayer.ActorNumber] = 0,
+            ["BattleToken"] = System.Guid.NewGuid().ToString("N"),
+            ["BattleAborted"] = false,
+            ["StartTime"] = -1d
+        });
+        PhotonNetwork.LoadLevel("SampleScene");
+    }
+}

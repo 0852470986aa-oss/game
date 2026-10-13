@@ -115,8 +115,8 @@ public partial class LobbyManager
                 : MatchRules.BotFill(room) ? "BOT WILL JOIN" : teams ? MatchRules.TeamNames[rowTeam] + " SLOT" : "OPEN SLOT";
             slot.name.color = present && player.IsLocal ? new Color(1f, .87f, .4f) : Color.white;
             slot.shipName.text = present ? ships[ship].name : "";
-            slot.ship.sprite = present ? BattleLoadoutCatalog.ShipSprite(ship) : null;
-            slot.ship.color = present ? ShipPaint.For(player) * BattleLoadoutCatalog.ShipTint(ship) : Color.clear;
+            if (present) VisualSkin.Preview(slot.ship, ship, ShipPaint.IndexFor(player));
+            else { slot.ship.sprite = null; slot.ship.color = Color.clear; }
             bool ready = IsPlayerReady(player);
             slot.ready.text = !present ? "" : KickArmed(player) ? "TAP AGAIN = KICK" : player.IsInactive ? "RECONNECTING"
                 : teams && player.IsLocal && !ready ? "TAP = SWITCH TEAM" : ready ? "READY" : "NOT READY";

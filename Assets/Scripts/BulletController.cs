@@ -190,7 +190,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             tr.time = 0.12f;
             tr.startWidth = 0.3f;
             tr.endWidth = 0f;
-            tr.material = new Material(Shader.Find("Sprites/Default"));
+            tr.sharedMaterial = SkinProjectileFx.TrailMaterial;
             
             Gradient gradient = new Gradient();
             gradient.SetKeys(
@@ -204,6 +204,12 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
     // Unity เรียกหลัง Awake (ทุกเครื่อง): ตั้งความเร็วพุ่งไปข้างหน้า; เครื่องคนยิงตั้งเวลาทำลายเมื่อครบ lifeTime
     void Start()
     {
+        // Both light RPC bullets and legacy Photon bullets resolve the same shooter skin.
+        if (!isTurretProjectile)
+        {
+            var shooter = PlayerController.FindCombatant(ShooterId);
+            if (shooter != null) SkinProjectileFx.Apply(gameObject, shooter.ProjectileSkin);
+        }
         // ให้ทุกเครื่องกำหนดความเร็วเท่ากันเพื่อให้ภาพกระสุนไม่ค้างเฉพาะฝั่งที่ไม่ได้ยิง
         if (GetComponent<Rigidbody2D>() != null)
         {

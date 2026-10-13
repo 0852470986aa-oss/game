@@ -1,4 +1,4 @@
-// Campaign.cs — ด่านเนื้อเรื่องเล่นคนเดียว 5 ด่าน (เฟส 7B)
+// Campaign.cs — ด่านเนื้อเรื่องเล่นคนเดียว 10 ด่าน (ห้ามสลับ 5 ด่านแรก: มีเซฟผู้เล่นเดิม)
 // เล่นผ่านปุ่ม VS BOT เมื่อเลือกโหมด CAMPAIGN (ปุ่มจำนวนบอทหน้าหลัก) — เล่นด่านถัดไปที่ยังไม่ผ่านอัตโนมัติ
 // ผ่านด่าน = ได้เหรียญ (ผ่านครั้งแรกได้เต็ม ครั้งต่อไปได้ 25%) และปลดล็อกด่านถัดไป (เก็บใน Progression: campaignStage)
 // แก้เนื้อเรื่อง/ความยากได้ที่รายการ Stages ด้านล่าง
@@ -9,7 +9,8 @@ public class CampaignStageDef
     public int bots;            // จำนวนบอทศัตรู (ไม่รวมบอส)
     public int difficulty;      // 1 ง่าย 2 กลาง 3 ยาก
     public int kills;           // Kill ที่ต้องทำเพื่อผ่าน (ด่านบอส = ทำลายบอส)
-    public int map;             // 0 แมงกะพรุน 1 ปริซึม 2 หุ่นยนต์
+    public int map;             // 0 แมงกะพรุน 1 ปริซึม 2 หุ่นยนต์ 3 สถานี 4 ลาวา
+    public int MapIndex => map < GameplayManager.MapCount ? map : 2;
     public bool boss; // true = ด่านบอส ต้องทำลายยานแม่ DREADNOUGHT เพื่อผ่าน
     public int reward;          // เหรียญเมื่อผ่านครั้งแรก
 }
@@ -17,7 +18,7 @@ public class CampaignStageDef
 // รายการด่าน Campaign และตัวช่วยเลือกด่านถัดไปจากความคืบหน้าใน Progression
 public static class Campaign
 {
-    // รายการด่าน Campaign ทั้ง 5 ด่าน เรียงตามลำดับเล่น แก้เนื้อเรื่อง/ความยากได้ที่นี่
+    // รายการ 10 ด่าน เรียงตามเซฟเดิม; เพิ่มด่านใหม่ต่อท้าย ห้ามสลับเลขด่าน
     public static readonly CampaignStageDef[] Stages =
     {
         new CampaignStageDef { title = "FIRST CONTACT", briefing = "หน่วยลาดตระเวนศัตรูบุกเข้ามาในเขตแมงกะพรุนสายฟ้า ทำลายให้ได้ 3 ลำ!",
@@ -30,6 +31,16 @@ public static class Campaign
             bots = 3, difficulty = 3, kills = 6, map = 1, reward = 500 },
         new CampaignStageDef { title = "THE DREADNOUGHT", briefing = "ยานแม่ DREADNOUGHT ปรากฏตัว! ทำลายบอสให้ได้เพื่อปกป้องดวงดาว",
             bots = 2, difficulty = 2, kills = 0, map = 2, boss = true, reward = 1000 },
+        new CampaignStageDef { title = "STATION BREACH", briefing = "ศัตรูยึดสถานีอวกาศ! ใช้ซากแท่นและประตูเป็นที่กำบัง แล้วทำลายศัตรู 7 ลำ",
+            bots = 3, difficulty = 2, kills = 7, map = 3, reward = 650 },
+        new CampaignStageDef { title = "EMBER PATROL", briefing = "ตามรอยกองยานเข้าสู่ทุ่งลาวา ใช้หินบังแนวยิงและทำลายหน่วยลาดตระเวน 8 ลำ",
+            bots = 3, difficulty = 3, kills = 8, map = 4, reward = 750 },
+        new CampaignStageDef { title = "INFERNO CRUISER", briefing = "ยานบัญชาการ INFERNO เฝ้าเส้นทางลาวา! ฝ่าลูกน้องคุ้มกันแล้วทำลายแกนกลางบอส",
+            bots = 2, difficulty = 3, kills = 0, map = 4, boss = true, reward = 1200 },
+        new CampaignStageDef { title = "VOID BLOCKADE", briefing = "กองยานม่วงปิดล้อมสถานี! หลบหลังโครงสร้างและทำลายแนวปิดล้อมให้ได้ 10 ลำ",
+            bots = 4, difficulty = 3, kills = 10, map = 3, reward = 900 },
+        new CampaignStageDef { title = "VOID MOTHERSHIP", briefing = "ยานแม่แห่งความว่างเปล่ามาถึงสุสานหุ่นยนต์! ใช้ซากหุ่นบังการโจมตีแล้วจบสงคราม",
+            bots = 3, difficulty = 3, kills = 0, map = 2, boss = true, reward = 1500 },
     };
 
     public static int Count => Stages.Length; // จำนวนด่าน Campaign ทั้งหมด

@@ -28,6 +28,7 @@ public partial class LobbyManager
     private void OnRoomModeClicked()
     {
         if (!FeatureFlags.MultiPlayer || !CanEditRoomSettings()) return;
+        if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom)) return;
         var room = PhotonNetwork.CurrentRoom;
         var modes = new System.Collections.Generic.List<(int size, bool teams)>();
         foreach (int size in MatchRules.PlayerOptions)
@@ -77,7 +78,7 @@ public partial class LobbyManager
         bool canEdit = visible && CanEditRoomSettings();
         var room = PhotonNetwork.CurrentRoom;
         // เงื่อนไขชนะแบบใหม่ไม่ใช้เป้า Kill (เล่นจนหมดเวลา) จึงล็อกปุ่ม KILLS ไว้
-        bool usesKillTarget = !MatchRules.UsesRuleScore(room);
+        bool usesKillTarget = !MatchRules.UsesRuleScore(room) && !BossRaidRules.Enabled(room);
         SetRoomSettingButton(roomKillsButton, visible, canEdit && usesKillTarget, usesKillTarget ? "KILLS " + MatchRules.KillTarget(room) : "KILLS  -");
         bool winRuleVisible = visible && FeatureFlags.WinRules && !MatchRules.IsRanked(room) && MatchRules.GameMode(room) == MatchRules.ModeDeathmatch;
         SetRoomSettingButton(roomWinRuleButton, winRuleVisible, canEdit, MatchRules.WinRuleNames[MatchRules.WinRule(room)]);
@@ -87,17 +88,17 @@ public partial class LobbyManager
         SetRoomSettingButton(roomHazardButton, visible, canEdit, MatchRules.Hazards(room) ? "HAZARDS ON" : "HAZARDS OFF");
         // ป้ายโหมด: 1 VS 1 / FFA xP (Host เห็นคำว่า >> ให้รู้ว่ากดได้)
         int maxPlayers = room != null ? room.MaxPlayers : 2;
-        if (roomModeLabel != null) roomModeLabel.text = MatchRules.IsRanked(room) ? "RANKED 1V1"
-            : MatchRules.ModeName(maxPlayers, MatchRules.IsTeamRoom(room)) + (canEdit && FeatureFlags.MultiPlayer ? "  >>" : "");
+        if (roomModeLabel != null) roomModeLabel.text = MatchRules.IsRanked(room) ? MatchRules.RankedLabel(room)
+            : BossRaidRules.Enabled(room) ? "CO-OP / 2-4 PILOTS" : MatchRules.ModeName(maxPlayers, MatchRules.IsTeamRoom(room)) + (canEdit && FeatureFlags.MultiPlayer ? "  >>" : "");
         if (roomModeButton != null)
         {
             roomModeButton.gameObject.SetActive(visible && FeatureFlags.MultiPlayer);
-            roomModeButton.interactable = canEdit;
+            roomModeButton.interactable = canEdit && !BossRaidRules.Enabled(room);
         }
         RefreshRoomUpgradesButton();
         RefreshRoomPowerUpsButton();
         RefreshRoomGameModeButton();
-        SetRoomSettingButton(roomBotButton, visible && FeatureFlags.Bots, canEdit,
+        SetRoomSettingButton(roomBotButton, visible && FeatureFlags.Bots && !BossRaidRules.Enabled(room), canEdit,
             MatchRules.BotFill(room) ? "BOT " + MatchRules.DifficultyNames[MatchRules.BotDifficulty(room)] : "BOT OFF");
     }
 
@@ -143,7 +144,8 @@ public partial class LobbyManager
         var room = PhotonNetwork.CurrentRoom;
         bool fill = MatchRules.BotFill(room);
         int level = MatchRules.BotDifficulty(room);
-        if (!fill) { fill = true; level = 1; }
+        if (!fill) { fill = true; level = MatchRules.VeryEasyDifficulty; }
+        else if (level == MatchRules.VeryEasyDifficulty) level = 1;
         else if (level < 3) level++;
         else fill = false;
         var expected = new ExitGames.Client.Photon.Hashtable { ["MapRevision"] = MapRevision, ["Starting"] = false };

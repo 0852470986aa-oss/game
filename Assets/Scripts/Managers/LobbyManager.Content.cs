@@ -123,7 +123,7 @@ public partial class LobbyManager
 
     // ===== ห้องรอ: ปุ่มเลือกโหมดเกม (เฟส 7B) =====
     // ออนไลน์เลือกได้: ปกติ / ยึดจุด / เก็บดาว / Battle Royale / Survival (Campaign เล่นคนเดียวเท่านั้น)
-    private static readonly int[] OnlineModes = { MatchRules.ModeDeathmatch, MatchRules.ModeKoth, MatchRules.ModeStars, MatchRules.ModeRoyale, MatchRules.ModeSurvival };
+    private static readonly int[] OnlineModes = { MatchRules.ModeDeathmatch, MatchRules.ModeKoth, MatchRules.ModeStars, MatchRules.ModeRoyale, MatchRules.ModeSurvival, MatchRules.ModeBossRaid };
     private Button roomGameModeButton;
 
     // สร้างปุ่มโหมดเกมในห้องรอ กดแล้ววนไปโหมดถัดไปใน OnlineModes (เฉพาะคนที่แก้กติกาได้)
@@ -133,7 +133,20 @@ public partial class LobbyManager
         {
             if (!CanEditRoomSettings()) return;
             int current = System.Array.IndexOf(OnlineModes, MatchRules.GameMode(PhotonNetwork.CurrentRoom));
-            SetRoomRule(MatchRules.GameModeKey, OnlineModes[(current + 1) % OnlineModes.Length]);
+            int next = OnlineModes[(current + 1) % OnlineModes.Length];
+            if (next == MatchRules.ModeBossRaid && (!FeatureFlags.BossRaid || !FeatureFlags.Bots)) next = MatchRules.ModeDeathmatch;
+            if (next == MatchRules.ModeBossRaid)
+            {
+                if (PhotonNetwork.CurrentRoom.PlayerCount > BossRaidRules.MaxPilots) { UpdateStatus("Boss Co-op supports 2-4 pilots."); return; }
+                PhotonNetwork.CurrentRoom.MaxPlayers = BossRaidRules.MaxPilots;
+                // ส่งทุกค่าในครั้งเดียว: CAS ใช้ revision เดียว ห้ามส่งหลาย SetRoomRule ติดกัน
+                PhotonNetwork.CurrentRoom.SetCustomProperties(new ExitGames.Client.Photon.Hashtable {
+                    [MatchRules.GameModeKey] = next, [MatchRules.TeamsKey] = false,
+                    [MatchRules.MatchSecondsKey] = BossRaidRules.Seconds, ["MapRevision"] = MapRevision + 1
+                }, new ExitGames.Client.Photon.Hashtable { ["MapRevision"] = MapRevision, ["Starting"] = false });
+                return;
+            }
+            SetRoomRule(MatchRules.GameModeKey, next);
         });
     }
 

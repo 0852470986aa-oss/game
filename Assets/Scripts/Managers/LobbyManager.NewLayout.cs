@@ -70,7 +70,8 @@ public partial class LobbyManager
         string[] titles = { "SURVIVAL", "KING OF THE HILL", "STAR HUNT", "BATTLE ROYALE" };
         string[] subs = { "Survive waves", "Capture the hill", "Collect stars", "Last ship standing" };
         for (int i = 0; i < 4; i++)
-            ModeCard(7 + i, modeCategories[1], i % 2 == 0 ? -257 : 257, i < 2 ? 109 : -109, 500, 202, art[i], titles[i], subs[i]);
+            ModeCard(7 + i, modeCategories[1], i % 2 == 0 ? -257 : 257, i < 2 ? 145 : 0, 500, 130, art[i], titles[i], subs[i]);
+        ModeCard(BossRaidRules.SoloChoice, modeCategories[1], 0, -145, 1014, 130, "survival", "BOSS CO-OP", "3 phases / You + 3 allied bots / Online: choose BOSS CO-OP in room rules");
         // หมวด ฝึกซ้อม: ปุ่ม TRAINING เดิมเป็นการ์ดใหญ่ (กดแล้วเริ่มฝึกเหมือนเดิม)
         if (trainingButton != null)
         {

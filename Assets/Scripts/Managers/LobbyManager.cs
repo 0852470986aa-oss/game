@@ -570,6 +570,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         int roomSize = inRoom ? PhotonNetwork.CurrentRoom.MaxPlayers : 2;
         bool botFill = inRoom && MatchRules.BotFill(PhotonNetwork.CurrentRoom);
         if (readyHint != null) readyHint.text = busy ? "Connecting or preparing battle..."
+            : inRoom && MatchRules.IsRanked(PhotonNetwork.CurrentRoom) && players.Length < MatchRules.RankedPlayers(PhotonNetwork.CurrentRoom)
+                ? "RANKED: waiting for all " + MatchRules.RankedPlayers(PhotonNetwork.CurrentRoom) + " pilots (" + players.Length + "/" + MatchRules.RankedPlayers(PhotonNetwork.CurrentRoom) + ")."
             : roomSize > 2 && CanStartGame() ? "All " + players.Length + " pilots ready" + (botFill && players.Length < roomSize ? " (+" + (roomSize - players.Length) + " bots)" : "") + ". Host can launch the battle."
             : roomSize > 2 ? "Pilots " + players.Length + "/" + roomSize + ". Host can start with 2+ ready pilots" + (botFill ? " (empty slots become bots)." : ".")
             : players.Length < 2 && botFill ? "No rival yet: press READY, then START to fight a bot."
@@ -615,8 +617,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         if (skillText != null) skillText.text = present ? "EQUIPPED SKILL  /  " + skills[skill].name : "1 VS 1";
         if (picture != null)
         {
-            picture.sprite = present ? BattleLoadoutCatalog.ShipSprite(ship) : null;
-            picture.color = present ? ShipPaint.For(player) * BattleLoadoutCatalog.ShipTint(ship) : Color.clear;
+            if (present) VisualSkin.Preview(picture, ship, ShipPaint.IndexFor(player));
+            else { picture.sprite = null; picture.color = Color.clear; }
             picture.preserveAspect = true;
         }
         if (readyText != null)
@@ -719,6 +721,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         // ครบ 2 คน หรือคนเดียวแต่เปิดบอทเติมห้องไว้
         // ห้องหลายคน: 2 คนขึ้นไป (ไม่เกินขนาดห้อง) เริ่มได้
         int players = PhotonNetwork.PlayerList.Length;
+        if (MatchRules.IsRanked(PhotonNetwork.CurrentRoom) && players != MatchRules.RankedPlayers(PhotonNetwork.CurrentRoom)) return false;
+        if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom) && (players < 2 || players > BossRaidRules.MaxPilots)) return false;
         if (players < 2 && !(players == 1 && MatchRules.BotFill(PhotonNetwork.CurrentRoom))) return false;
         foreach (Player player in PhotonNetwork.PlayerList) if (!IsPlayerReady(player)) return false;
         return true;
@@ -732,6 +736,8 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
         if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient || !RoomStarting || isStartingGame) return;
         int humans = PhotonNetwork.PlayerList.Length;
         bool ready = humans >= 2 || (humans == 1 && MatchRules.BotFill(PhotonNetwork.CurrentRoom));
+        if (MatchRules.IsRanked(PhotonNetwork.CurrentRoom)) ready &= humans == MatchRules.RankedPlayers(PhotonNetwork.CurrentRoom);
+        if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom)) ready &= humans >= 2 && humans <= BossRaidRules.MaxPilots;
         foreach (Player player in PhotonNetwork.PlayerList) ready &= IsPlayerReady(player);
         if (!ready || isLeavingRoom)
         {

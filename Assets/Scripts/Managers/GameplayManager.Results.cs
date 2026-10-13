@@ -58,9 +58,11 @@ public partial class GameplayManager
             {
                 int stage = CampaignReplayStage(); // ผ่าน = ด่านถัดไป, แพ้ = ด่านเดิม
                 replay[MatchRules.CampaignStageKey] = stage;
-                replay["MapIndex"] = Campaign.Get(stage).map;
+                replay["MapIndex"] = Campaign.Get(stage).MapIndex;
                 replay[MatchRules.BotDifficultyKey] = Campaign.Get(stage).difficulty;
             }
+            else if (!MatchRules.IsTutorial(PhotonNetwork.CurrentRoom))
+                replay["MapIndex"] = SoloMapRotation.Next(MapCount, GetCurrentMapIndex());
             PhotonNetwork.CurrentRoom.SetCustomProperties(replay);
             PhotonNetwork.DestroyAll();
             PhotonNetwork.LoadLevel("SampleScene");

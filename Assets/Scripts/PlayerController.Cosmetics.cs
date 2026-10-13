@@ -9,6 +9,7 @@ public partial class PlayerController
     // สีที่ใช้ย้อมภาพยาน ใช้คืนสีหลังกระพริบ/หลังหายสตัน
     private Color paintTint = Color.white;
     public Color PaintTint => paintTint;
+    public SkinDef ProjectileSkin => FeatureFlags.SkinGacha ? SkinCatalog.FromPaint(IsBot ? botPaint : ShipPaint.IndexFor(photonView.Owner)) : null;
 
     // ข้อความอีโมต: index ส่งผ่าน Photon อย่าสลับลำดับ
     public static readonly string[] Emotes = { "GG", "NICE SHOT!", "OOPS!", "HELLO!" };
@@ -19,10 +20,24 @@ public partial class PlayerController
     // ดึงสีของเจ้าของยานลำนี้จาก Photon แล้วย้อมภาพยาน (เรียกใน Start ทุกเครื่อง ทุกคนจึงเห็นสีเดียวกัน)
     private void ApplyPaint()
     {
-        paintTint = IsBot ? ShipPaint.Colors[botPaint] : ShipPaint.For(photonView.Owner);
+        int paint = IsBot ? botPaint : ShipPaint.IndexFor(photonView.Owner);
+        var skin = FeatureFlags.SkinGacha ? SkinCatalog.FromPaint(paint) : null;
+        var art = VisualSkin.SpriteFor(skin);
+        paintTint = Color.white;
         // ยานใหม่ที่ยังไม่มีรูปของตัวเอง: ย้อมสีประจำยานเพิ่ม ให้แยกจากยานเดิมได้ (เฟส 7)
-        paintTint *= BattleLoadoutCatalog.ShipTint(ShipIndex);
+        if (art != null && spriteRenderer != null && spriteRenderer.sprite != null)
+        {
+            // รักษาขนาดภาพเดิม ไม่แตะ Transform, Collider, อาวุธ หรือค่าพลัง
+            float height = spriteRenderer.sprite.bounds.size.y;
+            var appearance = gameObject.GetComponent<ShipSkinAppearance>();
+            if (appearance == null) appearance = gameObject.AddComponent<ShipSkinAppearance>();
+            appearance.Apply(spriteRenderer, art, height);
+        }
+        else paintTint *= BattleLoadoutCatalog.ShipTint(ShipIndex);
         if (spriteRenderer != null && !isStunned && !isDead) spriteRenderer.color = paintTint;
+        // สกินพรีเมียม (FeatureFlags.SkinGacha): แสงออร่ารอบยาน (SkinAura.cs) ไม่มีผลต่อการเล่น
+        if (FeatureFlags.SkinGacha)
+            SkinAura.Apply(transform, spriteRenderer, SkinCatalog.FromPaint(IsBot ? botPaint : ShipPaint.IndexFor(photonView.Owner)));
     }
 
     // เรียกจากปุ่มอีโมตบน HUD (เฉพาะยานของเรา) มีคูลดาวน์กันสแปม

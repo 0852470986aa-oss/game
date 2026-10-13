@@ -87,15 +87,18 @@ public partial class LobbyManager
         ArrangeNavigation(createRoomButton.transform, playMenu, -295, 198, 550, 66);
         ArrangeNavigation(rankedButton.transform, playMenu, 295, 198, 550, 66);
         UILabel("SoloHeading", playMenu, "SOLO / SELECT A MODE, THEN START", -100, 128, 930, 36, 21, accentColor);
-        string[] descriptions = { "Duel", "Free for all", "Free for all", "Free for all", "Team battle", "Team battle", "Team battle", "Survive waves", "Capture the hill", "Collect stars", "Last ship standing", "Story stages" };
+        string[] descriptions = { "Duel", "Free for all", "Free for all", "Free for all", "Team battle", "Team battle", "Team battle", "Survive waves", "Capture the hill", "Collect stars", "Last ship standing", "Story stages", "You + 3 allied bots" };
         for (int i = 0; i < SoloModeLabels.Length; i++)
         {
             int mode = i;
+            int columns = FeatureFlags.BossRaid ? 5 : 4;
+            float step = FeatureFlags.BossRaid ? 230 : 290;
             var card = UIButton("SoloChoice" + i, playMenu,
-                SoloModeLabels[i] + "\n" + descriptions[i], -435 + (i % 4) * 290, 60 - (i / 4) * 82, 276, 70,
+                SoloModeLabels[i] + "\n" + descriptions[i], -(columns - 1) * step / 2 + (i % columns) * step, 60 - (i / columns) * 82, step - 14, 70,
                 () => { SoloMode = mode; RefreshSoloButtons(); RefreshModeSelection(); });
             card.gameObject.SetActive(FeatureFlags.Bots && (i == 0 || FeatureFlags.MultiPlayer)
-                && (!SoloModeTeams[i] || FeatureFlags.Teams) && (SoloModeGame[i] == 0 || FeatureFlags.GameModes));
+                && (!SoloModeTeams[i] || FeatureFlags.Teams) && (SoloModeGame[i] == 0 || FeatureFlags.GameModes)
+                && (i != BossRaidRules.SoloChoice || FeatureFlags.BossRaid));
         }
         ArrangeNavigation(soloDifficultyButton.transform, playMenu, -435, -208, 276, 60);
         ArrangeNavigation(soloPlayButton.transform, playMenu, -145, -208, 276, 60);
@@ -132,7 +135,8 @@ public partial class LobbyManager
             }
         }
         if (soloSelection != null) soloSelection.text = "SELECTED: " + SoloModeLabels[SoloMode] + "  /  "
-            + (FeatureFlags.FunBotRules && SoloGoalText() != "" ? SoloGoalText() : "Set difficulty, then press VS BOT");
+            + (FeatureFlags.FunBotRules && SoloGoalText() != "" ? SoloGoalText() : "Set difficulty, then press VS BOT")
+            + (SoloModeGame[SoloMode] == MatchRules.ModeCampaign ? " / STORY MAP" : " / RANDOM MAP");
     }
 
     // เปิดหน้าต่างเลือกวิธีเล่น: รีเฟรชปุ่มโซโล่/แรงก์/การ์ดโหมดก่อน แล้วยกหน้าต่างขึ้นบนสุด

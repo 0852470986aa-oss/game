@@ -15,6 +15,7 @@ public partial class LobbyManager
     private Image rankedOverlay; // พื้นหลังมืดของหน้าต่างแรงค์
     private RectTransform rankedWindow, rankedPage; // กรอบหน้าต่างแรงค์ และหน้าเนื้อหาที่สร้างใหม่ทุกครั้งที่วาด
     private bool pendingRanked; // กำลังหาแมตช์แรงค์อยู่ (รอเข้าหรือสร้างห้องแรงค์)
+    private int rankedPlayers = 2; // 2 / 4 / 8 คน แยกคิวจับคู่ ไม่ผสมคนละขนาด
     private bool showingLeaderboard; // true = แสดงตารางอันดับ, false = แสดงหน้าสรุปแรงค์
     private bool rankedSubscribed; // สมัครรับอีเวนต์ Ranked.Changed แล้วหรือยัง (กันสมัครซ้ำ)
     private System.Collections.Generic.List<LeaderboardEntry> leaderboard; // ข้อมูลตารางอันดับที่โหลดจาก Firebase (null = ยังไม่โหลด)
@@ -163,8 +164,16 @@ public partial class LobbyManager
         }
         else UILabel("RewardInfo", page, "End-of-season reward by best rank: " + string.Join(" / ", System.Array.ConvertAll(Ranked.SeasonRewardCoins, c => c.ToString())) + " Astronium",
             0, -140, 820, 28, 15, Color.gray);
-        UILabel("Rules", page, "Ranked = 1 VS 1, " + MatchRules.RankedKills + " kills / " + MatchRules.RankedSeconds / 60 + " min, upgrades OFF, no bots. Win vs stronger = more MMR.",
-            0, -185, 840, 28, 14, Color.gray);
+        int[] sizes = { 2, 4, 8 };
+        for (int i = 0; i < sizes.Length; i++)
+        {
+            int pick = sizes[i];
+            var mode = UIButton("RankedSize" + pick, page, pick / 2 + " VS " + pick / 2, -260 + i * 260, -184, 230, 38,
+                () => { rankedPlayers = pick; BuildRankedPage(); });
+            mode.image.color = rankedPlayers == pick ? accentColor : panelColor;
+            mode.interactable = pick == 2 || (FeatureFlags.Teams && FeatureFlags.MultiPlayer);
+        }
+        UILabel("Rules", page, "Full teams required / 5 kills per pilot / 5 min / upgrades OFF / no bots", 0, -213, 840, 20, 13, Color.gray);
         var find = UIButton("Find", page, "FIND RANKED MATCH", -170, -250, 320, 58, OnRankedMatchClicked);
         find.interactable = profileLoaded && PhotonNetwork.InLobby && !roomRequestPending && !reconnecting && !pendingSolo;
         var board = UIButton("Board", page, "LEADERBOARD", 190, -250, 280, 58, () => { showingLeaderboard = true; leaderboard = null; LoadLeaderboard(); BuildRankedPage(); }); // โหลดใหม่ทุกครั้งที่เปิด
@@ -240,7 +249,8 @@ public partial class LobbyManager
             [ShipPaint.Property] = ShipPaint.Local,
             ["MMR"] = Ranked.Mmr
         });
-        if (!PhotonNetwork.JoinRandomRoom(new ExitGames.Client.Photon.Hashtable { [MatchRules.RankedKey] = true }, 2)) { pendingRanked = false; RoomRequestFailed(); }
+        if (rankedPlayers > 2 && (!FeatureFlags.Teams || !FeatureFlags.MultiPlayer)) rankedPlayers = 2;
+        if (!PhotonNetwork.JoinRandomRoom(new ExitGames.Client.Photon.Hashtable { [MatchRules.RankedKey] = true, [MatchRules.RankedSizeKey] = rankedPlayers }, (byte)rankedPlayers)) { pendingRanked = false; RoomRequestFailed(); }
     }
 
     // ไม่มีห้องแรงค์ว่าง: สร้างห้องแรงค์ (แม็พสุ่ม กติกาตายตัว) แล้วรอคู่แข่งเข้ามา
@@ -254,6 +264,8 @@ public partial class LobbyManager
             ["MapRevision"] = 0,
             ["Starting"] = false,
             [MatchRules.RankedKey] = true,
+            [MatchRules.RankedSizeKey] = rankedPlayers,
+            [MatchRules.TeamsKey] = rankedPlayers > 2,
             [MatchRules.UpgradesKey] = false,
             [MatchRules.BotFillKey] = false,
             [MatchRules.KillTargetKey] = MatchRules.RankedKills,
@@ -264,11 +276,11 @@ public partial class LobbyManager
         {
             PlayerTtl = 60000,
             EmptyRoomTtl = 60000,
-            MaxPlayers = 2,
+            MaxPlayers = (byte)rankedPlayers,
             IsVisible = true,
             IsOpen = true,
             CustomRoomProperties = props,
-            CustomRoomPropertiesForLobby = new string[] { "MapIndex", MatchRules.TeamsKey, MatchRules.RankedKey }
+            CustomRoomPropertiesForLobby = new string[] { "MapIndex", MatchRules.TeamsKey, MatchRules.RankedKey, MatchRules.RankedSizeKey }
         };
         if (!PhotonNetwork.CreateRoom(roomId, options, TypedLobby.Default)) { pendingRanked = false; RoomRequestFailed(); }
     }

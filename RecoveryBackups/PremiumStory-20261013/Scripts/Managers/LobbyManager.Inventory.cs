@@ -1,0 +1,229 @@
+// LobbyManager.Inventory.cs — ส่วนคลังยานและสกิลของ LobbyManager (partial class เดียวกัน) ใน LobbyScene
+// แสดงค่าพลังยาน, ปุ่ม Equip/Buy ยาน (ซื้อผ่าน FirebaseManager.PurchaseShip), เลือกและติดตั้งสกิล
+// ข้อมูลยาน/สกิลมาจาก BattleLoadoutCatalog; หน้า UI ถูกสร้างใน LobbyManager.Views.cs (BuildHangarScreen)
+using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
+using Photon.Pun;
+using Photon.Realtime;
+using TMPro;
+using System.Collections.Generic;
+
+// ส่วน Inventory ของ LobbyManager; partial คือคลาสเดิม ไม่ต้องเพิ่ม Component
+public partial class LobbyManager
+{
+    // แสดงยานที่ใส่อยู่ในหน้าหลัก: ชื่อ HP ATK SPD และรูปยานย้อมสีตาม ShipPaint
+    private void UpdateShipDisplay(int index)
+    {
+        if (index < 0 || index >= ships.Length) return;
+        ShipData ship = ships[index];
+
+        if (shipNameText != null) shipNameText.text = ship.name;
+        WriteUpgradedStats(index, shipHPText, shipATKText, shipSPDText, ""); // รวมตีบวก + ไอเท็ม (LobbyManager.UpgradeStats.cs)
+        if (shipSkillText != null) shipSkillText.text = ""; // ลบระบบ Skill เดิมทิ้ง
+        if (shipImage != null)
+        {
+            Sprite sp = BattleLoadoutCatalog.ShipSprite(index); // ยานใหม่ยังไม่มีรูป = ใช้รูปสำรอง + สีประจำยาน
+            if (sp != null)
+            {
+                VisualSkin.Preview(shipImage, index, ShipPaint.Local);
+            }
+        }
+    }
+
+    // แสดงรายละเอียดยานที่กำลังเลือกดูในหน้า Hangar แล้วอัปเดตปุ่ม Equip/Buy
+    private void UpdateInventoryDisplay(int index)
+    {
+        if (index < 0 || index >= ships.Length) return;
+        ShipData ship = ships[index];
+
+        if (inventoryShipName != null) inventoryShipName.text = ship.name;
+        WriteUpgradedStats(index, inventoryShipHP, inventoryShipATK, inventoryShipSPD, "   " + BattleLoadoutCatalog.WeaponNames[ship.weapon]);
+        if (inventoryShipSkill != null) inventoryShipSkill.text = ""; // ลบระบบ Skill เดิมทิ้ง
+        if (inventoryShipImage != null)
+        {
+            Sprite sp = BattleLoadoutCatalog.ShipSprite(index);
+            if (sp != null)
+            {
+                VisualSkin.Preview(inventoryShipImage, index, ShipPaint.Local);
+            }
+        }
+
+        UpdateInventoryActionButton(index);
+    }
+
+    // ตั้งสถานะปุ่มตามยาน: ใส่อยู่แล้ว = Equipped (กดไม่ได้), ครอบครองแล้ว = Equip, ยังไม่มี = Buy (ราคา)
+    private void UpdateInventoryActionButton(int index)
+    {
+        RefreshHangarCards();
+        if (inventoryActionButton == null) return;
+        
+        if (inventoryActionText == null)
+            inventoryActionText = inventoryActionButton.GetComponentInChildren<TMP_Text>();
+
+        // ถ้าปลดล็อกแล้ว
+        if (unlockedShips.Contains(index))
+        {
+            if (index == equippedShipIndex)
+            {
+                inventoryActionButton.interactable = false;
+                inventoryActionButton.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f);
+                if (inventoryActionText != null) inventoryActionText.text = "Equipped";
+            }
+            else
+            {
+                inventoryActionButton.interactable = true;
+                inventoryActionButton.GetComponent<Image>().color = new Color(0.2f, 0.6f, 0.3f);
+                if (inventoryActionText != null) inventoryActionText.text = "Equip";
+            }
+        }
+        else // ถ้ายังไม่ปลดล็อก
+        {
+            inventoryActionButton.interactable = true;
+            inventoryActionButton.GetComponent<Image>().color = new Color(0.8f, 0.6f, 0.1f);
+            if (inventoryActionText != null) inventoryActionText.text = "Buy (" + ships[index].price + ")";
+        }
+    }
+
+    // กดการ์ดยานในหน้า Hangar: เปลี่ยนยานที่กำลังดู (ไม่ได้ใส่ทันที) ห้ามเปลี่ยนระหว่างรอผลการซื้อ
+    public void SelectShip(int index)
+    {
+        if (hangarBusy || index < 0 || index >= ships.Length) return;
+        selectedShipIndex = index;
+        UpdateInventoryDisplay(index);
+    }
+
+    // กดปุ่ม Equip/Buy: ถ้ามียานแล้วจะใส่และบันทึกลง Firebase
+    // ถ้ายังไม่มีจะซื้อผ่าน FirebaseManager.PurchaseShip (Transaction หักเหรียญ+ปลดล็อกยานพร้อมกัน)
+    // ระหว่างรอผลตั้ง hangarBusy = true และปิดปุ่มกันกดซ้ำ; สำเร็จแล้วเพิ่มยานในรายการและแสดงยอดเหรียญใหม่จาก server
+    public void OnInventoryActionClicked()
+    {
+        if (hangarBusy || !profileLoaded) return;
+        int index = selectedShipIndex;
+        if (index < 0 || index >= ships.Length) return;
+
+        // สวมใส่ยาน
+        if (unlockedShips.Contains(index))
+        {
+            equippedShipIndex = index;
+            if (FirebaseManager.Instance != null)
+            {
+                FirebaseManager.Instance.SaveSelectedShip(index);
+            }
+            UpdateShipDisplay(equippedShipIndex); // อัปเดตหน้าล็อบบี้
+            UpdateInventoryActionButton(index);   // อัปเดตปุ่ม
+        }
+        // ซื้อยาน
+        else
+        {
+            ShipData ship = ships[index];
+            if (FirebaseManager.Instance != null)
+            {
+                hangarBusy = true;
+                inventoryActionButton.interactable = false; // ป้องกันการกดเบิ้ล
+                FirebaseManager.Instance.PurchaseShip(index, ship.price, (success, balance) =>
+                {
+                    if (this == null) return;
+                    hangarBusy = false;
+                    if (success)
+                    {
+                        if (!unlockedShips.Contains(index)) unlockedShips.Add(index);
+                        UpdateCoinDisplay(balance);
+                        UpdateStatus("Purchased " + ship.name + "!");
+                    }
+                    else UpdateStatus("Purchase not confirmed. Check coins/connection and try again.");
+                    UpdateInventoryActionButton(index);
+                });
+            }
+        }
+    }
+
+    // ============================
+    //  SKILL FUNCTIONS
+    // ============================
+
+    // กดการ์ดสกิล: เปลี่ยนสกิลที่กำลังดูและแสดงคำอธิบาย
+    public void SelectSkill(int index)
+    {
+        if (index < 0 || index >= skills.Length) return;
+        selectedSkillIndex = index;
+        UpdateSkillDisplay(index);
+    }
+
+    // อัปเดตหน้าสกิล: ไฮไลต์การ์ดที่เลือก, ป้าย INSTALLED/SELECTED/AVAILABLE, คำอธิบาย,
+    // ข้อความสกิลในหน้าหลัก และปุ่ม Install (กดไม่ได้ถ้าเป็นสกิลที่ติดตั้งอยู่แล้ว)
+    private void UpdateSkillDisplay(int index)
+    {
+        if (index < 0 || index >= skills.Length) return;
+        SkillData skill = skills[index];
+        int active = SkillUnlock.Usable(equippedSkillIndex); // สกิลที่ใช้รบจริง (ที่ติดตั้งไว้ยังล็อก = สกิลแรก)
+        if (hangarSkillCards != null)
+            for (int i = 0; i < hangarSkillCards.Length; i++)
+            {
+                bool locked = !SkillUnlock.Unlocked(i);
+                hangarSkillCards[i].GetComponent<Image>().color = i == index ? new Color(0.1f, 0.38f, 0.46f) : locked ? new Color(.05f, .07f, .1f) : panelColor;
+                hangarSkillStates[i].text = locked ? "LOCKED  LV " + SkillUnlock.RequiredLevel(i)
+                    : i == active ? "INSTALLED" : i == index ? "SELECTED" : "AVAILABLE";
+                hangarSkillStates[i].color = locked ? new Color(1f, .55f, .45f) : Color.white;
+            }
+        if (homeSkillText != null)
+            homeSkillText.text = "EQUIPPED  /  " + skills[active].name;
+
+        if (skillDescText != null)
+        {
+            // คำอธิบายละเอียด ไทย/อังกฤษ (SkillInfo.cs): ชื่อ + ตัวเลข + วิธีใช้
+            skillDescText.richText = true;
+            skillDescText.textWrappingMode = TextWrappingModes.Normal;
+            skillDescText.enableAutoSizing = true;
+            skillDescText.fontSizeMin = 14;
+            skillDescText.fontSizeMax = 22;
+            skillDescText.alignment = TextAlignmentOptions.Left;
+            skillDescText.text = "<size=125%><color=#5FE3E3>" + skill.name + "</color></size>   <color=#FFD27A>" + SkillInfo.Stats(index, skill.cooldown)
+                + "</color>\n" + SkillInfo.Describe(index);
+        }
+
+        if (installSkillButton == null) return;
+        if (installSkillText == null) installSkillText = installSkillButton.GetComponentInChildren<TMP_Text>();
+
+        if (!SkillUnlock.Unlocked(index))
+        {
+            // ยังไม่ถึงเลเวล: ติดตั้งไม่ได้
+            installSkillButton.interactable = false;
+            installSkillButton.GetComponent<Image>().color = new Color(0.35f, 0.3f, 0.3f);
+            if (installSkillText != null) installSkillText.text = "UNLOCK AT LV " + SkillUnlock.RequiredLevel(index);
+        }
+        else if (index == active)
+        {
+            installSkillButton.interactable = false;
+            installSkillButton.GetComponent<Image>().color = new Color(0.5f, 0.5f, 0.5f);
+            if (installSkillText != null) installSkillText.text = "INSTALLED";
+        }
+        else
+        {
+            installSkillButton.interactable = true;
+            installSkillButton.GetComponent<Image>().color = new Color(0.3f, 0.6f, 0.9f);
+            if (installSkillText != null) installSkillText.text = "INSTALL";
+        }
+    }
+
+    // กดปุ่ม Install: ตั้งสกิลที่เลือกเป็นสกิลที่ใช้รบ บันทึกลง Firebase แล้วอัปเดตหน้าจอ (สกิลไม่มีราคา)
+    public void OnInstallSkillClicked()
+    {
+        if (!SkillUnlock.Unlocked(selectedSkillIndex))
+        {
+            UpdateStatus("Reach level " + SkillUnlock.RequiredLevel(selectedSkillIndex) + " to unlock " + skills[selectedSkillIndex].name + ".");
+            return;
+        }
+        equippedSkillIndex = selectedSkillIndex;
+        if (FirebaseManager.Instance != null)
+        {
+            FirebaseManager.Instance.SaveSelectedSkill(equippedSkillIndex);
+        }
+        UpdateSkillDisplay(equippedSkillIndex);
+        UpdateStatus("Installed " + skills[equippedSkillIndex].name + " Skill!");
+    }
+
+    // ============================
+    //  PHOTON CALLBACKS
+    // ============================
+}

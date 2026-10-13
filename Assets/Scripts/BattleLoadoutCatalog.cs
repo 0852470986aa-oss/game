@@ -146,8 +146,8 @@ public static class ShipPaint
     public const string Property = "ShipSkin";
     private const string PrefsKey = "ShipSkin";
     // ชื่อสี และค่าสีที่ใช้คูณกับภาพยาน (index ตรงกัน)
-    public static readonly string[] Names = { "ORIGINAL", "CRIMSON", "AZURE", "EMERALD", "GOLD", "SHADOW" };
-    public static readonly UnityEngine.Color[] Colors = {
+    private static readonly string[] BaseNames = { "ORIGINAL", "CRIMSON", "AZURE", "EMERALD", "GOLD", "SHADOW" };
+    private static readonly UnityEngine.Color[] BaseColors = {
         UnityEngine.Color.white,
         new UnityEngine.Color(1f, .55f, .55f),
         new UnityEngine.Color(.55f, .8f, 1f),
@@ -155,17 +155,31 @@ public static class ShipPaint
         new UnityEngine.Color(1f, .85f, .4f),
         new UnityEngine.Color(.55f, .55f, .7f)
     };
+    // จำนวนสีพื้นฐาน (ฟรี) — index ตั้งแต่ BaseCount ขึ้นไปคือสกินพรีเมียม (SkinGacha.cs / FeatureFlags.SkinGacha)
+    public static int BaseCount => BaseColors.Length;
+    // ชื่อ/สีทั้งหมด = สีพื้นฐาน 6 สี + สกินพรีเมียมต่อท้าย (ต่อท้ายเสมอ ส่วนการใช้ได้ไหมเช็กที่ SkinCatalog.Usable)
+    public static readonly string[] Names = Concat(BaseNames, SkinCatalog.Names);
+    public static readonly UnityEngine.Color[] Colors = Concat(BaseColors, SkinCatalog.Tints);
+    private static T[] Concat<T>(T[] a, T[] b) { var all = new T[a.Length + b.Length]; a.CopyTo(all, 0); b.CopyTo(all, a.Length); return all; }
+    // สีของบอท: ปกติสุ่มจากสีเดิม (ยกเว้น ORIGINAL) / เปิดกาชา = มีโอกาส 25% ใส่สกินพรีเมียม (โชว์สกินในสนาม)
+    public static int RandomBotPaint()
+        => FeatureFlags.SkinGacha && UnityEngine.Random.value < .25f
+            ? BaseCount + UnityEngine.Random.Range(0, Colors.Length - BaseCount)
+            : UnityEngine.Random.Range(1, BaseCount);
     // ตรวจ index สี ถ้าเกินช่วงคืน 0 (ORIGINAL)
     public static int Valid(int index) => index >= 0 && index < Colors.Length ? index : 0;
     // สีที่ผู้เล่นเครื่องนี้เลือก: อ่าน/บันทึกใน PlayerPrefs
     public static int Local
     {
-        get => Valid(UnityEngine.PlayerPrefs.GetInt(PrefsKey, 0));
+        get { int paint = Valid(UnityEngine.PlayerPrefs.GetInt(PrefsKey, 0)); return SkinCatalog.Usable(paint) ? paint : 0; } // สกินที่ยังไม่มี/ปิดระบบ = สีเดิม
         set { UnityEngine.PlayerPrefs.SetInt(PrefsKey, Valid(value)); UnityEngine.PlayerPrefs.Save(); }
     }
     // ค่าสีของผู้เล่นเครื่องนี้
     public static UnityEngine.Color LocalColor => Colors[Local];
     // สีของผู้เล่นใดๆ จาก Custom Property "ShipSkin" (ไม่มีค่า = สีขาว/สีเดิม) ใช้ใน PlayerController.ApplyPaint
+    // index สีของผู้เล่นใดๆ จาก Custom Property (ไม่มีค่า = 0) ใช้หาสกิน/ออร่า
+    public static int IndexFor(Photon.Realtime.Player player)
+        => player != null && player.CustomProperties.TryGetValue(Property, out object value) && value is int index ? Valid(index) : 0;
     public static UnityEngine.Color For(Photon.Realtime.Player player)
         => player != null && player.CustomProperties.TryGetValue(Property, out object value) && value is int index
             ? Colors[Valid(index)] : UnityEngine.Color.white;

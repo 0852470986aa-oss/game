@@ -3,7 +3,7 @@
 // 2 STAR HUNT        : เก็บดาวที่เกิดในแม็พ ตายแล้วทำดาวหล่น 1 ดวง ถึงเป้าก่อนชนะ
 // 3 SURVIVAL         : คนจริงร่วมมือกันสู้บอทเป็นระลอก 10 ระลอก (ระลอก 5 และ 10 มีบอส) คนละ 3 ชีวิต
 // 4 BATTLE ROYALE    : 1 ชีวิต วงปลอดภัยหดเรื่อยๆ อยู่นอกวงเสียเลือด รอดคนสุดท้ายชนะ
-// 5 CAMPAIGN         : ด่านเนื้อเรื่องเล่นคนเดียว 5 ด่าน (Campaign.cs) คน 3 ชีวิต ด่านสุดท้ายมีบอส
+// 5 CAMPAIGN         : เนื้อเรื่อง 10 ด่าน (Campaign.cs) คน 3 ชีวิต บอสในด่าน 5 / 8 / 10
 // Master Client เป็นคนตัดสินคะแนน/เกิดดาว/เกิดบอท แล้วบอกทุกเครื่องผ่าน Room Properties และ RaiseEvent (รหัส 71-73)
 // ปิดทั้งระบบได้ด้วย FeatureFlags.GameModes = false (ทุกห้องกลับเป็นโหมดปกติ)
 using System.Collections.Generic;
@@ -77,6 +77,7 @@ public partial class GameplayManager : IOnEventCallback
             case MatchRules.ModeKoth: return "HOLD THE ZONE";
             case MatchRules.ModeStars: return "COLLECT STARS";
             case MatchRules.ModeSurvival: return "SURVIVE " + SurvivalWaves + " WAVES";
+            case MatchRules.ModeBossRaid: return "DESTROY DREADNOUGHT / DODGE TELEGRAPHED ATTACKS";
             case MatchRules.ModeRoyale: return "LAST SHIP STANDING";
             case MatchRules.ModeCampaign: return campaign != null && campaign.boss ? "DESTROY THE BOSS" : "DESTROY " + targetKills + " ENEMIES";
         }
@@ -111,11 +112,14 @@ public partial class GameplayManager : IOnEventCallback
     {
         if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
         var room = PhotonNetwork.CurrentRoom;
+        // กลับเข้า Raid รอบเดิมไม่ล้างทีม/เฟส/ผลที่ Host เดิมบันทึกไว้
+        if (BossRaidRules.Enabled(room) && room.CustomProperties.TryGetValue(BossRaidRules.RoundKey, out object raidRound)
+            && room.CustomProperties.TryGetValue("BattleToken", out object round) && Equals(raidRound, round)) return;
         var props = new ExitGames.Client.Photon.Hashtable();
         foreach (var entry in room.CustomProperties)
         {
             if (!(entry.Key is string key) || entry.Value == null) continue;
-            if (key.StartsWith(MatchRules.ModeScorePrefix) || key == ZoneXKey || key == ZoneYKey || key == WaveKey || key == ModeResultKey || key == "Banner")
+            if (key.StartsWith(BossRaidRules.Prefix) || key.StartsWith(MatchRules.ModeScorePrefix) || key == ZoneXKey || key == ZoneYKey || key == WaveKey || key == ModeResultKey || key == "Banner")
                 props[key] = null;
             foreach (string prefix in new[] { MatchRules.BotKillPrefix, MatchRules.BotDeathPrefix, MatchRules.TeamPrefix, MatchStats.BotPrefix })
                 if (key.StartsWith(prefix) && int.TryParse(key.Substring(prefix.Length), out int id) && id >= PlayerController.BotIdBase + 100)
@@ -136,6 +140,7 @@ public partial class GameplayManager : IOnEventCallback
             case MatchRules.ModeSurvival: UpdateSurvival(); break;
             case MatchRules.ModeRoyale: UpdateRoyale(); break;
             case MatchRules.ModeCampaign: UpdateCampaign(); break;
+            case MatchRules.ModeBossRaid: UpdateBossRaid(); break;
         }
     }
 
@@ -146,6 +151,7 @@ public partial class GameplayManager : IOnEventCallback
         int mode = MatchRules.GameMode(PhotonNetwork.CurrentRoom);
         if (ship.IsBot)
         {
+            if (mode == MatchRules.ModeBossRaid) return MatchRules.TeamOf(ship.CombatantId) == 0 && MatchRules.BotDeaths(ship.CombatantId) < BossRaidRules.Lives;
             if (mode == MatchRules.ModeRoyale || mode == MatchRules.ModeSurvival) return false;
             if (mode == MatchRules.ModeCampaign) return !ship.IsBoss;
             return true;
@@ -190,6 +196,8 @@ public partial class GameplayManager : IOnEventCallback
                 return "STARS  YOU " + MatchRules.ModeScore(myId) + "  /  LEAD " + BestModeScore() + "  /  TO " + targetKills;
             case MatchRules.ModeSurvival:
                 return "WAVE " + Mathf.Max(1, CurrentWave()) + " / " + SurvivalWaves + "   ENEMIES " + EnemyBotsPresent() + livesText;
+            case MatchRules.ModeBossRaid:
+                return "CO-OP" + livesText;
             case MatchRules.ModeRoyale:
                 return "ALIVE " + AliveCount() + "   ZONE " + Mathf.RoundToInt(RoyaleRadius()) + livesText;
             case MatchRules.ModeCampaign:
@@ -213,6 +221,7 @@ public partial class GameplayManager : IOnEventCallback
                 return PhotonNetwork.Time - MatchStartTime() > 3 && AliveCount() <= 1;
             case MatchRules.ModeSurvival:
             case MatchRules.ModeCampaign:
+            case MatchRules.ModeBossRaid:
                 return room.CustomProperties.TryGetValue(ModeResultKey, out object v) && v is int result && result != 0;
         }
         return false;
@@ -584,9 +593,11 @@ public partial class GameplayManager : IOnEventCallback
             int ship = boss ? 1 : BattleLoadoutCatalog.ValidShip(Random.Range(0, BattleLoadoutCatalog.Ships.Length));
             int skill = boss ? 2 : BattleLoadoutCatalog.ValidSkill(Random.Range(0, BattleLoadoutCatalog.Skills.Length));
             string name = boss ? "DREADNOUGHT [BOSS]" : BotNames[Random.Range(0, BotNames.Length)] + " [BOT]";
+            if (gameMode == MatchRules.ModeCampaign)
+                name = StoryFleetArt.Names[StoryFleetArt.Variant(boss, MatchRules.CampaignStage(room), ids[i])] + (boss ? " [BOSS]" : " [BOT]");
             string prefab = BattleLoadoutCatalog.PrefabName(ship);
             if (!TryFindSafeSpawn(GetPrefab(prefab), map, false, out Vector2 position)) position = new Vector2(Random.Range(-10f, 10f), 20f);
-            object[] data = { "BOT", ids[i], name, ship, skill, Random.Range(1, ShipPaint.Colors.Length), boss ? 3 : difficulty, boss };
+            object[] data = { "BOT", ids[i], name, ship, skill, ShipPaint.RandomBotPaint(), boss ? 3 : difficulty, boss };
             PhotonNetwork.InstantiateRoomObject(prefab, position, Quaternion.Euler(0, 0, 180f), 0, data);
         }
     }
@@ -710,7 +721,8 @@ public partial class GameplayManager : IOnEventCallback
             return;
         }
         CheckCoopDefeat();
-        if (campaign.boss ? Time.time > 3f && !BossAlive() && BossSeen() : MatchRules.LocalKills() >= campaign.kills) SetModeResult(1);
+        bool seen = campaign.boss && BossSeen(); // Record while alive, before the boss can be removed.
+        if (campaign.boss ? Time.time > 3f && seen && !BossAlive() : MatchRules.LocalKills() >= campaign.kills) SetModeResult(1);
     }
 
     private bool bossSeen; // เคยพบยานบอสในฉากแล้วหรือยัง
@@ -732,7 +744,13 @@ public partial class GameplayManager : IOnEventCallback
         int kills = MatchRules.LocalKills();
         int reward;
         string headline, detail;
-        if (gameMode == MatchRules.ModeSurvival)
+        if (gameMode == MatchRules.ModeBossRaid)
+        {
+            reward = BossRaidRules.Reward(won);
+            headline = won ? "BOSS DEFEATED!" : "RAID FAILED";
+            detail = "BOSS CO-OP / KILLS " + kills + " / +" + reward + " ASTRONIUM" + GrantRaidTicket(won);
+        }
+        else if (gameMode == MatchRules.ModeSurvival)
         {
             int cleared = won ? SurvivalWaves : Mathf.Max(0, CurrentWave() - 1);
             reward = cleared * 15 + (won ? 100 : 0);
@@ -749,7 +767,7 @@ public partial class GameplayManager : IOnEventCallback
                 + (won && stage < Campaign.Count && first ? "    NEXT STAGE UNLOCKED!" : "");
         }
         if (FirebaseManager.Instance != null)
-            FirebaseManager.Instance.RecordMatchResult(won, gameMode == MatchRules.ModeSurvival ? "SURVIVAL" : "CAMPAIGN", reward, kills, GetCurrentMapName());
+            FirebaseManager.Instance.RecordMatchResult(won, gameMode == MatchRules.ModeBossRaid ? "BOSS_COOP" : gameMode == MatchRules.ModeSurvival ? "SURVIVAL" : "CAMPAIGN", reward, kills, GetCurrentMapName());
         if (resultPanel != null)
         {
             resultPanel.SetActive(true);

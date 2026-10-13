@@ -44,10 +44,10 @@ public partial class GameplayManager
         int[] botTeam = new int[count], botTeamIndex = new int[count];
         for (int i = 0; i < count; i++)
         {
-            int t = teamCount[0] <= teamCount[1] ? 0 : 1;
+            int t = BossRaidRules.Enabled(room) ? 0 : teamCount[0] <= teamCount[1] ? 0 : 1;
             botTeam[i] = t;
             botTeamIndex[i] = teamCount[t]++;
-            if (isTeamMode) resetKills[MatchRules.TeamPrefix + (PlayerController.BotIdBase + i)] = t;
+            if (isTeamMode || BossRaidRules.Enabled(room)) resetKills[MatchRules.TeamPrefix + (PlayerController.BotIdBase + i)] = t;
         }
         room.SetCustomProperties(resetKills);
         // สุ่มชื่อไม่ซ้ำกัน
@@ -58,7 +58,7 @@ public partial class GameplayManager
             // เป้าซ้อมใช้ยานถึก (Comet Crusher) และไม่มีสกิลโจมตี / บอทปกติสุ่มยาน สกิล สี
             int ship = difficulty == 0 ? 1 : BattleLoadoutCatalog.ValidShip(Random.Range(0, BattleLoadoutCatalog.Ships.Length));
             int skill = difficulty == 0 ? 1 : BattleLoadoutCatalog.ValidSkill(Random.Range(0, BattleLoadoutCatalog.Skills.Length));
-            int paint = Random.Range(1, ShipPaint.Colors.Length);
+            int paint = ShipPaint.RandomBotPaint();
             string pick = names.Count > 0 ? names[Random.Range(0, names.Count)] : "BOT-" + (i + 1);
             names.Remove(pick);
             string name = (difficulty == 0 ? "TARGET DUMMY" : pick) + " [BOT]";

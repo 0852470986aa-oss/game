@@ -31,13 +31,13 @@ public partial class GameplayManager
         var report = new MatchReport
         {
             mode = gameMode == MatchRules.ModeKoth ? "HILL" : gameMode == MatchRules.ModeStars ? "STARS" : gameMode == MatchRules.ModeSurvival ? "SURVIVAL"
-                : gameMode == MatchRules.ModeRoyale ? "ROYALE" : gameMode == MatchRules.ModeCampaign ? "CAMPAIGN"
+                  : gameMode == MatchRules.ModeRoyale ? "ROYALE" : gameMode == MatchRules.ModeCampaign ? "CAMPAIGN" : gameMode == MatchRules.ModeBossRaid ? "BOSS_COOP"
                 : isTeamMode ? "TEAM" : isFreeForAll ? "FFA" : "1V1",
             won = won,
             draw = draw,
             online = !PhotonNetwork.OfflineMode,
             vsBots = MatchRules.IsBotMatch(room),
-            hardBot = MatchRules.IsBotMatch(room) && MatchRules.BotDifficulty(room) >= 3,
+            hardBot = MatchRules.IsBotMatch(room) && MatchRules.BotDifficulty(room) == 3,
             kills = MatchRules.LocalKills(),
             deaths = MatchRules.Deaths(PhotonNetwork.LocalPlayer),
             place = place,
@@ -47,6 +47,13 @@ public partial class GameplayManager
             map = GetCurrentMapName()
         };
         var gain = Progression.RecordMatch(report);
+        // Battle Pass (FeatureFlags.PremiumPass): XP ของ Pass เท่ากับ XP ที่ได้จากแมตช์
+        if (FeatureFlags.PremiumPass && gain != null && gain.xp > 0)
+        {
+            int tiers = BattlePass.AddXp(gain.xp);
+            string passLine = "PASS XP +" + gain.xp + (tiers > 0 ? "  TIER " + BattlePass.Tier + "!" : "");
+            rankLine = rankLine == null ? passLine : rankLine + "    " + passLine;
+        }
         ShowProgressLine(gain, rankLine);
     }
 
@@ -54,10 +61,16 @@ public partial class GameplayManager
     private string ReportRanked(bool won, bool draw)
     {
         var room = PhotonNetwork.CurrentRoom;
-        if (!MatchRules.IsRanked(room) || PhotonNetwork.OfflineMode || isFreeForAll || MatchRules.IsBotMatch(room)) return null;
+        if (!MatchRules.IsRanked(room) || PhotonNetwork.OfflineMode || (isFreeForAll && !isTeamMode) || MatchRules.IsBotMatch(room)) return null;
         int opponent = Ranked.StartMmr;
-        if (PhotonNetwork.PlayerListOthers.Length > 0 && PhotonNetwork.PlayerListOthers[0].CustomProperties.TryGetValue("MMR", out object value) && value is int mmr)
-            opponent = mmr;
+        int total = 0, count = 0;
+        foreach (var rival in PhotonNetwork.PlayerListOthers)
+        {
+            if (isTeamMode && MatchRules.TeamOf(rival.ActorNumber) == LocalTeam) continue;
+            total += rival.CustomProperties.TryGetValue("MMR", out object value) && value is int mmr ? mmr : Ranked.StartMmr;
+            count++;
+        }
+        if (count > 0) opponent = total / count;
         int before = Ranked.Mmr;
         int delta = Ranked.RecordMatch(won, draw, opponent);
         string line = "RANKED " + (delta >= 0 ? "+" : "") + delta + " MMR  (" + Ranked.Mmr + " " + Ranked.TierName(Ranked.Mmr) + ")";

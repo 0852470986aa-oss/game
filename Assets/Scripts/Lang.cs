@@ -290,6 +290,7 @@ public static class Lang
         { "FILL WITH BOTS", "เติมผู้เล่นด้วยบอท" }, { "SHIP UPGRADES", "ตีบวกยาน" },
         { "SOLO / SELECT A MODE, THEN START", "เล่นคนเดียว / เลือกโหมดแล้วกดเริ่ม" },
         { "Host changes rules. Changes require everyone to confirm READY again.", "เจ้าห้องเปลี่ยนกติกาได้ เมื่อเปลี่ยนทุกคนต้องกดพร้อมอีกครั้ง" },
+        { "VERY EASY", "ง่ายมาก" }, { "DIFFICULTY: VERY EASY", "ความยาก: ง่ายมาก" }, { "BOT VERY EASY", "บอท ง่ายมาก" },
         { "DIFFICULTY: EASY", "ความยาก: ง่าย" }, { "DIFFICULTY: NORMAL", "ความยาก: ปกติ" }, { "DIFFICULTY: HARD", "ความยาก: ยาก" },
         { "< RANK", "< แรงค์" },
         // ทั่วไป

@@ -7,6 +7,8 @@ using System.Collections.Generic;
 // คลาส static เก็บสวิตช์ฟีเจอร์ทั้งหมดเป็นตัวแปร bool (FirebaseManager เขียนทับได้ตอนโหลดหลังล็อกอิน)
 public static class FeatureFlags
 {
+    // โหมดบอส Co-op: ปิดเพื่อซ่อนทางเข้าโหมดใหม่ โดยไม่เปลี่ยนโหมดเดิม
+    public static bool BossRaid = true;
     // ระบบยิงแบบเบา: ส่งแค่คำสั่งยิงผ่าน RPC แล้วแต่ละเครื่องสร้างกระสุนเอง (false = กลับไปใช้ PhotonNetwork.Instantiate แบบเดิม)
     public static bool LightBullets = true;
     // ให้ Host ตั้งค่าห้องได้ (จำนวน Kill / เวลา / อันตรายในแม็พ) ในห้องรอ
@@ -131,6 +133,12 @@ public static class FeatureFlags
     public static bool FunBotRules = true;
     // FPS LIMIT 120 ได้จริง: ปิด VSync ซ้ำหลังสลับระดับกราฟิก (เดิมกราฟิก MEDIUM/HIGH เปิด VSync กลับ ทำให้ติดเพดานรีเฟรชจอ) (false = แบบเดิม)
     public static bool FpsUnlock = true;
+    // ร้านเติมเงิน + เงินพรีเมียม "คริสตัล" (Premium.cs): แพ็ก THB 35–1,490 โบนัสเติมครั้งแรก x2 แพ็กเริ่มต้น ประวัติการเติม — ใช้ระบบชำระเงินจำลอง ไม่ตัดเงินจริง (false = ซ่อนปุ่ม SHOP/คริสตัล)
+    public static bool PremiumShop = true;
+    // Battle Pass รายเดือน 30 ขั้น เส้นฟรี/พรีเมียม (BattlePass.cs) XP จากแมตช์และภารกิจ (false = ซ่อนปุ่ม PASS และไม่เก็บ XP ของ Pass)
+    public static bool PremiumPass = true;
+    // กาชาสกินยาน STAR FORGE (SkinGacha.cs): สกินเปลี่ยนสี + แสงออร่า ไม่เปลี่ยนค่าพลัง มีการันตี/หน้าแสดงโอกาส/แลกด้วยชิ้นส่วน (false = ซ่อนกาชา สกินพรีเมียมใช้ไม่ได้ บอทใช้สีเดิม 6 สี)
+    public static bool SkinGacha = true;
 
     // เขียนทับค่าจาก Firebase (key ต้องตรงชื่อ field เช่น "LightBullets") ค่าที่ไม่ใช่ bool จะถูกข้าม
     public static void Apply(IDictionary<string, object> values)
@@ -209,6 +217,10 @@ public static class FeatureFlags
                 case nameof(SoftUiFx): SoftUiFx = on; break;
                 case nameof(FunBotRules): FunBotRules = on; break;
                 case nameof(FpsUnlock): FpsUnlock = on; break;
+                case nameof(PremiumShop): PremiumShop = on; break;
+                case nameof(PremiumPass): PremiumPass = on; break;
+                case nameof(SkinGacha): SkinGacha = on; break;
+                case nameof(BossRaid): BossRaid = on; break;
             }
         }
     }

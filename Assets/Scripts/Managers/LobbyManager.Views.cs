@@ -472,16 +472,16 @@ public partial class LobbyManager
     // สร้างปุ่มสีเรียงแนวนอนตามจำนวนสีใน ShipPaint.Colors
     private void BuildPaintPicker()
     {
-        UILabel("PaintTitle", hangarShipsPage.transform, "PAINT", -40, -229, 120, 30, 17, accentColor);
-        paintSwatches = new Button[ShipPaint.Colors.Length];
-        for (int i = 0; i < paintSwatches.Length; i++)
+        // เลิกแสดงปุ่มย้อมสี แต่รักษา index เก่าไว้ให้เซฟเดิมอ่านได้
+        paintSwatches = null;
+        var oldTitle = hangarShipsPage.transform.Find("PaintTitle");
+        if (oldTitle != null) oldTitle.gameObject.SetActive(false);
+        for (int i = 0; i < ShipPaint.BaseCount; i++)
         {
-            int paint = i;
-            var swatch = UIButton("Paint" + i, hangarShipsPage.transform, "", 40 + i * 52, -229, 40, 40, () => SelectPaint(paint));
-            swatch.GetComponent<Image>().color = ShipPaint.Colors[i];
-            paintSwatches[i] = swatch;
+            var oldPaint = hangarShipsPage.transform.Find("Paint" + i);
+            if (oldPaint != null) oldPaint.gameObject.SetActive(false);
         }
-        RefreshPaintSwatches();
+        BuildHangarSkinsButton(hangarShipsPage.transform, 390, -229);
     }
 
     // เลือกสียาน: บันทึกใน PlayerPrefs ผ่าน ShipPaint.Local แล้วเปลี่ยนสีรูปยานในหน้า Hangar และหน้าหลักทันที
@@ -489,8 +489,8 @@ public partial class LobbyManager
     {
         ShipPaint.Local = paint;
         RefreshPaintSwatches();
-        if (inventoryShipImage != null) inventoryShipImage.color = ShipPaint.LocalColor;
-        if (shipImage != null) shipImage.color = ShipPaint.LocalColor;
+        VisualSkin.Preview(inventoryShipImage, selectedShipIndex, ShipPaint.Local);
+        VisualSkin.Preview(shipImage, equippedShipIndex, ShipPaint.Local);
         if (hangarMessage != null) hangarMessage.text = "Paint: " + ShipPaint.Names[ShipPaint.Local] + "  /  applies to every ship.";
     }
 
@@ -655,6 +655,7 @@ public partial class LobbyManager
         UpdateShipDisplay(equippedShipIndex);
         UpdateSkillDisplay(equippedSkillIndex);
         BuildHomeNavigation(root);
+        BuildPremiumUI(root); // คริสตัล / ร้านเติมเงิน / Battle Pass / กาชาสกิน (LobbyManager.Premium.cs)
     }
 
     // สร้างการ์ดผู้เล่นในห้องรอ (first = ฝั่ง P1 ซ้าย, ไม่ใช่ = P2 ขวา) แล้วเก็บ reference ไว้ให้ RenderPlayer ใช้

@@ -18,18 +18,18 @@ public partial class LobbyManager
     private const string SoloModePrefs = "SoloModeIndex"; // คีย์ PlayerPrefs เก็บโหมดเล่นคนเดียวที่เลือกไว้
     // โหมดเล่นคนเดียว: จำนวนบอท / เป็นโหมดทีมไหม / ชื่อบนปุ่ม (1 BOT = 1 VS 1, หลายตัว = FFA, TEAM = เราอยู่ทีม BLUE กับบอท)
     // เฟส 7B: เพิ่มโหมดเกม SURVIVAL / KOTH / STARS / ROYALE / CAMPAIGN (SoloModeGame = MatchRules.Mode*)
-    private static readonly int[] SoloModeBots = { 1, 3, 5, 9, 3, 5, 9, 0, 3, 3, 9, 0 };
-    private static readonly bool[] SoloModeTeams = { false, false, false, false, true, true, true, false, false, false, false, false };
-    private static readonly int[] SoloModeGame = { 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 5 };
+    private static readonly int[] SoloModeBots = { 1, 3, 5, 9, 3, 5, 9, 0, 3, 3, 9, 0, 3 };
+    private static readonly bool[] SoloModeTeams = { false, false, false, false, true, true, true, false, false, false, false, false, false };
+    private static readonly int[] SoloModeGame = { 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 4, 5, 6 };
     private static readonly string[] SoloModeLabels = { "1 BOT", "3 BOTS", "5 BOTS", "9 BOTS", "TEAM 2v2", "TEAM 3v3", "TEAM 5v5",
-        "SURVIVAL", "HILL 4P", "STARS 4P", "ROYALE 10", "CAMPAIGN" };
+        "SURVIVAL", "HILL 4P", "STARS 4P", "ROYALE 10", "CAMPAIGN", "BOSS CO-OP" };
     // FeatureFlags.FunBotRules: เป้าและเวลาของแต่ละโหมดเล่นกับบอท (ลำดับเดียวกับ SoloModeLabels) — เดิมทุกโหมดใช้ 3 Kill / 3 นาที
     // ศัตรูเยอะ = เก็บ Kill ได้เร็ว จึงตั้งเป้าตามจำนวนบอท ให้แมตช์ยาวราว 4–7 นาที
     // โหมดทีม: เป้าของทีม = ค่านี้ × จำนวนคนต่อทีม (2v2 = 10, 3v3 = 15, 5v5 = 25)
     // HILL: คะแนนยึดเนิน = ค่านี้ × 15 (6 → ยืนในวง 90 วินาที) / STARS: ดาว = ค่านี้ × 3 (5 → 15 ดวง)
     // SURVIVAL / ROYALE / CAMPAIGN ไม่ใช้ค่า Kill (ใช้กติกาของโหมดเอง)
-    private static readonly int[] SoloModeKills = { 5, 8, 10, 15, 5, 5, 5, 3, 6, 5, 3, 3 };
-    private static readonly int[] SoloModeSeconds = { 240, 300, 360, 420, 360, 360, 420, 900, 300, 300, 300, 480 };
+    private static readonly int[] SoloModeKills = { 5, 8, 10, 15, 5, 5, 5, 3, 6, 5, 3, 3, 3 };
+    private static readonly int[] SoloModeSeconds = { 240, 300, 360, 420, 360, 360, 420, 900, 300, 300, 300, 480, BossRaidRules.Seconds };
     // โหมดเล่นคนเดียวที่เลือกไว้ (จำใน PlayerPrefs) ถ้าโหมดถูกปิดด้วย FeatureFlags จะกลับเป็น 0
     private int SoloMode
     {
@@ -39,6 +39,7 @@ public partial class LobbyManager
             if (!FeatureFlags.MultiPlayer || value < 0 || value >= SoloModeBots.Length) return 0;
             if (SoloModeTeams[value] && !FeatureFlags.Teams) return 0;
             if (SoloModeGame[value] != 0 && !FeatureFlags.GameModes) return 0;
+            if (value == BossRaidRules.SoloChoice && !FeatureFlags.BossRaid) return 0;
             return value;
         }
         set { PlayerPrefs.SetInt(SoloModePrefs, value); PlayerPrefs.Save(); }
@@ -50,6 +51,7 @@ public partial class LobbyManager
     private string SoloGoalText()
     {
         int mode = SoloMode, game = SoloModeGame[mode], kills = SoloModeKills[mode];
+        if (game == MatchRules.ModeBossRaid) return "CO-OP / 3 ALLIED BOTS / 3 LIVES / 8:00";
         if (game == MatchRules.ModeCampaign) return "";
         int teamSize = SoloModeTeams[mode] ? (SoloModeBots[mode] + 1) / 2 : 1; // ทีม 2v2/3v3/5v5: เป้าของทีม = Kill ต่อคน × คนในทีม
         string goal = game == MatchRules.ModeKoth ? "HOLD THE ZONE"
@@ -66,8 +68,8 @@ public partial class LobbyManager
     // ความยากที่เลือกไว้ (1 ง่าย, 2 กลาง, 3 ยาก) จำไว้ในเครื่อง
     private int SoloDifficulty
     {
-        get => Mathf.Clamp(PlayerPrefs.GetInt(SoloDifficultyPrefs, 2), 1, 3);
-        set { PlayerPrefs.SetInt(SoloDifficultyPrefs, Mathf.Clamp(value, 1, 3)); PlayerPrefs.Save(); }
+        get => Mathf.Clamp(PlayerPrefs.GetInt(SoloDifficultyPrefs, 2), 1, 4);
+        set { PlayerPrefs.SetInt(SoloDifficultyPrefs, Mathf.Clamp(value, 1, 4)); PlayerPrefs.Save(); }
     }
 
     // ปุ่มแถวล่างของหน้าหลัก (เรียกจาก BuildHomeScreen)
@@ -113,7 +115,8 @@ public partial class LobbyManager
         for (int step = 0; step < SoloModeBots.Length; step++)
         {
             next = (next + 1) % SoloModeBots.Length;
-            if ((!SoloModeTeams[next] || FeatureFlags.Teams) && (SoloModeGame[next] == 0 || FeatureFlags.GameModes)) break;
+            if ((!SoloModeTeams[next] || FeatureFlags.Teams) && (SoloModeGame[next] == 0 || FeatureFlags.GameModes)
+                && (next != BossRaidRules.SoloChoice || FeatureFlags.BossRaid)) break;
         }
         SoloMode = next;
         RefreshSoloButtons();
@@ -122,7 +125,7 @@ public partial class LobbyManager
     // กดปุ่ม DIFFICULTY: วนความยากบอท ง่าย → กลาง → ยาก → ง่าย แล้วรีเฟรชปุ่ม
     private void OnSoloDifficultyClicked()
     {
-        SoloDifficulty = SoloDifficulty % 3 + 1;
+        SoloDifficulty = MatchRules.NextPlayableDifficulty(SoloDifficulty);
         RefreshSoloButtons();
     }
 
@@ -175,7 +178,7 @@ public partial class LobbyManager
     {
         var props = new ExitGames.Client.Photon.Hashtable
         {
-            [MapProperty] = pendingTraining ? 1 : selectedMapIndex,
+            [MapProperty] = pendingTraining ? 1 : SoloMapRotation.Next(MapChoices),
             ["MapRevision"] = 0,
             ["Starting"] = false,
             [MatchRules.SoloKey] = true,
@@ -193,6 +196,7 @@ public partial class LobbyManager
         props[MatchRules.GameModeKey] = game;
         if (game == MatchRules.ModeSurvival) props[MatchRules.MatchSecondsKey] = 900;
         if (game == MatchRules.ModeRoyale) props[MatchRules.MatchSecondsKey] = 300;
+        if (game == MatchRules.ModeBossRaid) props[MatchRules.MatchSecondsKey] = BossRaidRules.Seconds;
         // เป้า Kill/เวลาตามโหมดและจำนวนบอท (ดู SoloModeKills) — ปิดสวิตช์ = 3 Kill / 3 นาทีแบบเดิม
         if (FeatureFlags.FunBotRules && !pendingTraining && game != MatchRules.ModeCampaign)
         {
@@ -204,7 +208,7 @@ public partial class LobbyManager
             int stage = Campaign.NextStage;
             var def = Campaign.Get(stage);
             props[MatchRules.CampaignStageKey] = stage;
-            props[MapProperty] = def.map;
+            props[MapProperty] = def.MapIndex;
             props[MatchRules.BotDifficultyKey] = def.difficulty;
             props[MatchRules.MatchSecondsKey] = 480;
         }

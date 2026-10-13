@@ -208,7 +208,7 @@ public partial class GameplayManager
         }
         // เหลือผู้ต่อสู้ไม่ถึง 2 (คนออกหมด) = จบแมตช์ทันที
         // (โหมด Survival/Campaign/Battle Royale ตัดสินจบเองใน GameplayManager.Modes.cs)
-        bool modeDecidesEnd = gameMode == MatchRules.ModeSurvival || gameMode == MatchRules.ModeCampaign || gameMode == MatchRules.ModeRoyale;
+        bool modeDecidesEnd = MatchRules.IsCoop(PhotonNetwork.CurrentRoom) || gameMode == MatchRules.ModeRoyale;
         if (matchStarted && !isMatchEnding && !resultShown && !modeDecidesEnd && Time.unscaledTime >= nextCombatantCheck)
         {
             nextCombatantCheck = Time.unscaledTime + 1f;

@@ -26,8 +26,7 @@ public partial class LobbyManager
             Sprite sp = BattleLoadoutCatalog.ShipSprite(index); // ยานใหม่ยังไม่มีรูป = ใช้รูปสำรอง + สีประจำยาน
             if (sp != null)
             {
-                shipImage.sprite = sp;
-                shipImage.color = ShipPaint.LocalColor * BattleLoadoutCatalog.ShipTint(index);
+                VisualSkin.Preview(shipImage, index, ShipPaint.Local);
             }
         }
     }
@@ -46,8 +45,7 @@ public partial class LobbyManager
             Sprite sp = BattleLoadoutCatalog.ShipSprite(index);
             if (sp != null)
             {
-                inventoryShipImage.sprite = sp;
-                inventoryShipImage.color = ShipPaint.LocalColor * BattleLoadoutCatalog.ShipTint(index);
+                VisualSkin.Preview(inventoryShipImage, index, ShipPaint.Local);
             }
         }
 

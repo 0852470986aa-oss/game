@@ -77,14 +77,16 @@ public static partial class MatchRules
     public const string SoloKey = "Solo";
     public const string TutorialKey = "Tutorial";
     public const string BotKillPrefix = "BK";
-    public static readonly string[] DifficultyNames = { "TRAINING", "EASY", "NORMAL", "HARD" };
+    public const int VeryEasyDifficulty = 4; // Append: never renumber saved/network difficulty IDs.
+    public static readonly string[] DifficultyNames = { "TRAINING", "EASY", "NORMAL", "HARD", "VERY EASY" };
+    public static int NextPlayableDifficulty(int current) => current == 4 ? 1 : current >= 3 ? 4 : current + 1;
 
     // จำนวนบอทในห้อง (0 ถึง MaxCombatants-1) ปิด FeatureFlags.Bots = 0
     public static int BotCount(RoomInfo room)
         => FeatureFlags.Bots && room != null && room.CustomProperties.TryGetValue(BotCountKey, out object v) && v is int n ? UnityEngine.Mathf.Clamp(n, 0, MaxCombatants - 1) : 0;
     // ความยากบอทในห้อง 0-3 (ไม่มีค่า = 2 กลาง)
     public static int BotDifficulty(RoomInfo room)
-        => room != null && room.CustomProperties.TryGetValue(BotDifficultyKey, out object v) && v is int n ? UnityEngine.Mathf.Clamp(n, 0, 3) : 2;
+        => room != null && room.CustomProperties.TryGetValue(BotDifficultyKey, out object v) && v is int n ? UnityEngine.Mathf.Clamp(n, 0, 4) : 2;
     // ห้องเปิดเติมบอทแทนที่ว่างไหม (ไม่ใช้ในห้องแรงค์)
     public static bool BotFill(RoomInfo room)
         => FeatureFlags.Bots && !IsRanked(room) && room != null && room.CustomProperties.TryGetValue(BotFillKey, out object v) && v is bool on && on;
@@ -244,8 +246,8 @@ public static partial class MatchRules
     public const string GameModeKey = "GameMode";
     public const string CampaignStageKey = "CampaignStage";
     public const string ModeScorePrefix = "MS";
-    public const int ModeDeathmatch = 0, ModeKoth = 1, ModeStars = 2, ModeSurvival = 3, ModeRoyale = 4, ModeCampaign = 5;
-    public static readonly string[] ModeTitles = { "DEATHMATCH", "KING OF THE HILL", "STAR HUNT", "SURVIVAL", "BATTLE ROYALE", "CAMPAIGN" };
+    public const int ModeDeathmatch = 0, ModeKoth = 1, ModeStars = 2, ModeSurvival = 3, ModeRoyale = 4, ModeCampaign = 5, ModeBossRaid = 6;
+    public static readonly string[] ModeTitles = { "DEATHMATCH", "KING OF THE HILL", "STAR HUNT", "SURVIVAL", "BATTLE ROYALE", "CAMPAIGN", "BOSS CO-OP" };
     // โหมดเกมของห้อง (ปิด FeatureFlags.GameModes / ห้องแรงค์ / ไม่มีค่า = Deathmatch)
     public static int GameMode(RoomInfo room)
     {
@@ -256,14 +258,14 @@ public static partial class MatchRules
     public static int CampaignStage(RoomInfo room)
         => room != null && room.CustomProperties.TryGetValue(CampaignStageKey, out object v) && v is int stage ? stage : 1;
     // โหมดร่วมมือ: คนจริงทุกคนเป็นทีมเดียวกัน (ทีม 0) สู้บอท (ทีม 1)
-    public static bool IsCoop(RoomInfo room) { int mode = GameMode(room); return mode == ModeSurvival || mode == ModeCampaign; }
+    public static bool IsCoop(RoomInfo room) { int mode = GameMode(room); return mode == ModeSurvival || mode == ModeCampaign || mode == ModeBossRaid; }
     // ใช้ระบบทีม (ยิงเพื่อนไม่โดน): โหมดทีม หรือโหมดร่วมมือ
     public static bool UsesTeams(RoomInfo room) => IsTeamMode(room) || IsCoop(room);
     // จำนวนชีวิตของคนจริง (0 = ไม่จำกัด)
     public static int Lives(RoomInfo room)
     {
         int mode = GameMode(room);
-        return mode == ModeRoyale ? 1 : mode == ModeSurvival || mode == ModeCampaign ? 3 : 0;
+        return mode == ModeRoyale ? 1 : mode == ModeSurvival || mode == ModeCampaign || mode == ModeBossRaid ? 3 : 0;
     }
     // คะแนนของโหมด (ยึดจุด/เก็บดาว) เก็บใน Room Property "MS{CombatantId}" โดย Master
     public static int ModeScore(int combatantId)
@@ -282,6 +284,10 @@ public static partial class MatchRules
     // ===== แรงค์ (เฟส 6) =====
     // ห้องแรงค์: 1 VS 1 กติกาตายตัว (Host แก้ค่าไม่ได้) ไม่มีบอท ไม่ใช้ค่าตีบวก
     public const string RankedKey = "Ranked";
+    public const string RankedSizeKey = "RankedSize";
+    public static int RankedPlayers(RoomInfo room)
+        => room != null && room.CustomProperties.TryGetValue(RankedSizeKey, out object size) && size is int n && (n == 4 || n == 8) ? n : 2;
+    public static string RankedLabel(RoomInfo room) => "RANKED " + RankedPlayers(room) / 2 + "V" + RankedPlayers(room) / 2;
     public const int RankedKills = 5;
     public const int RankedSeconds = 300;
     // ห้องนี้เป็นห้องแรงค์ไหม (Room Property "Ranked" = true และเปิด FeatureFlags.Ranked)

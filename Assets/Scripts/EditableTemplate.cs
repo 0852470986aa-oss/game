@@ -9,10 +9,11 @@ using UnityEngine;
 // คอมโพเนนต์ติดที่ต้นแบบ UI: ซ่อนต้นแบบตอนเล่น และมีเมธอด Spawn สำหรับคัดลอก
 public class EditableTemplate : MonoBehaviour
 {
+    private bool spawnedCopy;
     // ตอนเริ่ม (เฉพาะตอนเกมรัน) ซ่อนต้นแบบไม่ให้แสดงบนจอ
     private void Awake()
     {
-        if (Application.isPlaying) gameObject.SetActive(false);
+        if (Application.isPlaying && !spawnedCopy) gameObject.SetActive(false);
     }
 
     // คัดลอกต้นแบบโดยไม่พาตัวซ่อนอัตโนมัติไปด้วย
@@ -24,7 +25,13 @@ public class EditableTemplate : MonoBehaviour
         GameObject copy = parent != null ? Instantiate(template, parent, false) : Instantiate(template);
         if (wasActive) template.SetActive(true);
         var marker = copy.GetComponent<EditableTemplate>();
-        if (marker != null) DestroyImmediate(marker);
+        if (marker != null)
+        {
+            // สำเนาอาจถูกสร้างจาก OnTriggerEnter2D ตอนยิงตาย: ห้าม DestroyImmediate ใน physics callback
+            marker.spawnedCopy = true;
+            if (Application.isPlaying) Destroy(marker);
+            else DestroyImmediate(marker);
+        }
         copy.SetActive(true);
         return copy;
     }

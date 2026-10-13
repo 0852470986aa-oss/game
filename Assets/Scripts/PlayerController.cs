@@ -182,6 +182,8 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
             if (IsBot)
             {
                 if (GetComponent<BotController>() == null) gameObject.AddComponent<BotController>();
+                if (IsBoss && BossRaidRules.Enabled(PhotonNetwork.CurrentRoom) && GetComponent<BossRaidBrain>() == null)
+                    gameObject.AddComponent<BossRaidBrain>();
             }
             else if (GameplayManager.Instance != null)
             {
@@ -257,6 +259,11 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
         // เฟส 5: ค่าตีบวก + ไอเท็มของเรา (เฉพาะยานคนจริงบนเครื่องตัวเอง และห้องเปิด UPGRADES) — PlayerController.Items.cs
         if (!IsBot && photonView.IsMine) ApplyLoadoutBonus(shipIndex);
         ApplyBossStats(); // เฟส 7B: บอส
+        if (StoryFleetArt.Apply(this, spriteRenderer))
+        {
+            paintTint = Color.white;
+            if (IsBoss && GetComponent<StoryBossFx>() == null) gameObject.AddComponent<StoryBossFx>();
+        }
 
         baseSpeed = speed;
         baseFireCooldown = fireCooldown;

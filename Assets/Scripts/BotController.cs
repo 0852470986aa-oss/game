@@ -30,6 +30,7 @@ public class BotController : MonoBehaviour
     private Vector2 targetVelocity; // ความเร็วเป้าโดยประมาณ (เฉลี่ยแบบนุ่ม) ใช้เล็งดักทาง
     private float lastDamagedAt = -10f; // เวลาที่บอทโดนยิงล่าสุด ใช้ตัดสินใจกดสกิลโล่
     private float wanderAngle; // มุมเดินสุ่ม (องศา) ตอนไม่มีเป้าหรือเดินลอยไปมา
+    private bool veryEasyWantsFire;
 
     // เริ่มต้น: ดึง PlayerController ของยาน แล้วตั้งค่าความไวในการคิด ความแม่นการเล็ง และการใช้สกิลตามระดับความยาก
     private void Start()
@@ -38,6 +39,7 @@ public class BotController : MonoBehaviour
         switch (ship != null ? ship.BotDifficulty : 2)
         {
             case 0: thinkInterval = .6f; aimError = 0f; leadFactor = 0f; skillChance = 0f; preferredRange = 9f; break;
+            case 4: thinkInterval = .9f; aimError = 38f; leadFactor = 0f; skillChance = 0f; preferredRange = 11f; break;
             case 1: thinkInterval = .45f; aimError = 22f; leadFactor = .2f; skillChance = .25f; preferredRange = 9f; break;
             case 3: thinkInterval = .12f; aimError = 4f; leadFactor = .95f; skillChance = .9f; preferredRange = 7.5f; break;
             default: thinkInterval = .25f; aimError = 11f; leadFactor = .6f; skillChance = .55f; preferredRange = 8f; break;
@@ -58,6 +60,7 @@ public class BotController : MonoBehaviour
     private void Update()
     {
         if (ship == null || !ship.photonView.IsMine) return;
+        if (ship.IsBoss && BossRaidRules.Enabled(Photon.Pun.PhotonNetwork.CurrentRoom)) return;
         if (ship.isDead || ship.HasMatchEnded)
         {
             ship.botMove = Vector2.zero; ship.botFire = false; ship.botSkill = false;
@@ -76,8 +79,16 @@ public class BotController : MonoBehaviour
         {
             nextThink = Time.time + thinkInterval * Random.Range(.8f, 1.2f);
             Think();
+            veryEasyWantsFire = ship.botFire;
+            if (ship.BotDifficulty == MatchRules.VeryEasyDifficulty) ship.botMove *= .55f;
         }
         Aim();
+        if (ship.BotDifficulty == MatchRules.VeryEasyDifficulty)
+        {
+            // Short bursts with long pauses; still a fighting opponent, unlike TRAINING.
+            ship.botFire = veryEasyWantsFire && Mathf.Repeat(Time.time + ship.CombatantId * .13f, 2.8f) < .55f;
+            ship.botSkill = false;
+        }
     }
 
     // ===== ตัดสินใจ (ทำเป็นช่วง ๆ ตามความยาก) =====
@@ -127,7 +138,7 @@ public class BotController : MonoBehaviour
 
         // เลือกสถานะ
         if (inHazard) state = State.Evade;
-        else if (hpRatio < .3f && ship.BotDifficulty >= 2 && distance < preferredRange + 3f) state = State.Retreat;
+        else if (hpRatio < .3f && (ship.BotDifficulty == 2 || ship.BotDifficulty == 3) && distance < preferredRange + 3f) state = State.Retreat;
         else if (distance > preferredRange + 2.5f) state = State.Chase;
         else state = State.Fight;
 

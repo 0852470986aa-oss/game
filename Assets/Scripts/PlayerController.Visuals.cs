@@ -87,7 +87,8 @@ public partial class PlayerController
         // 1) ครั้งแรก: เลือกสไตล์ไอพ่นจากชื่อภาพยาน (ship2 = 1, ship3 = 2 เขียว, อื่นๆ = 0 แดง) และเตรียม sprite เปลวไฟ
         if (sheetThrusters == null)
         {
-            var profile = OwnThrusterProfile(); // ยานใหม่ที่มีรูปของตัวเอง: ใช้จุดหัวฉีดตามรูป (PlayerController.ShipThrusters.cs)
+            var profile = OwnThrusterProfile(); // จุดหัวฉีดตามภาพจริง
+            customExhaust = profile != null;
             int style = profile != null ? profile.style : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship2") ? 1
                 : spriteRenderer.sprite.name.ToLowerInvariant().Contains("ship3") ? 2 : 0;
             exhaustStyle = style;
@@ -181,16 +182,16 @@ public partial class PlayerController
                 if (animated != null) nozzle.sprite = animated;
                 if (blendLayer != null) blendLayer.sprite = ThrusterFrameAt(exhaustStyle, frame + 1, i);
             }
-            nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled;
+            nozzle.enabled = !isDead && !matchEnded && spriteRenderer.enabled && !HiddenFromLocalViewer;
             if (blendLayer != null)
             {
                 blendLayer.enabled = nozzle.enabled && blendLayer.sprite != null && (exhaustStyle == 0 || exhaustStyle == 2);
             }
-            float engineSize = exhaustStyle == 2 ? 1.3f : exhaustStyle == 1 && i >= 2 ? .75f : 1f;
+            float engineSize = exhaustStyle == 2 ? 1.3f : !customExhaust && exhaustStyle == 1 && i >= 2 ? .75f : 1f;
             float scale = length * engineSize / Mathf.Max(0.01f, nozzle.sprite.bounds.size.y);
             float width = hull.size.x * (exhaustStyle == 2 ? Mathf.Lerp(.10f, .14f, displayedThrust)
                 : Mathf.Lerp(.052f, .072f, displayedThrust));
-            if (exhaustStyle == 1 && i >= 2) width *= .85f;
+            if (!customExhaust && exhaustStyle == 1 && i >= 2) width *= .85f;
             width *= exhaustWidthScale;
             nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
             Vector2 anchor = exhaustAnchors[i];

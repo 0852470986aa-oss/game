@@ -47,7 +47,7 @@ public partial class PlayerController : IPunInstantiateMagicCallback
         botShip = data[3] is int ship ? BattleLoadoutCatalog.ValidShip(ship) : 0;
         botSkillIndex = data[4] is int skill ? BattleLoadoutCatalog.ValidSkill(skill) : 0;
         botPaint = data[5] is int paint ? ShipPaint.Valid(paint) : 0;
-        BotDifficulty = data[6] is int level ? Mathf.Clamp(level, 0, 3) : 1;
+        BotDifficulty = data[6] is int level ? Mathf.Clamp(level, 0, 4) : 1;
         // เฟส 7B: data[7] = บอส (เลือด x6 ตัวใหญ่ แรงขึ้น) ใช้ในโหมด Survival/Campaign
         IsBoss = data.Length > 7 && data[7] is bool boss && boss;
     }
@@ -59,10 +59,22 @@ public partial class PlayerController : IPunInstantiateMagicCallback
     private void ApplyBossStats()
     {
         if (!IsBoss) return;
-        maxHp *= 6f;
+        maxHp *= BossRaidRules.Enabled(PhotonNetwork.CurrentRoom)
+            ? BossRaidRules.HealthMultiplier(MatchRules.ExpectedHumans(PhotonNetwork.CurrentRoom) + MatchRules.BotCount(PhotonNetwork.CurrentRoom)) : 6f;
         attack *= 1.4f;
         speed *= .85f;
         transform.localScale *= 1.6f;
+        if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom))
+        {
+            var appearance = GetComponent<BossRaidAppearance>();
+            if (appearance == null) appearance = gameObject.AddComponent<BossRaidAppearance>();
+            if (appearance.Apply(spriteRenderer))
+            {
+                paintTint = Color.white; // ไม่ให้สีสกินบอทสุ่มกลบสีเกราะและแกนบอสใหม่
+                spriteRenderer.color = paintTint;
+                SkinAura.Apply(transform, spriteRenderer, null);
+            }
+        }
     }
 
     // RPC มาจากผู้ควบคุมยานลำนี้จริงไหม (คน = เจ้าของยาน, บอท = Master Client)
