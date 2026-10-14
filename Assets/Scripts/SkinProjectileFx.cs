@@ -9,6 +9,7 @@ public sealed class SkinProjectileFx : MonoBehaviour
     private Color primary, secondary;
     private int style;
     private float born;
+    private bool impactPlayed;
     private static Material trailMaterial;
     public static Material TrailMaterial
     {
@@ -25,6 +26,26 @@ public sealed class SkinProjectileFx : MonoBehaviour
         int index = SkinCatalog.IndexOf(skin.id);
         if (index < 0 || index >= Names.Length) return;
         bullet.AddComponent<SkinProjectileFx>().Setup(index, skin.aura);
+    }
+
+    public static void ApplyCombatant(GameObject bullet, PlayerController shooter)
+    {
+        var hull = shooter.GetComponent<SpriteRenderer>();
+        string name = hull != null && hull.sprite != null ? hull.sprite.name : "";
+        if (name == "DreadnoughtRaidVisual" || name.StartsWith("StoryFleet_"))
+        {
+            string id = name.EndsWith("2") || name.EndsWith("5") ? "NEBULA" : name.EndsWith("1") ? "TOXIC" : "MAGMA";
+            Apply(bullet, SkinCatalog.Find(id));
+        }
+        else Apply(bullet, shooter.ProjectileSkin);
+    }
+
+    // Called only on collision, never when a projectile expires or the scene is unloaded.
+    public void Impact()
+    {
+        if (impactPlayed) return;
+        impactPlayed = true;
+        PrismFx.Burst(transform.position, primary, .55f + (style % 3) * .12f);
     }
 
     private void Setup(int index, Color tint)

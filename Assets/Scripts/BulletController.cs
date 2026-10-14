@@ -108,6 +108,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             {
                 if (TryReflect(visualHit.collider, visualHit.normal, visualHit.centroid)) return;
                 transform.position = visualHit.centroid;
+                GetComponent<SkinProjectileFx>()?.Impact();
                 DestroyBullet();
             }
             else if (body == null) transform.position = to;
@@ -208,7 +209,7 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (!isTurretProjectile)
         {
             var shooter = PlayerController.FindCombatant(ShooterId);
-            if (shooter != null) SkinProjectileFx.Apply(gameObject, shooter.ProjectileSkin);
+            if (shooter != null) SkinProjectileFx.ApplyCombatant(gameObject, shooter);
         }
         // ให้ทุกเครื่องกำหนดความเร็วเท่ากันเพื่อให้ภาพกระสุนไม่ค้างเฉพาะฝั่งที่ไม่ได้ยิง
         if (GetComponent<Rigidbody2D>() != null)
@@ -242,7 +243,11 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (localMode && !authority)
         {
             var touched = hitInfo.GetComponentInParent<PlayerController>();
-            if (!isDestroyed && ((touched != null && !MatchRules.IsAlly(touched.CombatantId, ShooterId)) || (touched == null && !hitInfo.isTrigger))) DestroyBullet();
+            if (!isDestroyed && ((touched != null && !MatchRules.IsAlly(touched.CombatantId, ShooterId)) || (touched == null && !hitInfo.isTrigger)))
+            {
+                GetComponent<SkinProjectileFx>()?.Impact();
+                DestroyBullet();
+            }
             return;
         }
         if (!IsAuthority || isDestroyed) return; // เฉพาะคนยิงเท่านั้นที่จะเป็นคนคำนวณดาเมจ และถ้ากระสุนถูกทำลายไปแล้วจะไม่คิดซ้ำ
@@ -254,12 +259,14 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
             // ถ้าชนโดนผู้เล่นอื่น (ไม่ใช่ตัวเอง)
             if (!enemy.isDead && !MatchRules.IsAlly(enemy.CombatantId, ShooterId))
             {
+                GetComponent<SkinProjectileFx>()?.Impact();
                 DestroyBullet();
                 PlayerController.SendDamage(enemy, damage, ShooterId, false); // เฟส 9: ผ่าน Host ถ้าเปิด HostDamage
             }
         }
         else if (!hitInfo.isTrigger)
         {
+            GetComponent<SkinProjectileFx>()?.Impact();
             // PHASE 6: ถ้าชนกับวัตถุแข็ง (เช่น เสาหิน) ที่ไม่ใช่ Trigger ให้กระสุนระเบิดทิ้ง
             GameObject impactPrefab = GameplayManager.GetPrefab("ImpactEffect");
             if (impactPrefab != null)

@@ -6,6 +6,7 @@ public sealed class StoryBossFx : MonoBehaviour
     private PlayerController owner;
     private SpriteRenderer body, core, ring;
     private float height, previousHp;
+    private float hitFlash;
     private int phase;
     private bool deathPlayed;
     private Color tint;
@@ -47,7 +48,9 @@ public sealed class StoryBossFx : MonoBehaviour
         if (phase > 0 && next > phase && !owner.isDead) Burst(.85f);
         phase = next;
         if (owner.isDead && !deathPlayed) { deathPlayed = true; Burst(1.3f); }
-        float hit = owner.currentHp < previousHp ? .9f : .35f;
+        if (owner.currentHp < previousHp) hitFlash = .2f;
+        hitFlash = Mathf.Max(0,hitFlash-Time.deltaTime);
+        float hit = .35f + hitFlash * 2.5f;
         previousHp = owner.currentHp;
         core.color = new Color(tint.r, tint.g, tint.b, alpha * (hit + .15f * Mathf.Sin(Time.time * (3 + phase))));
         ring.color = new Color(tint.r, tint.g, tint.b, alpha * (.07f + phase * .045f));
@@ -57,7 +60,7 @@ public sealed class StoryBossFx : MonoBehaviour
     private void Burst(float scale)
     {
         var go = new GameObject("StoryBossPulse");
-        go.transform.position = transform.position;
+        go.transform.position = core != null ? core.transform.position : transform.position;
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = UiFx.Ring;
         sr.sortingOrder = body.sortingOrder + 1;

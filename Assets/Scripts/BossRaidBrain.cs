@@ -7,6 +7,8 @@ public sealed class BossRaidBrain : MonoBehaviour
 {
     private PlayerController ship;
     private LineRenderer beam;
+    private LineRenderer beamGlow;
+    private SpriteRenderer chargeGlow;
     private Material beamMaterial;
     private double seenAttack = -1;
     private int lastTick = -1;
@@ -28,6 +30,20 @@ public sealed class BossRaidBrain : MonoBehaviour
         beam.positionCount = 2;
         beam.sortingOrder = 60;
         beam.enabled = false;
+        var glowLine = new GameObject("RaidBeamGlow");
+        glowLine.transform.SetParent(transform,false);
+        beamGlow = glowLine.AddComponent<LineRenderer>();
+        beamGlow.sharedMaterial = beamMaterial;
+        beamGlow.useWorldSpace = true;
+        beamGlow.positionCount = 2;
+        beamGlow.sortingOrder = 59;
+        beamGlow.enabled = false;
+        var charge = new GameObject("RaidWeaponCharge");
+        charge.transform.SetParent(transform,false);
+        chargeGlow = charge.AddComponent<SpriteRenderer>();
+        chargeGlow.sprite = UiFx.Glow;
+        chargeGlow.sortingOrder = 61;
+        chargeGlow.enabled = false;
     }
 
     private void OnDestroy() { if (beamMaterial != null) Destroy(beamMaterial); }
@@ -41,6 +57,7 @@ public sealed class BossRaidBrain : MonoBehaviour
         {
             ship.botMove = Vector2.zero; ship.botFire = ship.botSkill = false;
             beam.enabled = false;
+            beamGlow.enabled = chargeGlow.enabled = false;
             return;
         }
         if (!room.CustomProperties.TryGetValue("StartTime", out object start) || !(start is double time) || time < 0) return;
@@ -81,6 +98,7 @@ public sealed class BossRaidBrain : MonoBehaviour
             }
         }
         beam.enabled = attacking;
+        beamGlow.enabled = chargeGlow.enabled = attacking;
         if (!attacking) return;
         float sweep = laser ? Mathf.Lerp(-38f, 38f, Mathf.Clamp01((age - Windup) / SweepTime)) : 0;
         Vector2 direction = Quaternion.Euler(0, 0, angle + sweep) * Vector2.up;
@@ -90,6 +108,14 @@ public sealed class BossRaidBrain : MonoBehaviour
         Vector2 origin = transform.position;
         beam.SetPosition(0, origin);
         beam.SetPosition(1, origin + direction * BeamLength);
+        // Visual shell only: hit width, damage ticks and warning duration remain unchanged.
+        beamGlow.SetPosition(0,origin);
+        beamGlow.SetPosition(1,origin + direction * BeamLength);
+        beamGlow.startWidth = beamGlow.endWidth = warning ? .35f : laser ? 1.8f : .24f;
+        beamGlow.startColor = beamGlow.endColor = new Color(1,.2f,.03f,warning ? .08f : .18f);
+        float chargeSize = warning ? Mathf.Lerp(.4f,1.8f,Mathf.Clamp01(age/Windup)) : laser ? 2f : .7f;
+        chargeGlow.transform.localScale = Vector3.one * chargeSize / (chargeGlow.sprite.bounds.size.y * Mathf.Max(.01f,transform.lossyScale.x));
+        chargeGlow.color = new Color(1,warning ? .65f : .2f,.05f,.45f + .15f*Mathf.Sin(age*28));
         if (warning) return;
         if (!laser && !volleyFired)
         {

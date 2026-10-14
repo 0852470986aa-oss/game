@@ -15,7 +15,7 @@ using Firebase.Extensions;
 using Google;
 
 // เชื่อม Firebase Auth/Realtime Database: บัญชี โปรไฟล์ เหรียญ คลังยาน/สกิล สถิติ และประวัติแมตช์
-public class FirebaseManager : MonoBehaviour
+public partial class FirebaseManager : MonoBehaviour
 {
     // ตัวแปร static ให้สคริปต์อื่นเรียกได้ทันทีผ่าน FirebaseManager.Instance
     public static FirebaseManager Instance;
@@ -182,7 +182,7 @@ public class FirebaseManager : MonoBehaviour
                 string uid = user != null ? user.UserId : "unknown_uid";
                 Debug.Log($"Login Google สำเร็จ! UID: {uid}, Username: {currentUsername}");
                 
-                EnsureUserRecord(uid, currentUsername, onSuccess);
+                EnsureUserRecord(uid, currentUsername, onSuccess, onFailed);
             });
         });
     }
@@ -228,7 +228,7 @@ public class FirebaseManager : MonoBehaviour
             user = task.Result.User;
             currentUsername = "Guest_" + UnityEngine.Random.Range(1000, 9999);
             Debug.Log($"Login Guest สำเร็จ! UID: {user.UserId}, Username: {currentUsername}");
-            EnsureUserRecord(user.UserId, currentUsername, onSuccess);
+            EnsureUserRecord(user.UserId, currentUsername, onSuccess, onFailed);
         });
     }
 
@@ -236,7 +236,7 @@ public class FirebaseManager : MonoBehaviour
 
     // สร้างข้อมูลผู้เล่นใหม่ครั้งแรกที่ users/{uid}: เหรียญเริ่มต้น 5000, ยานเริ่มต้น index 0, สกิล 0, สถิติเป็น 0
     // แล้วสร้าง loadouts, user_spacecraft ของยานลำแรก และ catalog ของเกม
-    private void SaveInitialUserData(string uid, string username)
+    private System.Threading.Tasks.Task SaveInitialUserData(string uid, string username)
     {
         string now = DateTime.UtcNow.ToString("o");
         var initialProfile = new Dictionary<string, object>
@@ -252,49 +252,52 @@ public class FirebaseManager : MonoBehaviour
             { "total_wins", 0 },
             { "total_losses", 0 }
         };
-        dbReference.Child("users").Child(uid).UpdateChildrenAsync(initialProfile);
-
-        EnsureLoadoutRecord(uid, 0, 0);
-        EnsureUserSpacecraftRecord(uid, 0, now, true);
-        EnsureGameCatalog();
+        return dbReference.Child("users").Child(uid).RunTransaction(data => {
+            if (data.Value == null) data.Value = initialProfile;
+            return TransactionResult.Success(data);
+        }, false);
     }
 
     // อ่าน users/{uid} หลังล็อกอิน: ถ้ามีอยู่แล้วใช้ชื่อเดิมและเติม field ที่ขาด (ไม่เขียนทับ)
     // ถ้ายังไม่มีจึงสร้างใหม่ด้วย SaveInitialUserData; ถ้าอ่านไม่ได้จะไม่เขียนอะไรเลยเพื่อกันข้อมูลเดิมหาย
-    private void EnsureUserRecord(string uid, string fallbackUsername, Action<string> onComplete)
+    private void EnsureUserRecord(string uid, string fallbackUsername, Action<string> onComplete, Action<string> onError)
     {
         dbReference.Child("users").Child(uid).GetValueAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsFaulted || task.IsCanceled)
             {
                 Debug.LogWarning("ไม่สามารถอ่านข้อมูลผู้เล่นได้ จะไม่เขียนทับข้อมูลเดิม");
-                onComplete?.Invoke(currentUsername);
+                onError?.Invoke("โหลดบัญชีไม่สำเร็จ กรุณาลองเข้าสู่ระบบอีกครั้ง ข้อมูลเดิมไม่ได้ถูกแก้ไข");
                 return;
             }
-
+            if (user == null || user.UserId != uid) { onError?.Invoke("บัญชีเปลี่ยนระหว่างโหลด"); return; }
+            System.Threading.Tasks.Task prepare;
             if (task.Result.Exists)
             {
                 string savedName = task.Result.Child("username").Value?.ToString();
                 if (string.IsNullOrEmpty(savedName))
                     savedName = task.Result.Child("callsign").Value?.ToString();
                 currentUsername = string.IsNullOrEmpty(savedName) ? fallbackUsername : savedName;
-                BackfillExistingProfile(uid, task.Result, fallbackUsername);
+                prepare = BackfillExistingProfile(uid, task.Result, fallbackUsername);
             }
             else
             {
                 currentUsername = fallbackUsername;
-                SaveInitialUserData(uid, currentUsername);
+                prepare = SaveInitialUserData(uid, currentUsername);
             }
 
-            EnsureGameCatalog();
-            EnsureUserERRecords(uid);
-
-            onComplete?.Invoke(currentUsername);
+            prepare.ContinueWithOnMainThread(saved => {
+                if (saved.IsFaulted || saved.IsCanceled || user == null || user.UserId != uid)
+                { onError?.Invoke("เตรียมข้อมูลบัญชีไม่สำเร็จ กรุณาลองใหม่"); return; }
+                EnsureGameCatalog();
+                EnsureUserERRecords(uid);
+                onComplete?.Invoke(currentUsername);
+            });
         });
     }
 
     // เติมเฉพาะ field ที่ยังไม่มีในโปรไฟล์ผู้เล่นเก่า (เช่นบัญชีที่สร้างก่อนมี field ใหม่) และอัปเดต last_login
-    private void BackfillExistingProfile(string uid, DataSnapshot snapshot, string fallbackUsername)
+    private System.Threading.Tasks.Task BackfillExistingProfile(string uid, DataSnapshot snapshot, string fallbackUsername)
     {
         var missing = new Dictionary<string, object>();
         AddMissing(missing, snapshot, "username", fallbackUsername);
@@ -307,7 +310,12 @@ public class FirebaseManager : MonoBehaviour
         AddMissing(missing, snapshot, "total_wins", 0);
         AddMissing(missing, snapshot, "total_losses", 0);
         missing["last_login"] = DateTime.UtcNow.ToString("o");
-        dbReference.Child("users").Child(uid).UpdateChildrenAsync(missing);
+        return dbReference.Child("users").Child(uid).RunTransaction(data => {
+            if (data.Value == null) return TransactionResult.Success(data);
+            foreach (var pair in missing)
+                if (pair.Key == "last_login" || data.Child(pair.Key).Value == null) data.Child(pair.Key).Value = pair.Value;
+            return TransactionResult.Success(data);
+        }, false);
     }
 
     // ใส่ key ลง dictionary เฉพาะเมื่อ snapshot ยังไม่มี key นั้น
@@ -496,9 +504,7 @@ public class FirebaseManager : MonoBehaviour
     // อ่านค่าเหรียญจาก Database เป็น long; คืน false ถ้าไม่ใช่ตัวเลขหรือติดลบ (ข้อมูลเสีย)
     private static bool TryReadCoins(object value, out long coins)
     {
-        return long.TryParse(Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture),
-            System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out coins)
-            && coins >= 0;
+        return AccountDataValidation.Coins(value, out coins);
     }
 
     // อ่านยอดเหรียญปัจจุบัน (LobbyManager เรียกตอนโหลดโปรไฟล์) แบบอ่านอย่างเดียว
@@ -545,24 +551,10 @@ public class FirebaseManager : MonoBehaviour
     // ทำไมต้องใช้ Transaction: ถ้าใช้ "อ่านค่า -> บวก -> เขียนกลับ" ธรรมดา เมื่อมีการเปลี่ยนเหรียญสองครั้งพร้อมกัน
     // (เช่นรับรางวัลขณะซื้อยาน หรือเล่นสองเครื่อง) ค่าหนึ่งจะเขียนทับอีกค่าแล้วเหรียญหาย/เพิ่มผิด (lost update)
     // Transaction จะส่งค่าปัจจุบันจริงให้ฟังก์ชันคำนวณ ถ้าบน server ค่าเปลี่ยนไประหว่างนั้น Firebase จะเรียกฟังก์ชันใหม่ด้วยค่าล่าสุดเอง
-    // ฟังก์ชันอาจถูกเรียกหลายรอบ จึงรีเซ็ต applied ทุกรอบ; ค่าไม่ถูกต้องหรือบวกแล้วล้น long จะ Abort (ไม่เขียนอะไร)
+    // ใช้ receipt ใน transaction เดียวกับยอดเงิน เพื่อ retry ได้โดยไม่แจกซ้ำ (FirebaseManager.Reliability.cs)
     public void AddCoins(int amount, Action<bool> onResult = null)
     {
-        if (amount < 0 || user == null || dbReference == null) { onResult?.Invoke(false); return; }
-        bool applied = false;
-        var reference = dbReference.Child("users").Child(user.UserId).Child("coin_balance");
-        reference.RunTransaction(data =>
-        {
-            applied = false;
-            // Firebase may first call with an empty local cache; let the server retry with its actual value.
-            if (data.Value == null) return TransactionResult.Success(data);
-            if (!TryReadCoins(data.Value, out long balance) || balance > long.MaxValue - amount)
-                return TransactionResult.Abort();
-            data.Value = balance + amount;
-            applied = true;
-            return TransactionResult.Success(data);
-        }, false).ContinueWithOnMainThread(task =>
-            onResult?.Invoke(!task.IsFaulted && !task.IsCanceled && applied));
+        AddCoinsReliable(amount, onResult);
     }
 
     // ซื้อยาน (เรียกจาก LobbyManager.OnInventoryActionClicked) ทำใน Transaction เดียวบน users/{uid}
@@ -662,33 +654,10 @@ public class FirebaseManager : MonoBehaviour
     // === ระบบคลังยาน (Inventory) ===
 
     // อ่านรายการยานที่ปลดล็อกแล้ว (เก็บเป็น string คั่นด้วยจุลภาค เช่น "0,2") แปลงเป็น List<int>
-    // ถ้าอ่านไม่ได้หรือไม่ได้ล็อกอินคืน [0] คือมีแค่ยานเริ่มต้น
+    // ถ้าอ่านไม่ได้จะไม่คืน [0] ปลอมเป็นผลสำเร็จ และไม่อนุญาตให้ผู้เรียกเขียนทับคลังเดิม
     public void GetUnlockedShips(Action<List<int>> onResult)
     {
-        if (user == null || dbReference == null)
-        {
-            onResult?.Invoke(new List<int> { 0 });
-            return;
-        }
-
-        dbReference.Child("users").Child(user.UserId).Child("unlocked_ships")
-            .GetValueAsync().ContinueWithOnMainThread(task =>
-            {
-                if (!task.IsFaulted && !task.IsCanceled && task.Result.Exists)
-                {
-                    string data = task.Result.Value.ToString();
-                    List<int> unlocked = new List<int>();
-                    foreach (string s in data.Split(','))
-                    {
-                        if (int.TryParse(s, out int idx)) unlocked.Add(idx);
-                    }
-                    onResult?.Invoke(unlocked);
-                }
-                else
-                {
-                    onResult?.Invoke(new List<int> { 0 });
-                }
-            });
+        GetAccountLoadout(profile => onResult?.Invoke(profile.ships), error => Debug.LogWarning(error));
     }
 
     // เพิ่มยานเข้า unlocked_ships แบบอ่านแล้วเขียนทับ ไม่หักเหรียญ (การซื้อจริงใช้ PurchaseShip)

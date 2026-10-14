@@ -84,6 +84,7 @@ public partial class LobbyManager
             equippedShipIndex = equippedSkillIndex = 0;
             shipLoaded = skillLoaded = true;
             FinishProfileLoad();
+            UpdateStatus("Editor preview: open LoginScene and sign in to load your purchased ships and coins.");
             return;
         }
         // 2) แสดงชื่อผู้เล่น
@@ -98,35 +99,25 @@ public partial class LobbyManager
             if (this == null || generation != profileGeneration || winsText == null) return;
             winsText.text = $"HIGH SCORE  {highScore:N0}     W  {wins:N0}  /  L  {losses:N0}";
         });
-        FirebaseManager.Instance.GetCoinBalance(coins => {
+        // Apply one complete snapshot. Failed reads must not replace owned ships with a starter-only list.
+        FirebaseManager.Instance.GetAccountLoadout(profile => {
             if (this == null || generation != profileGeneration) return;
-            UpdateCoinDisplay(coins);
+            unlockedShips = profile.ships;
+            UpdateCoinDisplay(profile.coins);
+            int ship = profile.selectedShip;
+            equippedShipIndex = ship >= 0 && ship < ships.Length && unlockedShips.Contains(ship) ? ship : 0;
+            selectedShipIndex = equippedShipIndex;
+            equippedSkillIndex = Mathf.Clamp(profile.selectedSkill, 0, skills.Length - 1);
+            selectedSkillIndex = equippedSkillIndex;
+            shipLoaded = skillLoaded = true;
+            FinishProfileLoad();
         }, error => {
             if (this == null || generation != profileGeneration) return;
-            if (coinText != null) coinText.text = "Astronium Coins : unavailable";
-            if (hangarCoinText != null) hangarCoinText.text = "ASTRONIUM / unavailable";
+            if (coinText != null) coinText.text = "Astronium Coins : loading...";
+            if (hangarCoinText != null) hangarCoinText.text = "ASTRONIUM / loading...";
+            // Existing inventory stays intact; recovery can now see that loading is incomplete.
+            profileDeadline = Time.unscaledTime;
             UpdateStatus(error);
-        });
-        // 4) อ่านยานที่ปลดล็อก (ยาน 0 มีเสมอ) แล้วอ่านยานที่ใส่อยู่ ถ้าไม่ได้ครอบครองให้กลับเป็นยาน 0
-        FirebaseManager.Instance.GetUnlockedShips(result => {
-            if (this == null || generation != profileGeneration) return;
-            unlockedShips = result ?? new List<int> { 0 };
-            if (!unlockedShips.Contains(0)) unlockedShips.Add(0);
-            FirebaseManager.Instance.GetSelectedShip(index => {
-                if (this == null || generation != profileGeneration) return;
-                equippedShipIndex = index >= 0 && index < ships.Length && unlockedShips.Contains(index) ? index : 0;
-                selectedShipIndex = equippedShipIndex;
-                shipLoaded = true;
-                FinishProfileLoad();
-            });
-        });
-        // 5) อ่านสกิลที่ใส่อยู่ เมื่อโหลดครบทั้งยานและสกิลแล้ว FinishProfileLoad จะเปิดปุ่มต่าง ๆ
-        FirebaseManager.Instance.GetSelectedSkill(index => {
-            if (this == null || generation != profileGeneration) return;
-            equippedSkillIndex = Mathf.Clamp(index, 0, skills.Length - 1);
-            selectedSkillIndex = equippedSkillIndex;
-            skillLoaded = true;
-            FinishProfileLoad();
         });
     }
 

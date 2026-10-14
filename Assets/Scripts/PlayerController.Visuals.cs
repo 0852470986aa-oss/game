@@ -129,6 +129,7 @@ public partial class PlayerController
             sheetThrusterGlows = new SpriteRenderer[exhaustAnchors.Length];
             exhaustGlowColor = style == 0 ? new Color(1f, 0.35f, 1f) : style == 1
                 ? new Color(0.2f, 0.85f, 1f) : new Color(0.35f, 1f, 0.25f);
+            if (customExhaust) exhaustGlowColor = customExhaustTint;
             // 2) สร้างหัวฉีดแต่ละอัน: เปลวไฟ + แสงเรือง (glow) + เลเยอร์ผสมเฟรม แล้วปิด ParticleSystem เดิม
             for (int i = 0; i < sheetThrusters.Length; i++)
             {
@@ -200,6 +201,7 @@ public partial class PlayerController
             nozzle.transform.localRotation = Quaternion.Euler(0, 0, exhaustAngles[i] + (spriteRenderer.flipY ? 180 : 0));
             nozzle.transform.localPosition = new Vector3(hull.min.x + hull.size.x * anchor.x, hull.min.y + hull.size.y * anchor.y, 0);
             Color flameTint = exhaustStyle == 2 ? new Color(0.68f, 1f, 0.42f) : Color.white;
+            if (customExhaust) flameTint = Color.Lerp(customExhaustTint, Color.white, .25f);
             flameTint.a = Mathf.Lerp(0.85f, 1f, displayedThrust);
             nozzle.color = flameTint;
             if (blendLayer != null && blendLayer.enabled)

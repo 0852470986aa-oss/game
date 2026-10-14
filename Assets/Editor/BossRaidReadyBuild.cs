@@ -8,6 +8,12 @@ using UnityEngine;
 
 public static class BossRaidReadyBuild
 {
+    public static void WindowsEffects()
+    {
+        EffectsThrusterPreview.Run();
+        PremiumStoryValidation.Run();
+        BuildWindows("Builds/Effects-20261014-Windows");
+    }
     public static void WindowsPremiumStory()
     {
         PremiumStoryPreview.Run();

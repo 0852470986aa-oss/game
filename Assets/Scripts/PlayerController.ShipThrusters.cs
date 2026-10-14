@@ -29,16 +29,26 @@ public partial class PlayerController
 
     private float exhaustWidthScale = 1f; // ตัวคูณความกว้างไฟไอพ่นของยานนี้ (จากโปรไฟล์)
     private bool customExhaust;
+    private Color customExhaustTint = Color.white;
 
     // Pixel coordinates measured at the nozzle mouths, not the tips of painted flames.
     // Convert through the actual cropped sprite rect so transparent atlas margins do not shift the flames.
     private ThrusterProfile PixelThrusters(int style, float width, float imageWidth, float imageHeight, params Vector2[] pixels)
     {
         Sprite art = spriteRenderer.sprite;
+        customExhaustTint = style == 0 ? new Color(1,.35f,.08f) : style == 2 ? new Color(.4f,1,.2f) : new Color(.35f,.85f,1);
+        if (art.name.StartsWith("Skin_"))
+        {
+            var skin = SkinCatalog.Find(art.name.Substring(5));
+            if (skin != null) customExhaustTint = skin.aura;
+        }
+        else if (art.name == "StoryFleet_2" || art.name == "StoryFleet_5") customExhaustTint = new Color(.8f,.25f,1);
+        customExhaustTint.a = 1;
         for (int i = 0; i < pixels.Length; i++)
             pixels[i] = new Vector2((pixels[i].x * art.texture.width / imageWidth - art.rect.x) / art.rect.width,
                 ((imageHeight - pixels[i].y) * art.texture.height / imageHeight - art.rect.y) / art.rect.height);
-        return new ThrusterProfile(style, width, pixels);
+        // Neutral flame takes the ship's own color; the legacy red sheet is actually magenta.
+        return new ThrusterProfile(style == 0 ? 1 : style, width, pixels);
     }
 
     // ยานนี้ใช้รูปของตัวเองและมีโปรไฟล์ไอพ่นหรือไม่ (เรียกตอนสร้างไอพ่นครั้งแรกใน LateUpdateVisuals)
@@ -87,6 +97,7 @@ public partial class PlayerController
         }
         int ship = ShipIndex;
         if (ship < 0 || ship >= OwnArtThrusters.Length || OwnArtThrusters[ship] == null) return null;
+        customExhaustTint = OwnArtThrusters[ship].style == 2 ? new Color(.68f,1,.42f) : Color.white;
         return BattleLoadoutCatalog.HasOwnArt(ship) ? OwnArtThrusters[ship] : null;
     }
 }
