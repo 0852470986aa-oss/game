@@ -264,6 +264,7 @@ public partial class PlayerController : MonoBehaviourPunCallbacks, IPunObservabl
             paintTint = Color.white;
             if (IsBoss && GetComponent<StoryBossFx>() == null) gameObject.AddComponent<StoryBossFx>();
         }
+        if (IsBoss && GetComponent<BossSpectacleFx>() == null) gameObject.AddComponent<BossSpectacleFx>();
 
         baseSpeed = speed;
         baseFireCooldown = fireCooldown;

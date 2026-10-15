@@ -4,6 +4,9 @@
 // แก้เนื้อเรื่อง/ความยากได้ที่รายการ Stages ด้านล่าง
 public class CampaignStageDef
 {
+    public StoryObjective objective;
+    public int duration = 60; // วินาทีของด่านอยู่รอด/คุ้มกัน
+    public int generators = 3;
     public string title; // ชื่อด่านที่แสดงบนจอ (ภาษาอังกฤษ)
     public string briefing;     // ข้อความเล่าเรื่องตอนเริ่มด่าน (ภาษาไทย)
     public int bots;            // จำนวนบอทศัตรู (ไม่รวมบอส)
@@ -41,6 +44,12 @@ public static class Campaign
             bots = 4, difficulty = 3, kills = 10, map = 3, reward = 900 },
         new CampaignStageDef { title = "VOID MOTHERSHIP", briefing = "ยานแม่แห่งความว่างเปล่ามาถึงสุสานหุ่นยนต์! ใช้ซากหุ่นบังการโจมตีแล้วจบสงคราม",
             bots = 3, difficulty = 3, kills = 0, map = 2, boss = true, reward = 1500 },
+        new CampaignStageDef { title = "LAST SIGNAL", briefing = "รักษาสัญญาณขอความช่วยเหลือ! อยู่รอด 70 วินาที ใช้สิ่งกีดขวางหลบแนวยิง ศัตรูเกิดใหม่เรื่อย ๆ",
+            bots = 3, difficulty = 2, kills = 1, map = 0, objective = StoryObjective.Survive, duration = 70, reward = 1000 },
+        new CampaignStageDef { title = "REACTOR SABOTAGE", briefing = "ทำลายเครื่องกำเนิดพลังงานศัตรู 3 จุด! ยิงแกนพลังงานสีแดงเพื่อปลดระบบปิดล้อม",
+            bots = 3, difficulty = 2, kills = 1, map = 3, objective = StoryObjective.Generators, generators = 3, reward = 1100 },
+        new CampaignStageDef { title = "RESCUE CONVOY", briefing = "คุ้มกันยานกู้ภัยสีฟ้า! อยู่ใกล้ยานไม่เกิน 10 หน่วยเพื่อซ่อมให้ครบ 60 วินาที ห้ามยานกู้ภัยถูกทำลาย",
+            bots = 3, difficulty = 2, kills = 1, map = 1, objective = StoryObjective.Escort, duration = 60, reward = 1300 },
     };
 
     public static int Count => Stages.Length; // จำนวนด่าน Campaign ทั้งหมด

@@ -23,7 +23,7 @@ public partial class BattleSettingsPanel
     private static readonly string[][] UnifiedLayout =
     {
         new[] { "SOUND", "MASTER", "MUSIC", "EFFECTS" },
-        new[] { "CONTROL", "AIM SPEED", "BUTTON SIZE", "BUTTON OPACITY", "CONTROLS" },
+        new[] { "CONTROL", "AIM SPEED", "BUTTON SIZE", "BUTTON OPACITY", "CONTROLS", "CUSTOMIZE CONTROLS" },
         new[] { "DISPLAY", "GRAPHICS", "FPS LIMIT", "SHOW FPS", "CAMERA SHAKE", "DAMAGE NUMBERS" },
         new[] { "GENERAL", "LANGUAGE", "KILL FEED", "EMOTES" },
     };

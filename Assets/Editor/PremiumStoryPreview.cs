@@ -55,6 +55,16 @@ public static class PremiumStoryPreview
             tab.SetValue(manager, Enum.ToObject(tab.FieldType, 1));
             Set(manager, "passPage", 4);
             Call(manager, "BuildPremiumPage"); Save(camera, target, "pass-tickets");
+            page = (RectTransform)typeof(LobbyManager).GetField("premiumPage", Fields).GetValue(manager);
+            page.gameObject.SetActive(false);
+            var upgrade = new GameObject("UpgradePreview", typeof(RectTransform));
+            upgrade.transform.SetParent(overlay.transform, false);
+            upgrade.GetComponent<RectTransform>().sizeDelta = new Vector2(1100, 640);
+            Set(manager, "workshopEmbedded", true);
+            Call(manager, "BuildUpgradeTab", upgrade.GetComponent<RectTransform>());
+            Save(camera, target, "upgrade");
+            UnityEngine.Object.DestroyImmediate(upgrade);
+            page.gameObject.SetActive(true);
             Call(manager, "OpenCheckout", Premium.Packs[2]); Save(camera, target, "checkout");
             // Do not invoke approve or purchase.
             var modal = (RectTransform)typeof(LobbyManager).GetField("premiumModal", Fields).GetValue(manager);

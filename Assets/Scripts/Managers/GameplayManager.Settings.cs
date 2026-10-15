@@ -23,6 +23,7 @@ public partial class GameplayManager
     private void HandleBattleBackKey()
     {
         if (!LobbyManager.BackKeyPressed()) return;
+        if (ControlLayoutEditor.HandleBack()) return;
         if (CelebrationOverlay.HandleBack()) return; // ปิดฉากฉลองก่อน
         if (BattleSettingsPanel.HandleBack()) return;
         if (emoteMenu != null && emoteMenu.activeSelf) { emoteMenu.SetActive(false); return; }
@@ -38,14 +39,16 @@ public partial class GameplayManager
         if (!Application.isPlaying || battleHud == null) return;
         UpdateFpsCounter();
         string key = GameSettings.ButtonSizeIndex + "|" + GameSettings.LeftHanded + "|" + GameSettings.Emotes
-            + "|" + (joystick != null) + (fireButton != null) + (skillButton != null);
+            + "|" + (joystick != null) + (fireButton != null) + (skillButton != null)
+            + "|" + ControlLayout.Revision + "|" + battleHud.rect.size;
         if (key == appliedLayoutKey) return;
         appliedLayoutKey = key;
         float scale = GameSettings.ButtonScale;
         bool mirror = GameSettings.LeftHanded;
-        if (joystick != null) LayoutControl(joystick.transform as RectTransform, scale, mirror);
-        if (fireButton != null) LayoutControl(fireButton.transform as RectTransform, scale, mirror);
-        if (skillButton != null) LayoutControl(skillButton.transform as RectTransform, scale, mirror);
+        var custom = ControlLayout.Load();
+        if (joystick != null) LayoutEditableControl(joystick.transform as RectTransform, 0, custom, scale, mirror);
+        if (fireButton != null) LayoutEditableControl(fireButton.transform as RectTransform, 1, custom, scale, mirror);
+        if (skillButton != null) LayoutEditableControl(skillButton.transform as RectTransform, 2, custom, scale, mirror);
         var emoteButton = battleHud.Find("EmoteButton") as RectTransform;
         var emoteList = battleHud.Find("EmoteMenu") as RectTransform;
         // แถวปุ่มมุมขวาบนจัดเองใน PlaceTopRightButtons (ไม่สลับฝั่งตามโหมดมือซ้าย)
@@ -56,6 +59,23 @@ public partial class GameplayManager
         }
         if (emoteButton != null) emoteButton.gameObject.SetActive(GameSettings.Emotes);
         if (!GameSettings.Emotes && emoteList != null) emoteList.gameObject.SetActive(false);
+    }
+
+    private readonly Dictionary<RectTransform, Vector2> controlBaseMin = new Dictionary<RectTransform, Vector2>();
+    private readonly Dictionary<RectTransform, Vector2> controlBaseMax = new Dictionary<RectTransform, Vector2>();
+    private readonly Dictionary<RectTransform, Vector2> controlBasePivot = new Dictionary<RectTransform, Vector2>();
+    private void LayoutEditableControl(RectTransform control, int index, ControlLayout.Profile custom, float scale, bool mirror)
+    {
+        if (control == null) return;
+        if (!controlBaseMin.ContainsKey(control))
+        {
+            controlBaseMin[control]=control.anchorMin; controlBaseMax[control]=control.anchorMax;
+            controlBasePivot[control]=control.pivot;
+            controlBasePosition[control]=control.anchoredPosition;controlBaseScale[control]=control.localScale;
+        }
+        control.anchorMin=controlBaseMin[control];control.anchorMax=controlBaseMax[control];control.pivot=controlBasePivot[control];
+        anchorsMirrored.Remove(control);
+        if(custom!=null)ControlLayout.Apply(control,custom.slots[index]);else LayoutControl(control,scale,mirror);
     }
 
     // ปรับขนาดและฝั่ง (กลับด้านแกน x) ของปุ่มหนึ่งอัน จากค่าเดิมที่จำไว้

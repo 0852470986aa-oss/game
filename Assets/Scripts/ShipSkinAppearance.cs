@@ -11,6 +11,13 @@ public sealed class ShipSkinAppearance : MonoBehaviour
             art.rect.height / Mathf.Max(.01f, height), 0, SpriteMeshType.FullRect);
         generated.name = art.name;
         target.sprite = generated;
+        var rig = GetComponent<SkinPartMesh>();
+        if (SkinPartMotion.Index(generated) >= 0)
+        {
+            if (rig == null) rig = gameObject.AddComponent<SkinPartMesh>();
+            rig.Configure(target);
+        }
+        else if (rig != null) rig.Deactivate();
     }
     private void Release()
     {

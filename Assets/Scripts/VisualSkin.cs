@@ -50,6 +50,15 @@ public static class VisualSkin
         image.color = (art != null ? Color.white : BattleLoadoutCatalog.ShipTint(shipIndex)) * (owned ? 1f : .45f);
         image.preserveAspect = true;
         image.raycastTarget = false;
-        if (Application.isPlaying && image.GetComponent<ShipPreviewFloat>() == null) image.gameObject.AddComponent<ShipPreviewFloat>();
+        var floating = image.GetComponent<ShipPreviewFloat>();
+        if (floating != null) floating.enabled = art == null;
+        var rig = image.GetComponent<SkinPartUI>();
+        if (art != null)
+        {
+            if (rig == null) rig = image.gameObject.AddComponent<SkinPartUI>();
+            rig.enabled = true;
+        }
+        else if (rig != null) rig.enabled = false;
+        if (art == null && Application.isPlaying && floating == null) image.gameObject.AddComponent<ShipPreviewFloat>();
     }
 }

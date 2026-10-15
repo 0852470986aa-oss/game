@@ -90,7 +90,8 @@ public static class EffectsThrusterPreview
                 var points = (Vector2[])typeof(PlayerController).GetField("exhaustAnchors",F).GetValue(player);
                 for(int n=0;n<nozzles.Length;n++)
                 {
-                    Vector2 expected = (Vector2)body.sprite.bounds.min + Vector2.Scale(body.sprite.bounds.size,Vector2.one-points[n]);
+                    Vector2 moved = SkinPartMotion.Deform(points[n],Time.time,SkinPartMotion.Index(body.sprite),body.sprite.bounds.size.x/body.sprite.bounds.size.y);
+                    Vector2 expected = (Vector2)body.sprite.bounds.min + Vector2.Scale(body.sprite.bounds.size,Vector2.one-moved);
                     if(Vector2.Distance(expected,nozzles[n].transform.localPosition)>.0001f) throw new Exception("Mirrored nozzle mismatch "+root.name);
                 }
                 player.isDead = true;

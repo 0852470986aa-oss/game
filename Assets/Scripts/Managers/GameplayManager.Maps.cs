@@ -15,12 +15,13 @@ public partial class GameplayManager
     public const float ArenaHalfHeight = 36.5f;
     // แม็พปริซึมเดิมกว้าง 128 (ครึ่งละ 64) ใหญ่เกินสำหรับ 1v1 → ลดเหลือ 92 ให้เจอกันเร็วขึ้น
     // ครึ่งความกว้างสนามแยกตามแม็พ (index 0,1,2) หน่วยโลก ใช้คำนวณขอบสนาม/กำแพง/จุดเกิด
-    private static readonly float[] ArenaHalfWidths = { 36.3f, 46f, 39f, 37f, 37f }; // 3, 4 = แม็พใหม่ (GameplayManager.NewMaps.cs)
+    private static readonly float[] ArenaHalfWidths = { 36.3f, 46f, 39f, 37f, 37f, 44f };
 
     // อ่านเลขแม็พจาก Custom Property "MapIndex" ของห้อง Photon (ทุกเครื่องอ่านค่าเดียวกัน)
     // ถ้ายังไม่อยู่ในห้องหรือไม่มีค่า จะคืน 2 (แม็พหุ่นยนต์) เป็นค่าเริ่มต้น
     public static int GetCurrentMapIndex()
     {
+        if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom)) return BossArenaMapIndex;
         if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object value))
             return Mathf.Clamp((int)value, 0, ArenaHalfWidths.Length - 1);
         return 2;
@@ -29,7 +30,7 @@ public partial class GameplayManager
     // คืนชื่อแม็พปัจจุบันเป็นข้อความ (ใช้แสดงผลบน UI)
     public static string GetCurrentMapName()
     {
-        string[] names = { "Electric Jellyfish Core", "Obelisk Plains of Prism", "Abandoned Mech Warzone", "Asteroid Station", "Molten Nebula" };
+        string[] names = { "Electric Jellyfish Core", "Obelisk Plains of Prism", "Abandoned Mech Warzone", "Asteroid Station", "Molten Nebula", "Dreadnought Citadel" };
         return names[GetCurrentMapIndex()];
     }
 
@@ -352,11 +353,7 @@ public partial class GameplayManager
         GameObject obstaclesContainer = new GameObject("Obstacles");
 
         // 2. อ่านค่าว่าห้องนี้เลือกด่านอะไรมา
-        int mapIndex = 1; // ⭐ เปลี่ยนเป็น 1 (Map1 - Obelisk Plains) เพื่อทดสอบ
-        if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object mapIdxProp))
-        {
-            mapIndex = (int)mapIdxProp;
-        }
+        int mapIndex = GetCurrentMapIndex();
 
         // จัดการเปิด/ปิด Map2_Visuals ในฉาก (ถ้ามี)
         GameObject map2Vis = GameObject.Find("Map2_Visuals");
@@ -903,7 +900,7 @@ public partial class GameplayManager
     // หาจุดเกิดที่ไม่ทับสิ่งกีดขวาง/Hazard และห่างผู้เล่นที่ยังมีชีวิต >= 14 หน่วย; lowerSide = อยากเกิดครึ่งล่าง (Master) หรือบน
     // เรียกบนเครื่องเจ้าของยาน (ตอนเกิดครั้งแรกในแม็พ 2 และตอนเกิดใหม่) คืน false ถ้ายังไม่มีจุดว่าง ผู้เรียกจะรอแล้วลองใหม่
     // ให้คะแนน: ระยะห่างคู่แข่ง + 8 ถ้าเป็นจุดเกิดที่กำหนด + 3 ถ้าอยู่ฝั่งที่ต้องการ แล้วเลือกจุดคะแนนสูงสุด
-    public static bool TryFindSafeSpawn(GameObject ship, int mapIndex, bool lowerSide, out Vector2 position)
+    public static bool TryFindSafeSpawn(GameObject ship, int mapIndex, bool lowerSide, out Vector2 position, float sizeMultiplier = 1f)
     {
         // Clearance includes the entire solid hull around its pivot, even while the dead hull is disabled.
         float radius = 2.5f;
@@ -912,7 +909,7 @@ public partial class GameplayManager
                 for (int path = 0; path < polygon.pathCount; path++)
                     foreach (Vector2 point in polygon.GetPath(path))
                         radius = Mathf.Max(radius, ((Vector2)polygon.transform.TransformPoint(point + polygon.offset) - (Vector2)ship.transform.position).magnitude);
-        radius += .65f;
+        radius = radius * Mathf.Max(1f,sizeMultiplier) + .65f;
         Vector2 min = GetArenaMin(mapIndex);
         Vector2 max = GetArenaMax(mapIndex);
         var players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);

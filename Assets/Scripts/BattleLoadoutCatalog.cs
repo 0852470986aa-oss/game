@@ -128,7 +128,8 @@ public static class BattleLoadoutCatalog
         // ===== เฟส 7: สกิลใหม่ =====
         new SkillData("BLINK", "Teleport forward 9 units", "Images/icon_blink", 8f),
         new SkillData("HEAL", "Repair 35% of your hull", "Images/icon_heal", 14f),
-        new SkillData("CLOAK", "Invisible to enemies for 3 sec (firing reveals you)", "Images/icon_cloak", 15f)
+        new SkillData("CLOAK", "Invisible to enemies for 3 sec (firing reveals you)", "Images/icon_cloak", 15f),
+        new SkillData("OVERDRIVE", "Double fire rate for 5 sec", "Images/PowerUps/powerup_overdrive", 18f)
     };
     // ตรวจ index ที่รับมา (เช่นจาก Firebase/Photon) ถ้าเกินช่วงคืน 0 กันเกม error
     // ปิด FeatureFlags.NewShips / NewSkills = ยาน/สกิลเฟส 7 ใช้ไม่ได้ (กลับเป็นยาน/สกิลแรก)

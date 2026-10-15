@@ -16,6 +16,8 @@ public partial class LobbyManager
     private void BuildPassPage(RectTransform page)
     {
         var left = BattlePass.SeasonLeft;
+        UIPanel("SeasonBackdrop", page, 0, 143, 1040, 82, new Color(.045f, .10f, .16f));
+        UIPanel("SeasonAccent", page, -518, 143, 4, 82, accentColor);
         var season = UILabel("Season", page, BattlePass.SeasonName + "  /  ENDS IN  " + left.Days + "d " + left.Hours + "h", -250, 160, 520, 28, 18, accentColor);
         season.alignment = TextAlignmentOptions.Left;
         int tier = BattlePass.Tier;
@@ -68,6 +70,12 @@ public partial class LobbyManager
         var skin = reward.type == PassRewardType.Skin ? SkinCatalog.Find(reward.skin) : null;
         Color bg = can ? new Color(.08f, .38f, .36f) : claimed ? new Color(.07f, .09f, .13f) : premium ? new Color(.18f, .13f, .05f) : new Color(.06f, .1f, .17f);
         var card = UIPanel("Card" + key, page, x, y, 136, 118, bg);
+        Color edge = premium ? GoldText : accentColor;
+        UIPanel("RewardEdge", card.transform, 0, 58, 136, 2, edge);
+        UIPanel("RewardBase", card.transform, 0, -42, 132, 30, new Color(.02f, .04f, .08f, .85f));
+        var aura = UIPanel("RewardAura", card.transform, 0, 21, 108, 78, new Color(edge.r, edge.g, edge.b, claimed ? .1f : .24f));
+        aura.sprite = UiFx.Glow;
+        aura.raycastTarget = false;
         if (skin != null)
         {
             var glow = UIPanel("Glow", card.transform, 0, 16, 100, 100, new Color(skin.aura.r, skin.aura.g, skin.aura.b, .55f));
@@ -78,6 +86,12 @@ public partial class LobbyManager
         }
         else if (reward.type == PassRewardType.Crystals) CrystalIcon(card.transform, 0, 36, 18);
         else if (reward.type == PassRewardType.Tickets) TicketIcon(card.transform, 0, 36, 48);
+        else
+        {
+            var coin = UIPanel("Coin", card.transform, 0, 36, 30, 30, Color.white);
+            coin.sprite = PolishSprites.Coin();
+            coin.preserveAspect = true;
+        }
         var label = UILabel("Reward", card.transform, reward.Label, 0, skin != null ? -18 : 6, 130, 46, 15,
             skin != null ? SkinCatalog.RarityColors[(int)skin.rarity] : reward.type == PassRewardType.Crystals ? CrystalColor : reward.type == PassRewardType.Tickets ? new Color(.8f, .6f, 1f) : GoldText);
         label.richText = false;

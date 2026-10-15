@@ -30,6 +30,9 @@ public partial class GameplayManager
         if (!Progression.Enabled) { ShowProgressLine(null, rankLine); return; }
         var report = new MatchReport
         {
+            shipIndex = localPlayer != null ? localPlayer.ShipIndex : 0,
+            bossDefeated = won && (gameMode == MatchRules.ModeBossRaid
+                || gameMode == MatchRules.ModeCampaign && campaign != null && campaign.boss),
             mode = gameMode == MatchRules.ModeKoth ? "HILL" : gameMode == MatchRules.ModeStars ? "STARS" : gameMode == MatchRules.ModeSurvival ? "SURVIVAL"
                   : gameMode == MatchRules.ModeRoyale ? "ROYALE" : gameMode == MatchRules.ModeCampaign ? "CAMPAIGN" : gameMode == MatchRules.ModeBossRaid ? "BOSS_COOP"
                 : isTeamMode ? "TEAM" : isFreeForAll ? "FFA" : "1V1",

@@ -188,6 +188,7 @@ public class BotController : MonoBehaviour
                 case 4: use = (state == State.Retreat && distance < 6f) || (state == State.Chase && distance > 12f); break; // BLINK: หนี/ไล่
                 case 5: use = hpRatio < .5f; break;                                                  // HEAL: เลือดเหลือครึ่ง
                 case 6: use = hpRatio < .4f || (distance > 9f && distance < 14f); break;             // CLOAK: หนีหรือเข้าประชิด
+                case 7: use = ship.botFire && distance < 15f && !ship.HasOverdrive; break;
             }
             if (use) ship.botSkill = true;
         }

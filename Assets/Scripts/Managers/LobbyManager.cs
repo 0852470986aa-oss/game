@@ -789,6 +789,7 @@ public partial class LobbyManager : MonoBehaviourPunCallbacks
     // ใช้ expected properties (MapRevision เดิมและยังไม่ Starting) แล้วเพิ่ม MapRevision เพื่อทำให้ Ready เดิมหมดอายุ
     public void SelectLobbyMap(int index)
     {
+        if (PhotonNetwork.InRoom && BossRaidRules.Enabled(PhotonNetwork.CurrentRoom)) return;
         if (index < 0 || index >= MapChoices) return;
         if (!PhotonNetwork.InRoom)
         {

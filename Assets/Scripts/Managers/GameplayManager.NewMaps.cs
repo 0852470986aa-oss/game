@@ -12,13 +12,14 @@ public partial class GameplayManager
 {
     public const int StationMapIndex = 3; // เลขแม็พสถานีอวกาศในดงอุกกาบาต (แม็พ 3)
     public const int LavaMapIndex = 4; // เลขแม็พเนบิวลาลาวา (แม็พ 4)
+    public const int BossArenaMapIndex = 5; // สนามเฉพาะ Raid ไม่รวมในตัวเลือก PvP/สุ่มทั่วไป
     // จำนวนแม็พที่เลือกได้ในล็อบบี้
     public static int MapCount => FeatureFlags.NewMaps ? 5 : 3;
     // true = แม็พที่สร้างด้วยโค้ดตอนรันเกม (แม็พ 3 และ 4) ไม่ได้จัดวางไว้ใน Scene
-    public static bool IsRuntimeMap(int map) => map == StationMapIndex || map == LavaMapIndex;
+    public static bool IsRuntimeMap(int map) => map == StationMapIndex || map == LavaMapIndex || map == BossArenaMapIndex;
     // พื้นหลังของแม็พ (index ตรงกับเลขแม็พ)
     public static readonly string[] MapBackgroundImages =
-        { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech", "Images/Map_AsteroidStation", "Images/Map_MoltenNebula" };
+        { "Images/Map_ThunderJellyfish", "Images/Map_ObeliskPlains", "Images/Map_AncientMech", "Images/Map_AsteroidStation", "Images/Map_MoltenNebula", "Images/Map_AsteroidStation" };
 
     // ชนิดตัวชนของชิ้นส่วนแม็พ: วงกลม / สี่เหลี่ยม / รูปหลายเหลี่ยมตามรูป Sprite
     public enum MapCollider { Circle, Box, Poly }
@@ -103,12 +104,17 @@ public partial class GameplayManager
         renderer.sortingOrder = -6;
         FitBackgroundToArena(renderer);
         backgroundSprite = renderer;
+        if (map == BossArenaMapIndex)
+        {
+            renderer.color = new Color(.22f, .28f, .42f);
+            root.AddComponent<BossCitadelVisuals>();
+        }
     }
 
     // สร้างสิ่งกีดขวางของแม็พใหม่ (เรียกจาก GenerateMapObstacles หลังสร้างกำแพงขอบ)
     private void BuildRuntimeMapObstacles(int map, Transform container)
     {
-        MapPiece[] layout = map == StationMapIndex ? StationLayout : map == LavaMapIndex ? LavaLayout : null;
+        MapPiece[] layout = map == BossArenaMapIndex ? BossCitadelLayout : map == StationMapIndex ? StationLayout : map == LavaMapIndex ? LavaLayout : null;
         if (layout == null) return;
         const string folder = "Images/Maps/"; // โฟลเดอร์รูปชิ้นส่วนแม็พใน Resources
         int obstacleLayer = LayerMask.NameToLayer("Obstacle");
@@ -140,4 +146,12 @@ public partial class GameplayManager
             if (map == LavaMapIndex) item.AddComponent<MoltenContactSurface>();
         }
     }
+    private static readonly MapPiece[] BossCitadelLayout = {
+        new MapPiece("Station/st_platform_hex", -33, 24, 10, 0, MapCollider.Circle, .38f, 0),
+        new MapPiece("Station/st_platform_hex", 33, 24, 10, 0, MapCollider.Circle, .38f, 0),
+        new MapPiece("Station/st_platform_hex", -33, -24, 10, 0, MapCollider.Circle, .38f, 0),
+        new MapPiece("Station/st_platform_hex", 33, -24, 10, 0, MapCollider.Circle, .38f, 0),
+        new MapPiece("Station/st_gate_short", -36, 0, 10, 90, MapCollider.Box, .95f, .3f),
+        new MapPiece("Station/st_gate_short", 36, 0, 10, 90, MapCollider.Box, .95f, .3f)
+    };
 }

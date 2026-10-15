@@ -143,6 +143,17 @@ public partial class LobbyManager
         int ship = workshopShip;
         var state = Economy.ShipState(ship);
         int cap = Economy.UpgradeCap(ship);
+        if (workshopEmbedded)
+        {
+        var banner = UIPanel("UpgradeShipBanner", page, -290, 229, 460, 68, new Color(.035f, .09f, .14f));
+        var glow = UIPanel("Glow", banner.transform, -170, 0, 90, 66, new Color(.1f, .65f, .85f, .4f));
+        glow.sprite = UiFx.Glow;
+        var art = UIPanel("ShipPreview", banner.transform, -170, 0, 72, 62, Color.white);
+        art.sprite = BattleLoadoutCatalog.ShipSprite(ship);
+        art.preserveAspect = true;
+        UILabel("ShipIdentity", banner.transform, ships[ship].name, 35, 9, 300, 28, 22, Color.white);
+        UILabel("ShipCap", banner.transform, "MAX +" + cap, 35, -18, 300, 22, 15, accentColor);
+        }
         UILabel("CapInfo", page, "Upgrade limit for this ship: +" + cap + "   (cheap ships cap lower, expensive ships cap higher)", 0, 178, 1040, 28, 16, Color.gray);
         float[] baseValues = { ships[ship].hp, ships[ship].spd, ships[ship].atk };
         for (int i = 0; i < 3; i++)
@@ -151,10 +162,12 @@ public partial class LobbyManager
             int level = Economy.StatLevel(state, stat);
             float y = 110 - i * 92;
             var row = UIPanel("Stat" + i, page, 0, y, 1040, 80, new Color(.06f, .1f, .17f));
+            Color statColor = i == 0 ? new Color(.35f, .9f, .65f) : i == 1 ? accentColor : new Color(1f, .65f, .28f);
+            UIPanel("StatAccent", row.transform, -518, 0, 4, 80, statColor);
             UILabel("Name", row.transform, Economy.StatNames[i], -400, 16, 220, 30, 20, Color.white);
             // แถบเลเวล
             for (int pip = 0; pip < cap; pip++)
-                UIPanel("Pip" + pip, row.transform, -470 + pip * 16, -18, 12, 14, pip < level ? accentColor : new Color(.15f, .2f, .28f));
+                UIPanel("Pip" + pip, row.transform, -470 + pip * 16, -18, 12, 14, pip < level ? statColor : new Color(.15f, .2f, .28f));
             float bonus = level * Economy.StatPerLevel[i];
             UILabel("Value", row.transform, "+" + level + "   " + baseValues[i].ToString("0.#") + " -> " + (baseValues[i] * (1 + bonus)).ToString("0.#")
                 + "  (+" + Mathf.RoundToInt(bonus * 100) + "%)", -90, 0, 330, 40, 18, Color.white);
@@ -164,6 +177,14 @@ public partial class LobbyManager
             var chance = UIButton("Chance", row.transform, maxed ? "MAX" : "CHANCE " + Economy.UpgradeChance(level) + "%  " + Economy.UpgradeCost(level, false),
                 430, 0, 190, 54, () => DoUpgrade(stat, false));
             safe.interactable = chance.interactable = !maxed && !workshopBusy;
+            safe.GetComponent<Image>().color = maxed ? new Color(.12f, .25f, .23f) : new Color(.12f, .48f, .4f);
+            chance.GetComponent<Image>().color = maxed ? new Color(.12f, .25f, .23f) : new Color(.48f, .32f, .13f);
+            if (maxed)
+            {
+                chance.gameObject.SetActive(false);
+                safe.GetComponent<RectTransform>().anchoredPosition = new Vector2(330, 0);
+                safe.GetComponent<RectTransform>().sizeDelta = new Vector2(390, 54);
+            }
         }
         // สรุปค่าพลังรวม (ตีบวก + ไอเท็ม)
         var total = Economy.BuildBonus(ship);

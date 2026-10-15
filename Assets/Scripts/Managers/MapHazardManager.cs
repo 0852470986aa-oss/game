@@ -226,7 +226,7 @@ public class MapHazardManager : MonoBehaviourPunCallbacks
     {
         if (PhotonNetwork.CurrentRoom != null && PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object mapProp))
         {
-            mapIndex = (int)mapProp;
+            mapIndex = GameplayManager.GetCurrentMapIndex();
         }
 
         if (PhotonNetwork.IsMasterClient)

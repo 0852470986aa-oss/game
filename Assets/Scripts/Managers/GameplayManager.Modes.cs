@@ -48,7 +48,7 @@ public partial class GameplayManager : IOnEventCallback
         else if (gameMode == MatchRules.ModeCampaign)
         {
             campaign = Campaign.Get(MatchRules.CampaignStage(room));
-            targetKills = campaign.boss ? 999 : campaign.kills;
+            targetKills = campaign.boss || campaign.objective != StoryObjective.Eliminate ? 999 : campaign.kills;
         }
         if (gameMode == MatchRules.ModeRoyale) SetupRoyaleZone();
         ApplyModeHudText();
@@ -79,7 +79,7 @@ public partial class GameplayManager : IOnEventCallback
             case MatchRules.ModeSurvival: return "SURVIVE " + SurvivalWaves + " WAVES";
             case MatchRules.ModeBossRaid: return "DESTROY DREADNOUGHT / DODGE TELEGRAPHED ATTACKS";
             case MatchRules.ModeRoyale: return "LAST SHIP STANDING";
-            case MatchRules.ModeCampaign: return campaign != null && campaign.boss ? "DESTROY THE BOSS" : "DESTROY " + targetKills + " ENEMIES";
+            case MatchRules.ModeCampaign: return StoryObjectiveLabel();
         }
         return "";
     }
@@ -153,7 +153,7 @@ public partial class GameplayManager : IOnEventCallback
         {
             if (mode == MatchRules.ModeBossRaid) return MatchRules.TeamOf(ship.CombatantId) == 0 && MatchRules.BotDeaths(ship.CombatantId) < BossRaidRules.Lives;
             if (mode == MatchRules.ModeRoyale || mode == MatchRules.ModeSurvival) return false;
-            if (mode == MatchRules.ModeCampaign) return !ship.IsBoss;
+            if (mode == MatchRules.ModeCampaign) return !ship.IsBoss && ship.GetComponent<StoryRescueShip>() == null;
             return true;
         }
         int lives = MatchRules.Lives(PhotonNetwork.CurrentRoom);
@@ -202,7 +202,7 @@ public partial class GameplayManager : IOnEventCallback
                 return "ALIVE " + AliveCount() + "   ZONE " + Mathf.RoundToInt(RoyaleRadius()) + livesText;
             case MatchRules.ModeCampaign:
                 return "STAGE " + MatchRules.CampaignStage(room) + "  " + campaign.title + "   "
-                    + (campaign.boss ? (BossAlive() ? "DESTROY THE BOSS" : "BOSS DOWN!") : "KILLS " + MatchRules.LocalKills() + "/" + campaign.kills) + livesText;
+                    + StoryProgressLabel() + livesText;
         }
         return "";
     }
@@ -596,7 +596,15 @@ public partial class GameplayManager : IOnEventCallback
             if (gameMode == MatchRules.ModeCampaign)
                 name = StoryFleetArt.Names[StoryFleetArt.Variant(boss, MatchRules.CampaignStage(room), ids[i])] + (boss ? " [BOSS]" : " [BOT]");
             string prefab = BattleLoadoutCatalog.PrefabName(ship);
-            if (!TryFindSafeSpawn(GetPrefab(prefab), map, false, out Vector2 position)) position = new Vector2(Random.Range(-10f, 10f), 20f);
+            if (!TryFindSafeSpawn(GetPrefab(prefab), map, false, out Vector2 position, boss ? BossSpectacleFx.BossScale : 1f))
+            {
+                if (boss)
+                {
+                    if (!BossSpawnPlacement.Find(GetPrefab(prefab),map,out position))
+                    { Debug.LogError("No safe spawn for enlarged boss; ending this attempt."); SetModeResult(-1); continue; }
+                }
+                else position = new Vector2(Random.Range(-10f, 10f), 20f);
+            }
             object[] data = { "BOT", ids[i], name, ship, skill, ShipPaint.RandomBotPaint(), boss ? 3 : difficulty, boss };
             PhotonNetwork.InstantiateRoomObject(prefab, position, Quaternion.Euler(0, 0, 180f), 0, data);
         }
@@ -717,10 +725,12 @@ public partial class GameplayManager : IOnEventCallback
         if (!campaignSpawned)
         {
             campaignSpawned = true;
+            SetupStoryObjective();
             SpawnEnemyBots(campaign.bots, campaign.difficulty, campaign.boss);
             return;
         }
         CheckCoopDefeat();
+        if(campaign.objective != StoryObjective.Eliminate){UpdateStoryObjective();return;}
         bool seen = campaign.boss && BossSeen(); // Record while alive, before the boss can be removed.
         if (campaign.boss ? Time.time > 3f && seen && !BossAlive() : MatchRules.LocalKills() >= campaign.kills) SetModeResult(1);
     }

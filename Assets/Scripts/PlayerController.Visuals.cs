@@ -196,6 +196,7 @@ public partial class PlayerController
             width *= exhaustWidthScale;
             nozzle.transform.localScale = new Vector3(width / Mathf.Max(0.01f, nozzle.sprite.bounds.size.x), scale, 1f);
             Vector2 anchor = exhaustAnchors[i];
+            anchor = SkinPartMotion.Deform(anchor,Time.time,SkinPartMotion.Index(spriteRenderer.sprite),hull.size.x/hull.size.y);
             if (spriteRenderer.flipX) anchor.x = 1f - anchor.x;
             if (spriteRenderer.flipY) anchor.y = 1f - anchor.y;
             nozzle.transform.localRotation = Quaternion.Euler(0, 0, exhaustAngles[i] + (spriteRenderer.flipY ? 180 : 0));

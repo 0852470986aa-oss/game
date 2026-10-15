@@ -55,7 +55,7 @@ public partial class PlayerController : IPunInstantiateMagicCallback
     // true = บอทตัวนี้เป็นบอส (โหมด Survival/Campaign)
     public bool IsBoss { get; private set; }
 
-    // บอส: เลือด 6 เท่า แรง 1.4 เท่า ช้าลงนิดหน่อย ตัวใหญ่ 1.6 เท่า (ทุกเครื่องคำนวณเหมือนกัน)
+    // บอส: เลือด 6 เท่า แรง 1.4 เท่า ช้าลงนิดหน่อย ตัวใหญ่ 2.4 เท่า (ทุกเครื่องคำนวณเหมือนกัน)
     private void ApplyBossStats()
     {
         if (!IsBoss) return;
@@ -63,7 +63,7 @@ public partial class PlayerController : IPunInstantiateMagicCallback
             ? BossRaidRules.HealthMultiplier(MatchRules.ExpectedHumans(PhotonNetwork.CurrentRoom) + MatchRules.BotCount(PhotonNetwork.CurrentRoom)) : 6f;
         attack *= 1.4f;
         speed *= .85f;
-        transform.localScale *= 1.6f;
+        transform.localScale *= BossSpectacleFx.BossScale;
         if (BossRaidRules.Enabled(PhotonNetwork.CurrentRoom))
         {
             var appearance = GetComponent<BossRaidAppearance>();

@@ -24,7 +24,7 @@
 - Receipt ป้องกันซ้ำภายในการ retry ของคำสั่งเดียว ยังไม่ใช่คิวถาวรข้ามการปิดเกม/Stop Play; ควรรอให้บันทึกเสร็จก่อนหยุด
 - ต้องตรวจ Firebase Rules จริงว่าอนุญาต transaction และ child coin_operations ในบัญชีเจ้าของ ผู้ช่วยไม่ได้แก้ Rules หรือเชื่อมบัญชีจริง
 - การทดสอบออฟไลน์ไม่สามารถยืนยัน permission/การเชื่อมต่อจริงได้
-- งานแอนิเมชันแยกชิ้นส่วนสกินยังไม่ได้เริ่ม ตามลำดับที่ผู้ใช้ให้แก้ข้อ 2 ก่อน
+- งานแอนิเมชันส่วนสกินทำต่อเสร็จแล้ว ดู ANIMATED_SKIN_PARTS_TH.md
 
 ## ทดสอบใน Unity
 
@@ -36,4 +36,4 @@
 ชุดตรวจ: Assets/Editor/AccountReliabilityValidation.cs (ไม่เขียนบัญชีจริง)
 
 ผลตรวจ: Unity batch compile ผ่าน; AccountReliabilityValidation 28 ข้อ (การแปลง/ตรวจข้อมูลและ source contracts), PremiumStoryValidation 166 ข้อ, VisualRankedValidation 355 ข้อ ผ่าน ไม่ใช่การทดสอบ transaction กับ Firebase จริง
-แก้ในโปรเจค Unity แล้ว ยังไม่ได้สร้าง .exe ใหม่สำหรับแพตช์บัญชีนี้
+แพตช์รวมอยู่ใน Builds/AnimatedSkins-20261014-Windows/BattlefieldOfTheStars.exe แล้ว แต่ยังต้องทดสอบการบันทึกและโหลดกับบัญชี Firebase จริงตามขั้นตอนด้านบน

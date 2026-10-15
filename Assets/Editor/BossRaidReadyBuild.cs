@@ -8,6 +8,27 @@ using UnityEngine;
 
 public static class BossRaidReadyBuild
 {
+    public static void WindowsBossSpectacle()
+    {
+        BossSpectacleValidation.Run();
+        EffectsThrusterPreview.Run();
+        BuildWindows("Builds/BossSpectacle-20261014-Windows");
+    }
+    public static void WindowsControlsStoryMissions()
+    {
+        ControlsStoryMissionsValidation.Run();
+        AccountReliabilityValidation.Run();
+        PremiumStoryValidation.Run();
+        VisualRankedValidation.Run();
+        BuildWindows("Builds/ControlsStoryMissions-20261014-Windows-v2");
+    }
+    public static void WindowsAnimatedSkins()
+    {
+        SkinPartValidation.Run();
+        AccountReliabilityValidation.Run();
+        EffectsThrusterPreview.Run();
+        BuildWindows("Builds/AnimatedSkins-20261014-Windows");
+    }
     public static void WindowsEffects()
     {
         EffectsThrusterPreview.Run();

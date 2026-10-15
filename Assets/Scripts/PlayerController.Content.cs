@@ -59,6 +59,7 @@ public partial class PlayerController
             case 4: SkillBlink(); return true;
             case 5: photonView.RPC("HealRPC", RpcTarget.All); return true;
             case 6: photonView.RPC("CloakRPC", RpcTarget.All, true); return true;
+            case 7: photonView.RPC("OverdriveSkillRPC", RpcTarget.All); return true;
         }
         return false;
     }
@@ -103,6 +104,18 @@ public partial class PlayerController
 
     // ===== CLOAK =====
     private bool cloaked;
+    public const float OverdriveSkillSeconds = 5f;
+    [PunRPC]
+    public void OverdriveSkillRPC(PhotonMessageInfo info)
+    {
+        if (!FromController(info) || isDead || matchEnded) return;
+        // Same timer as the pickup: never multiplies twice or shortens an existing pickup.
+        if (photonView.IsMine) overdriveUntil = Mathf.Max(overdriveUntil, Time.time + OverdriveSkillSeconds);
+        var fx = GetComponent<OverdriveSkillFx>();
+        if (fx == null) fx = gameObject.AddComponent<OverdriveSkillFx>();
+        fx.Play(OverdriveSkillSeconds);
+        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX("SFX_PowerUp");
+    }
     private float cloakUntil;
     private readonly List<Renderer> cloakHidden = new List<Renderer>();
     public bool IsCloaked => cloaked && Time.time < cloakUntil;

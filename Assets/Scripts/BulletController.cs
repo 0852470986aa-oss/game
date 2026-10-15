@@ -253,6 +253,12 @@ public class BulletController : MonoBehaviourPunCallbacks, IPunInstantiateMagicC
         if (!IsAuthority || isDestroyed) return; // เฉพาะคนยิงเท่านั้นที่จะเป็นคนคำนวณดาเมจ และถ้ากระสุนถูกทำลายไปแล้วจะไม่คิดซ้ำ
         if (isTurretProjectile && hitInfo.GetComponentInParent<AutoTurret>() != null) return;
 
+        var generator=hitInfo.GetComponentInParent<StoryGenerator>();
+        if(generator!=null)
+        {
+            generator.Hit(damage,ShooterId);GetComponent<SkinProjectileFx>()?.Impact();DestroyBullet();return;
+        }
+
         PlayerController enemy = hitInfo.GetComponentInParent<PlayerController>();
         if (enemy != null)
         {

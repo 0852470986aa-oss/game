@@ -325,7 +325,7 @@ public partial class LobbyManager
                 t.richText = false;
                 if (t.name == "RoomNameText") t.text = "Room: " + room.Name;
                 else if (t.name == "RoomPlayersText") t.text = room.PlayerCount + " / " + room.MaxPlayers;
-                else if (t.name == "RoomModeMapText") t.text = (MatchRules.IsRanked(room) ? MatchRules.RankedLabel(room) : MatchRules.ModeName(room.MaxPlayers, MatchRules.IsTeamRoom(room))) + " | " + mapNames[ReadMap(room)];
+                else if (t.name == "RoomModeMapText") t.text = (MatchRules.IsRanked(room) ? MatchRules.RankedLabel(room) : MatchRules.ModeName(room.MaxPlayers, MatchRules.IsTeamRoom(room))) + " | " + (BossRaidRules.Enabled(room) ? "Dreadnought Citadel" : mapNames[ReadMap(room)]);
                 if (t.name == "RoomNameText" || t.name == "RoomModeMapText")
                 {
                     t.rectTransform.anchoredPosition = new Vector2(-60, t.name == "RoomNameText" ? 15 : -15);

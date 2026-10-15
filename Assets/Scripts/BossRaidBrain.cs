@@ -6,6 +6,7 @@ using ExitGames.Client.Photon;
 public sealed class BossRaidBrain : MonoBehaviour
 {
     private PlayerController ship;
+    private BossWeaponSpectacle weaponFx;
     private LineRenderer beam;
     private LineRenderer beamGlow;
     private SpriteRenderer chargeGlow;
@@ -21,6 +22,7 @@ public sealed class BossRaidBrain : MonoBehaviour
     private void Start()
     {
         ship = GetComponent<PlayerController>();
+        weaponFx = gameObject.AddComponent<BossWeaponSpectacle>();
         var line = new GameObject("RaidAttackTelegraph");
         line.transform.SetParent(transform, false);
         beam = line.AddComponent<LineRenderer>();
@@ -58,6 +60,7 @@ public sealed class BossRaidBrain : MonoBehaviour
             ship.botMove = Vector2.zero; ship.botFire = ship.botSkill = false;
             beam.enabled = false;
             beamGlow.enabled = chargeGlow.enabled = false;
+            weaponFx.Hide();
             return;
         }
         if (!room.CustomProperties.TryGetValue("StartTime", out object start) || !(start is double time) || time < 0) return;
@@ -99,13 +102,15 @@ public sealed class BossRaidBrain : MonoBehaviour
         }
         beam.enabled = attacking;
         beamGlow.enabled = chargeGlow.enabled = attacking;
-        if (!attacking) return;
+        if (!attacking) { weaponFx.Hide(); return; }
         float sweep = laser ? Mathf.Lerp(-38f, 38f, Mathf.Clamp01((age - Windup) / SweepTime)) : 0;
         Vector2 direction = Quaternion.Euler(0, 0, angle + sweep) * Vector2.up;
         bool warning = age < Windup;
+        GetComponent<BossSpectacleFx>()?.Charge(warning ? Mathf.Clamp01(age/Windup) : 1f,!warning);
         beam.startWidth = beam.endWidth = warning ? .18f : laser ? 1.1f : .12f;
-        beam.startColor = beam.endColor = warning ? new Color(1f, .65f, .1f, .65f) : Color.red;
+        beam.startColor = beam.endColor = warning ? new Color(1f, .65f, .1f, .65f) : new Color(1f,.8f,.55f);
         Vector2 origin = transform.position;
+        weaponFx.Draw(origin, direction, age, Windup, laser);
         beam.SetPosition(0, origin);
         beam.SetPosition(1, origin + direction * BeamLength);
         // Visual shell only: hit width, damage ticks and warning duration remain unchanged.

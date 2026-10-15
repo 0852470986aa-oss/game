@@ -165,6 +165,9 @@ public partial class LobbyManager
         if (def == null) return;
         bool done = state.progress >= def.goal;
         var row = UIPanel("Row" + key, page, 0, y, 1000, 44, new Color(.06f, .1f, .17f));
+        var track=UIPanel("ProgressTrack",row.transform,-220,-18,520,3,new Color(.12f,.2f,.26f));
+        var fill=UIPanel("ProgressFill",track.transform,0,0,520*Mathf.Clamp01((float)state.progress/Mathf.Max(1,def.goal)),3,accentColor);
+        var fillRect=(RectTransform)fill.transform;fillRect.anchorMin=fillRect.anchorMax=new Vector2(0,.5f);fillRect.pivot=new Vector2(0,.5f);fillRect.anchoredPosition=Vector2.zero;
         var text = UILabel("Text", row.transform, def.text, -230, 0, 500, 40, 18, state.claimed ? Color.gray : Color.white);
         text.alignment = TextAlignmentOptions.Left;
         UILabel("Progress", row.transform, state.progress + " / " + def.goal, 110, 0, 140, 40, 18, done ? new Color(.35f, 1f, .7f) : Color.white);

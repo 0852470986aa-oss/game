@@ -716,6 +716,7 @@ public partial class LobbyManager
     // กดได้เฉพาะตอนไม่ได้อยู่ในห้อง หรือเป็น Host ในห้อง; อีกฝ่ายจะเห็นข้อความ HOST SELECTS
     private void RefreshMapCards()
     {
+        bool raid = PhotonNetwork.InRoom && BossRaidRules.Enabled(PhotonNetwork.CurrentRoom);
         int index = PhotonNetwork.InRoom ? ReadMap(PhotonNetwork.CurrentRoom) : selectedMapIndex;
         bool editable = !roomRequestPending && !reconnecting && !isStartingGame && !isLeavingRoom && !RoomStarting
             && (!PhotonNetwork.InRoom || PhotonNetwork.IsMasterClient);
@@ -724,11 +725,14 @@ public partial class LobbyManager
             for (int i = 0; i < mapCardGroups[group].Length; i++)
             {
                 Button button = mapCardGroups[group][i];
-                button.interactable = editable;
+                button.gameObject.SetActive(!raid || i == mapCardGroups[group].Length / 2);
+                button.interactable = editable && !raid;
                 button.GetComponent<Image>().color = i == index ? new Color(0.10f, 0.38f, 0.46f) : panelColor;
-                mapLabelGroups[group][i].text = mapShortNames[i];
+                mapLabelGroups[group][i].text = raid ? "Dreadnought Citadel" : mapShortNames[i];
+                var preview = button.transform.Find("MapPreview").GetComponent<Image>();
+                preview.sprite = Resources.Load<Sprite>(raid ? "Images/Map_AsteroidStation_Preview" : MapImage(i));
                 TMP_Text hint = button.transform.Find("SelectionHint").GetComponent<TMP_Text>();
-                hint.text = i == index ? "SELECTED" : editable ? "SELECT MAP" : "HOST SELECTS";
+                hint.text = raid ? "BOSS ARENA" : i == index ? "SELECTED" : editable ? "SELECT MAP" : "HOST SELECTS";
                 hint.color = i == index ? new Color(0.4f, 1f, 0.73f) : Color.gray;
             }
         }

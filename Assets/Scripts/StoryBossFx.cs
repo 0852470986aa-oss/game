@@ -75,7 +75,11 @@ public sealed class StoryBossPulse : MonoBehaviour
     private Color tint;
     private float size, age;
     public void Initialize(SpriteRenderer renderer, Color color, float diameter)
-    { view = renderer; tint = color; size = diameter; Destroy(gameObject, .65f); }
+    {
+        view = renderer; tint = color; size = diameter;
+        transform.localScale=Vector3.one*size*.25f/view.sprite.bounds.size.y;view.color=new Color(tint.r,tint.g,tint.b,.6f);
+        if(Application.isPlaying)Destroy(gameObject,.65f);
+    }
     private void Update()
     {
         if (view == null) return;

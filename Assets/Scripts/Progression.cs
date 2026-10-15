@@ -45,6 +45,7 @@ public class PlayerProgress
     public int winStreak, bestStreak; // ชนะติดต่อกันตอนนี้ และสถิติสูงสุด
     public string dailyId = ""; // รหัสวันของภารกิจรายวันชุดปัจจุบัน
     public List<MissionState> daily = new List<MissionState>(); // ภารกิจรายวัน 3 ข้อของวันนี้
+    public List<int> dailyWinShips = new List<int>(); // ชนิดยานที่ชนะวันนี้ ป้องกันนับยานเดิมซ้ำ
     public string weeklyId = ""; // รหัสสัปดาห์ของภารกิจรายสัปดาห์ชุดปัจจุบัน
     public List<MissionState> weekly = new List<MissionState>(); // ภารกิจรายสัปดาห์ของสัปดาห์นี้
     public string lastLoginClaim = ""; // วันที่รับรางวัลล็อกอินล่าสุด
@@ -59,6 +60,8 @@ public class PlayerProgress
 // ข้อมูลผลแมตช์ที่ส่งมาจาก GameplayManager ตอนจบเกม
 public class MatchReport
 {
+    public int shipIndex;
+    public bool bossDefeated, newShipWin;
     public string mode = "1V1"; // โหมดที่เล่น: 1V1 / FFA / TEAM
     public bool won, draw, online, vsBots, hardBot; // ผลแมตช์และประเภทแมตช์ (ออนไลน์ / เล่นกับบอท / บอทยาก)
     public int kills, deaths, place = 1, count = 2, skills, coins; // Kill, ตาย, อันดับ, จำนวนผู้เล่น, สกิลที่ใช้, เหรียญที่ได้
@@ -107,6 +110,10 @@ public static class Progression
     // ภารกิจรายวัน (สุ่มวันละ 3 ข้อจากรายการนี้ ทุกเครื่องได้ชุดเดียวกันในวันเดียวกัน)
     public static readonly MissionDef[] DailyPool =
     {
+        new MissionDef("PLAY2", "Play 2 matches", 2, 40, 40, r => 1),
+        new MissionDef("BOSS1", "Defeat a boss in Story or Co-op", 1, 90, 70, r => r.won && r.bossDefeated ? 1 : 0),
+        new MissionDef("STORY1", "Clear 1 Story stage", 1, 70, 60, r => r.mode == "CAMPAIGN" && r.won ? 1 : 0),
+        new MissionDef("VARIETY2", "Win with 2 different ship types", 2, 80, 60, r => r.newShipWin ? 1 : 0),
         new MissionDef("PLAY3", "Play 3 matches", 3, 40, 40, r => 1),
         new MissionDef("WIN1", "Win 1 match", 1, 60, 50, r => r.won ? 1 : 0),
         new MissionDef("KILL10", "Destroy 10 enemy ships", 10, 50, 50, r => r.kills),
@@ -212,6 +219,7 @@ public static class Progression
     private static void Normalize()
     {
         if (Data.daily == null) Data.daily = new List<MissionState>();
+        if (Data.dailyWinShips == null) Data.dailyWinShips = new List<int>();
         if (Data.weekly == null) Data.weekly = new List<MissionState>();
         if (Data.achievements == null) Data.achievements = new List<string>();
         if (Data.history == null) Data.history = new List<MatchRecord>();
@@ -266,15 +274,9 @@ public static class Progression
         {
             Data.dailyId = TodayId;
             Data.daily.Clear();
-            // สุ่ม 3 ข้อแบบเดิมทุกครั้งในวันเดียวกัน (seed = วันที่)
-            var rng = new System.Random(int.Parse(TodayId));
-            var pool = new List<MissionDef>(DailyPool);
-            for (int i = 0; i < 3 && pool.Count > 0; i++)
-            {
-                int pick = rng.Next(pool.Count);
-                Data.daily.Add(new MissionState { id = pool[pick].id });
-                pool.RemoveAt(pick);
-            }
+            if (Data.dailyWinShips == null) Data.dailyWinShips = new List<int>();
+            Data.dailyWinShips.Clear();
+            Data.daily = BuildDailySet(int.Parse(TodayId));
         }
         if (Data.weeklyId != WeekId || Data.weekly.Count != WeeklyPool.Length)
         {
@@ -282,6 +284,23 @@ public static class Progression
             Data.weekly.Clear();
             foreach (var def in WeeklyPool) Data.weekly.Add(new MissionState { id = def.id });
         }
+    }
+
+    public static List<MissionState> BuildDailySet(int seed)
+    {
+        var set=new List<MissionState>{new MissionState{id="PLAY2"}};
+        var rng=new System.Random(seed);
+        var pool=new List<MissionDef>(DailyPool);pool.RemoveAll(def=>def.id=="PLAY2"||def.id=="PLAY3");
+        for(int i=1;i<3&&pool.Count>0;i++)
+        {int pick=rng.Next(pool.Count);set.Add(new MissionState{id=pool[pick].id});pool.RemoveAt(pick);}
+        return set;
+    }
+    public static bool RegisterDailyShipWin(PlayerProgress data,int ship,bool won)
+    {
+        if(data==null||!won||ship<0)return false;
+        if(data.dailyWinShips==null)data.dailyWinShips=new List<int>();
+        if(data.dailyWinShips.Contains(ship))return false;
+        data.dailyWinShips.Add(ship);return true;
     }
 
     // หานิยามภารกิจจาก id ทั้งรายวันและรายสัปดาห์ (ไม่พบ = null)
@@ -345,6 +364,7 @@ public static class Progression
         EnsureLoaded();
         RollPeriods();
         // 1) สถิติ
+        r.newShipWin = RegisterDailyShipWin(Data,r.shipIndex,r.won);
         Data.matches++;
         if (r.online) Data.onlineMatches++;
         if (r.won) { Data.wins++; Data.winStreak++; Data.bestStreak = Mathf.Max(Data.bestStreak, Data.winStreak); }

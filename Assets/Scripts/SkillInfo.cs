@@ -53,6 +53,9 @@ public static class SkillInfo
             case 6:
                 return th ? "ล่องหน 3 วินาที ศัตรูมองไม่เห็นยานคุณ ยิงเมื่อไหร่จะปรากฏตัวทันที ใช้ย่องเข้าใกล้หรือหนีออกจากวงล้อม"
                           : "Become invisible to enemies for 3 sec. Firing reveals you immediately. Sneak up on targets or slip away.";
+            case 7:
+                return th ? "เร่งอัตราการยิง 2 เท่าเป็นเวลา 5 วินาที ดาเมจต่อนัดเท่าเดิม ไม่ทวีซ้ำกับไอเท็มเร่งยิง และไม่ลดเวลาบัฟเดิมที่เหลืออยู่"
+                          : "Double fire rate for 5 sec. Damage per shot is unchanged. Does not stack with the Overdrive pickup or shorten its remaining duration.";
         }
         return "";
     }
@@ -64,7 +67,7 @@ public static class SkillInfo
         string text = (th ? "คูลดาวน์ " : "Cooldown ") + N(cooldown) + (th ? " วิ" : " sec");
         float damage = Damage(index);
         if (damage > 0) text += (th ? "   •   ดาเมจ " : "   •   Damage ") + N(damage);
-        float duration = index == 0 ? BattleBalance.StunSeconds : index == 1 ? BattleBalance.ShieldSeconds : index == 6 ? 3f : 0f;
+        float duration = index == 0 ? BattleBalance.StunSeconds : index == 1 ? BattleBalance.ShieldSeconds : index == 6 ? 3f : index == 7 ? PlayerController.OverdriveSkillSeconds : 0f;
         if (duration > 0) text += (th ? "   •   นาน " : "   •   Lasts ") + N(duration) + (th ? " วิ" : " sec");
         return text;
     }

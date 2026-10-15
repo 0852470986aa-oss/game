@@ -63,7 +63,7 @@ public static class StoryFleetSmokeTest
             var ships = UnityEngine.Object.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
             var bots = ships.Where(s => s.IsBot).ToArray();
             var def = Campaign.Get(stage);
-            if (bots.Length != def.bots + (def.boss ? 1 : 0)) return;
+            if (bots.Length != def.bots + (def.boss || def.objective == StoryObjective.Escort ? 1 : 0)) return;
             if (bots.Any(b => b.GetComponent<SpriteRenderer>().sprite == null || !b.GetComponent<SpriteRenderer>().sprite.name.StartsWith("StoryFleet_"))) return;
             Check(GameplayManager.GetCurrentMapIndex() == def.MapIndex, "Map for stage " + stage);
             Check(bots.All(b => b.GetComponent<Collider2D>() != null), "Enemy artwork and colliders stage " + stage);
@@ -78,7 +78,40 @@ public static class StoryFleetSmokeTest
                 typeof(GameplayManager).GetMethod("UpdateCampaign", Private).Invoke(gm, null);
                 Check(Equals(PhotonNetwork.CurrentRoom.CustomProperties["ModeResult"], 1), "Boss defeat wins stage " + stage);
             }
-            if (stage >= Campaign.Count) { Finish(true, "All ten stages spawn; all three bosses complete objectives. No reward screen or account writes."); return; }
+            if(def.objective==StoryObjective.Survive)
+            {
+                var state=(StoryObjectiveState)typeof(GameplayManager).GetField("storyState",Private).GetValue(gm);
+                Check(!state.Complete(def,0),"Survival cannot win early");
+                for(int i=0;i<def.duration*4;i++)state.Tick(.25f,true,true,true,def.objective);
+                typeof(GameplayManager).GetMethod("UpdateCampaign",Private).Invoke(gm,null);
+                Check(Equals(PhotonNetwork.CurrentRoom.CustomProperties["ModeResult"],1),"Survival wins stage "+stage);
+            }
+            if(def.objective==StoryObjective.Generators)
+            {
+                var cores=UnityEngine.Object.FindObjectsByType<StoryGenerator>(FindObjectsSortMode.None);
+                Check(cores.Length==def.generators,"All generators spawn");
+                foreach(var core in cores)
+                {
+                    core.Hit(100,bots[0].CombatantId);Check(core.Hp==100,"Enemy cannot damage own core");
+                    var shot=BulletController.SpawnLocal(core.transform.position,0,100,PhotonNetwork.LocalPlayer.ActorNumber,true,0);
+                    typeof(BulletController).GetMethod("OnTriggerEnter2D",Private).Invoke(shot,new object[]{core.GetComponent<Collider2D>()});
+                    Check(core.Destroyed&&!core.GetComponent<Collider2D>().enabled,"Real bullet destroys core");
+                }
+                typeof(GameplayManager).GetMethod("UpdateCampaign",Private).Invoke(gm,null);
+                Check(Equals(PhotonNetwork.CurrentRoom.CustomProperties["ModeResult"],1),"Generator objective wins");
+            }
+            if(def.objective==StoryObjective.Escort)
+            {
+                var rescue=bots.FirstOrDefault(b=>b.GetComponent<StoryRescueShip>()!=null);
+                if(rescue==null||rescue.maxHp!=320)return;
+                Check(MatchRules.IsAlly(rescue.CombatantId,gm.localPlayer.CombatantId),"Rescue belongs to player team");
+                Check(!gm.CanRespawn(rescue),"Rescue cannot respawn");
+                Check(!rescue.GetComponent<BotController>().enabled,"Rescue does not attack");
+                rescue.isDead=true;rescue.currentHp=0;
+                typeof(GameplayManager).GetMethod("UpdateCampaign",Private).Invoke(gm,null);
+                Check(Equals(PhotonNetwork.CurrentRoom.CustomProperties["ModeResult"],-1),"Rescue death fails mission");
+            }
+            if (stage >= Campaign.Count) { Finish(true, "All thirteen stages spawn; boss, survival, generator and rescue objectives verified. No reward screen or account writes."); return; }
             stage++;
             PhotonNetwork.CurrentRoom.SetCustomProperties(new Hashtable {
                 [MatchRules.CampaignStageKey] = stage, ["MapIndex"] = Campaign.Get(stage).MapIndex,

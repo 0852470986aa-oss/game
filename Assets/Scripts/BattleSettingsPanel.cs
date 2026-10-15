@@ -306,6 +306,7 @@ public partial class BattleSettingsPanel : MonoBehaviour
             new OptionRow{ title="BUTTON SIZE", value=()=>Mathf.RoundToInt(GameSettings.ButtonScale*100)+"%", next=()=>Cycle("Opt_ButtonSize",GameSettings.ButtonSizeIndex,GameSettings.ButtonSizes.Length) },
             new OptionRow{ title="BUTTON OPACITY", value=()=>Mathf.RoundToInt(GameSettings.ButtonOpacity*100)+"%", next=()=>Cycle("Opt_ButtonOpacity",GameSettings.ButtonOpacityIndex,GameSettings.ButtonOpacities.Length) },
             new OptionRow{ title="CONTROLS", value=()=>GameSettings.LeftHanded ? "LEFT-HANDED" : "RIGHT-HANDED", next=()=>Toggle("Opt_LeftHanded",GameSettings.LeftHanded) },
+            new OptionRow{ title="CUSTOMIZE CONTROLS", value=()=>"OPEN", next=()=>ControlLayoutEditor.Show() },
         };
         if(FeatureFlags.Language)
             rows.Add(new OptionRow{ title="LANGUAGE", value=()=>Lang.CurrentName, next=()=>Lang.SetThai(!Lang.Thai) });
@@ -345,6 +346,7 @@ public partial class BattleSettingsPanel : MonoBehaviour
     // ปุ่มย้อนกลับมือถือ/Esc: ปิดชั้นบนสุดของหน้าตั้งค่า (หน้า MORE OPTIONS > หน้ายืนยัน > หน้าตั้งค่า) คืน false ถ้าไม่ได้เปิดอยู่
     public static bool HandleBack()
     {
+        if (ControlLayoutEditor.HandleBack()) return true;
         if (current == null) return false;
         if (current.optionsPage != null && current.optionsPage.activeSelf) { current.optionsPage.SetActive(false); return true; }
         if (current.authoredConfirmation != null && current.authoredConfirmation.activeSelf) { current.authoredConfirmation.SetActive(false); return true; }

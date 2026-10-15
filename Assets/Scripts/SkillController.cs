@@ -323,6 +323,8 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
         if (!photonView.IsMine) return;
         foreach (var collider in Physics2D.OverlapCircleAll(transform.position, NovaRadius))
         {
+            var generator=collider.GetComponentInParent<StoryGenerator>();
+            if(generator!=null)generator.Hit(damage,casterId);
             var player = collider.GetComponentInParent<PlayerController>();
             if (player != null && !MatchRules.IsAlly(player.CombatantId, casterId)) DealDamage(player);
         }
@@ -355,6 +357,11 @@ public class SkillController : MonoBehaviourPunCallbacks, IPunInstantiateMagicCa
     void OnTriggerEnter2D(Collider2D hit)
     {
         if (!photonView.IsMine || isDestroyed || behavior == SkillBehavior.NovaBlast) return;
+        var generator=hit.GetComponentInParent<StoryGenerator>();
+        if(generator!=null)
+        {
+            generator.Hit(damage,casterId);DestroySkill();photonView.RPC(nameof(PlayImpactRPC),RpcTarget.All,transform.position);return;
+        }
         var player = hit.GetComponentInParent<PlayerController>();
         if (player != null && (player.isDead || MatchRules.IsAlly(player.CombatantId, casterId))) return;
         if (player == null && hit.isTrigger) return;

@@ -12,7 +12,7 @@ public static class PremiumStoryValidation
         Action<bool, string> check = (ok, message) => { if (!ok) throw new Exception(message); count++; };
         check(PremiumItemArt.Crystal != null, "Crystal artwork");
         check(PremiumItemArt.Ticket != null, "Ticket artwork");
-        check(Campaign.Count == 10, "Ten stages");
+        check(Campaign.Count == 13, "Thirteen stages; first ten retained");
         check(SkinGacha.RarityForRoll(1, 1, false, .79f) == SkinRarity.Legendary, "Legendary base boundary");
         check(SkinGacha.RarityForRoll(1, 1, false, .81f) == SkinRarity.Epic, "Epic base boundary");
         check(SkinGacha.RarityForRoll(1, 1, false, 5.01f) == SkinRarity.Rare, "Rare base boundary");

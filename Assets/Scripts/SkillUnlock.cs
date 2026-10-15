@@ -7,7 +7,7 @@ public static class SkillUnlock
 {
     // เลเวลที่ต้องการของแต่ละสกิล (ลำดับเดียวกับ BattleLoadoutCatalog.Skills)
     // STUN, SHIELD, NOVA, SEEKER, BLINK, HEAL, CLOAK
-    public static readonly int[] RequiredLevels = { 1, 1, 1, 3, 5, 7, 9 };
+    public static readonly int[] RequiredLevels = { 1, 1, 1, 3, 5, 7, 9, 11 };
 
     // เลเวลที่ต้องใช้ปลดล็อกสกิล index (ปิดระบบ = 1)
     public static int RequiredLevel(int index)

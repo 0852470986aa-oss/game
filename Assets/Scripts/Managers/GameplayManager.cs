@@ -228,7 +228,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
     // เวลาถัดไปที่จะเช็ค/ส่งสถานะพร้อม (ทำทุก 1 วินาที ไม่ใช่ทุกเฟรม)
     private float nextReadyUpdate;
     // อนุญาตให้บังคับยานไหม: แมตช์ยังไม่จบ และเริ่มแล้ว (ถ้าไม่ได้อยู่ในห้อง เช่น ทดสอบออฟไลน์ ให้เล่นได้เลย)
-    public bool MatchInputAllowed => !isMatchEnding && (!PhotonNetwork.InRoom || matchStarted);
+    public bool MatchInputAllowed => !ControlLayoutEditor.IsOpen && !isMatchEnding && (!PhotonNetwork.InRoom || matchStarted);
 
     // ระบบเริ่มแมตช์พร้อมกัน (เรียกทุกเฟรมจาก Update บนทุกเครื่อง)
     // ใช้ BattleToken (รหัสของรอบแข่ง) + LoadedBattleToken ของผู้เล่นแต่ละคน เพื่อรู้ว่าทั้งคู่โหลดฉากเสร็จแล้ว
@@ -428,7 +428,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
             }
             // แม็พใหม่ 3 (สถานี) / 4 (ลาวา) ไม่มีของวางไว้ใน Scene: ต้องสร้างกำแพงขอบ + สิ่งกีดขวางด้วยโค้ดเสมอ
             // (เดิมสร้างเฉพาะตอนเปิด autoGenerateMap ซึ่งใน Scene ปิดไว้ -> แม็พใหม่ไม่มีสิ่งกีดขวางเลย)
-            else if (FeatureFlags.NewMaps && IsRuntimeMap(GetCurrentMapIndex()))
+            else if (IsRuntimeMap(GetCurrentMapIndex()))
             {
                 GenerateMapObstacles();
             }
@@ -455,7 +455,7 @@ public partial class GameplayManager : MonoBehaviourPunCallbacks
             {
                 if (PhotonNetwork.CurrentRoom.CustomProperties.TryGetValue("MapIndex", out object mapProp))
                 {
-                    int mapIdx = (int)mapProp;
+                    int mapIdx = GetCurrentMapIndex();
                     string[] mapImages = MapBackgroundImages; // รวมแม็พใหม่ 3, 4
                     if (mapIdx >= 0 && mapIdx < mapImages.Length)
                     {
